@@ -1,4 +1,10 @@
 --!strict
+--!nolint LocalUnused
+
+--[[
+    The main RoundHandler. Used to create and interact with rounds.
+]]
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -8,13 +14,13 @@ local API = require("API")
 
 local module = {}
 local participant: Types.Participant = {} :: Types.Participant
-local roundHandler = {}
+local roundHandler: Types.Round = {} :: Types.Round
 
 module.Rounds = {}
 
 local PREPARING_TIME = 10
--- local HIGHLIGHTS_TIME = 10
--- local INTERMISSION_TIME = 10
+local HIGHLIGHTS_TIME = 10
+local INTERMISSION_TIME = 10
 
 
 -- self is explicitly defined to specify the type.
@@ -107,7 +113,11 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
     return participant
 end
 
-function roundHandler.StartRound(self: Types.Round) -- Starts the round, assigning everyone's roles. Also sets up the timeout condition.
+--[[
+    Starts the round, assigning everyone's roles and the setting up the timeout condition.
+]]
+
+function roundHandler.StartRound(self: Types.Round)
     local gm = self.Gamemode
     local roles = gm.Roles
     local participants = self.Participants
@@ -124,10 +134,11 @@ function roundHandler.StartRound(self: Types.Round) -- Starts the round, assigni
             end
         end
     end
+    return
 end
 
 function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
-    
+    return
 end
 
 function roundHandler.GetRoleObject(self: Types.Round, name: Types.RoleName): Types.Role
@@ -240,7 +251,7 @@ end
 function module.GetRound(identifier: Types.RoundCategory | Types.UUID): Types.Round?
     for _,v in module.Rounds do if v.ID == identifier then return v end end -- Look for ID first
     for _,v in module.Rounds do if v.Category == identifier then return v end end
-    return nil
+    return
 end
 
 return module

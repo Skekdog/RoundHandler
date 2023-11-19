@@ -60,6 +60,10 @@ export type Equipment = {
     Cost: Integer,
 }
 
+--[[
+    The Participant class acts similar to an extension of Roblox's Player.
+]]
+
 export type Participant = {
     Player: Player?, -- A reference to the Player object. Can be nil.
     Name: string, -- Separates Participant from Player, in case of disconnection.
@@ -92,6 +96,10 @@ export type Participant = {
     GiveEquipment: (self: Participant, equipment: Equipment) -> nil,
 }
 
+--[[
+    The Round class. All Participants belong to a Round.
+]]
+
 export type Round = {
     ID: UUID,
     Category: RoundCategory,
@@ -109,6 +117,7 @@ export type Round = {
     
     StartRound: (self: Round) -> nil,
     EndRound: (self: Round, victors: Role) -> nil,
+    CheckForVictory: (self: Round) -> boolean?,
 
     GetRoleObject: (self: Round, name: RoleName) -> Role?, -- Shortcut method to get a Role
 }
@@ -191,4 +200,7 @@ export type Gamemode = {
     Highlights: {RoundHighlight}, -- List of available round highlights.
 }
 
+--[[
+    Defines all custom types used by Round Handler.
+]]
 return {}

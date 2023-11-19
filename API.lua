@@ -1,3 +1,7 @@
+--[[
+    Includes useful functions for common tasks in the library.
+]]
+
 local module = {}
 
 function module.NamedInstance(className: string, name: string, parent: Instance): Instance -- Used if the return value is needed
