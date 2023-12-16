@@ -142,9 +142,14 @@ function roundHandler.StartRound(self: Types.Round)
     return
 end
 
-function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, role2: Types.Role): Types.RoleRelationship?
-    if table.find(role1.Allies, role2.Name) then return "Ally" end
-    return "Enemy"
+function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
+    return (table.find(role1.Allies, role2.Name) and "Ally") or "Enemy"
+end
+
+function roundHandler.CompareRoles(self: Types.Round, role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
+    if role2.Name == comparison then return true end
+    if comparison == "All" then return true end
+    return self:GetRoleRelationship(role1, role2) == comparison
 end
 
 -- Returns a Participant with some fields omitted depending on the target's role or lack there-of
@@ -159,7 +164,10 @@ function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Playe
     if not viewerRole then return warn(viewer.Name.." role is nil in Round "..self.ID..".") end
     if not targetRole then return warn(target.Name.." role is nil in Round "..self.ID..".") end
 
-    return nil
+    local rules = {}
+    for rule, allow in viewerRole.KnowsRoles do
+        
+    end
 end
 
 function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
@@ -307,8 +315,8 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
         end
     end
 
-    local function validateRoleRelationship(list: {Types.RoleRelationship} | {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
-        for relationship, _ in pairs(list) do
+    local function validateRoleRelationship(list: {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
+        for relationship, _ in list do
             if not table.find({"All", "Ally", "Enemy"}, relationship) and not table.find(roleNames, relationship) then
                 i(relationship.." is not a valid RoleRelationship in "..info..".")
             end

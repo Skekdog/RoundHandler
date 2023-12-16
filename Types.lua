@@ -100,6 +100,7 @@ export type Round = {
     CheckForVictory: (self: Round) -> boolean?,
 
     GetRoleInfo: (self: Round, name: RoleName) -> Role?, -- Shortcut method to get a Role
+    CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean,
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> RoleRelationship?,
     GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> Role?,
 }
