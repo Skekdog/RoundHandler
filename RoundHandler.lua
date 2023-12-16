@@ -8,6 +8,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require("Types")
 local API = require("API")
@@ -38,10 +39,9 @@ function participant.LeaveRound(self: Types.Participant)
     return
 end
 
-function participant.GetRole(self: Types.Participant, useAllegiance: boolean): Types.Role?
+function participant.GetAllegiance(self: Types.Participant): Types.Role?
     if not self.Role then return end
-    if useAllegiance then return self.Round:GetRoleObject(self.Role.Allegiance) end
-    return self.Round:GetRoleObject(self.Role.Name)
+    return self.Round:GetRoleInfo(self.Role.Allegiance or self.Role.Name)
 end
 
 function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equipment): nil
@@ -49,6 +49,10 @@ function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equ
     return
 end
 
+function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Types.Role
+    for _,v in self.Gamemode.Roles do if v.Name == name then return v end end
+    error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
+end
 
 function roundHandler.CheckForVictory(self: Types.Round): boolean?
     return
@@ -94,8 +98,8 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
         AssignRole = participant.AssignRole,
         LeaveRound = participant.LeaveRound,
         GiveEquipment = participant.GiveEquipment,
-        GetRole = participant.GetRole,
-    } :: Types.Participant
+        GetAllegiance = participant.GetAllegiance,
+    }
 
     table.insert(self.Participants, _participant)
 
@@ -127,6 +131,7 @@ function roundHandler.StartRound(self: Types.Round)
         table.sort(roles, function(role1, role2) return role1.AssignmentPriority < role2.AssignmentPriority end)
         local last, num = 0, #participants
         for _,role in roles do
+            assert(role.AssignmentProportion)
             for i,v in participants do
                 if i > last then
                     if i <= math.floor(num*role.AssignmentProportion) then v:AssignRole(role) else last = i-1; break end
@@ -137,13 +142,28 @@ function roundHandler.StartRound(self: Types.Round)
     return
 end
 
-function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
-    return
+function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, role2: Types.Role): Types.RoleRelationship?
+    if table.find(role1.Allies, role2.Name) then return "Ally" end
+    return "Enemy"
 end
 
-function roundHandler.GetRoleObject(self: Types.Round, name: Types.RoleName): Types.Role
-    for _,v in self.Gamemode.Roles do if v.Name == name then return v end end
-    error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
+-- Returns a Participant with some fields omitted depending on the target's role or lack there-of
+function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Player, target: Player): Types.Role?
+    local viewerParticipant = self:GetParticipant(viewer.Name)
+    local targetParticipant = self:GetParticipant(target.Name)
+    if not viewerParticipant then return warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
+    if not targetParticipant then return warn(target.Name.." is not a Participant of Round "..self.ID..".") end
+
+    local viewerRole = viewerParticipant.Role
+    local targetRole = targetParticipant.Role
+    if not viewerRole then return warn(viewer.Name.." role is nil in Round "..self.ID..".") end
+    if not targetRole then return warn(target.Name.." role is nil in Round "..self.ID..".") end
+
+    return nil
+end
+
+function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
+    return
 end
 
 function module.LoadMap(map: Folder, category: string): nil -- Loads a map.
@@ -242,7 +262,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Ty
     self.StartRound = roundHandler.StartRound -- Starts the round, assigning everyone's roles. Also sets up the timeout condition.
     self.EndRound = roundHandler.EndRound
 
-    self.GetRoleObject = roundHandler.GetRoleObject
+    self.GetRoleInfo = roundHandler.GetRoleInfo
     
     module.Rounds[self.ID] = self
     return self
@@ -252,6 +272,63 @@ function module.GetRound(identifier: Types.RoundCategory | Types.UUID): Types.Ro
     for _,v in module.Rounds do if v.ID == identifier then return v end end -- Look for ID first
     for _,v in module.Rounds do if v.Category == identifier then return v end end
     return
+end
+
+-- Returns whether the gamemode is valid, and a list of issues with the gamemode
+function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean): (boolean, {string})
+    local issues = {}
+    local i = function(issue: string) table.insert(issues, issue) end
+
+    -- Test with some functions
+    if gamemode.Duration(gamemode.MinimumPlayers) <= 0 then i("Gamemode duration is negative with MinimumPlayers.") end
+    if gamemode.Duration(gamemode.MaximumPlayers or 700) <= 0 then i("Gamemode duration is negative with "..tostring(gamemode.MaximumPlayers or "700 (max. size of a server in theory)").." players") end
+
+    local equipmentNames = {}
+    for _, equipment in gamemode.AvailableEquipment do table.insert(equipmentNames, equipment.Name) end
+
+    local hasOwnAssignmentFunction = gamemode.AssignRoles ~= nil
+    local roleNames = {}
+    for _, role in gamemode.Roles do
+        table.insert(roleNames, role.Name)
+        if not role.AssignmentPriority and not hasOwnAssignmentFunction then i("Role "..role.Name.." does not have an AssignmentPriority. Define Gamemode.AssignRoles() or set a priority.") end
+        if not role.AssignmentProportion and not hasOwnAssignmentFunction then i("Role "..role.Name.." does not have an AssignmentProportion. Define Gamemode.AssignRoles() or set a proportion.") end
+
+        if table.find({"All", "Ally", "Enemy"}, role.Name) then i("Role name "..role.Name.." is reserved.") end
+        
+        for _, equipmentName in role.StartingEquipment do
+            if not table.find(equipmentNames, equipmentName) then
+                i("Equipment "..equipmentName.." of "..role.Name..".StartingEquipment ".." is not defined in Gamemode.AvailableEquipment.")
+            end
+        end
+        for _, equipmentName in role.EquipmentShop do
+            if not table.find(equipmentNames, equipmentName) then
+                i("Equipment "..equipmentName.." of "..role.Name..".EquipmentShop ".." is not defined in Gamemode.EquipmentShop.")
+            end
+        end
+    end
+
+    local function validateRoleRelationship(list: {Types.RoleRelationship} | {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
+        for relationship, _ in pairs(list) do
+            if not table.find({"All", "Ally", "Enemy"}, relationship) and not table.find(roleNames, relationship) then
+                i(relationship.." is not a valid RoleRelationship in "..info..".")
+            end
+        end
+    end
+
+    for _, role in gamemode.Roles do
+        for _, ally in role.Allies do
+            if not table.find(roleNames, ally) then i("Role "..role.Name.." has an undefined Ally: "..ally) end
+        end
+        if not table.find(roleNames, role.Allegiance) then
+            i("Role "..role.Name.." has an undefined Allegiance: "..role.Allegiance)
+        end
+
+        validateRoleRelationship(role.KnowsRoles, role.Name..".KnowsRoles")
+        validateRoleRelationship(role.HighlightRules, role.Name..".HighlightRules")
+        validateRoleRelationship(role.AwardOnDeath, role.Name..".AwardOnDeath")
+    end
+
+    return #issues<1, issues
 end
 
 return module

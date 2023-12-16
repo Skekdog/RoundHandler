@@ -1,3 +1,4 @@
+--!strict
 --[[
     Includes useful functions for common tasks in the library.
 ]]
