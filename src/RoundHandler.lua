@@ -1,5 +1,4 @@
 --!strict
---!nolint LocalUnused
 
 --[[
     The main RoundHandler. Used to create and interact with rounds.
@@ -8,7 +7,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require("Types")
 local API = require("API")
@@ -19,9 +17,9 @@ local roundHandler: Types.Round = {} :: Types.Round
 
 module.Rounds = {}
 
-local PREPARING_TIME = 10
-local HIGHLIGHTS_TIME = 10
-local INTERMISSION_TIME = 10
+local PREPARING_TIME = 10 -- Duration of the preparing phase
+local HIGHLIGHTS_TIME = 10 -- Duration of the highlights phase
+local INTERMISSION_TIME = 10 -- Duration of map voting
 
 
 -- self is explicitly defined to specify the type.
@@ -49,9 +47,9 @@ function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equ
     return
 end
 
-function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Types.Role
+function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Types.Role?
     for _,v in self.Gamemode.Roles do if v.Name == name then return v end end
-    error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
+    return self:error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
 function roundHandler.CheckForVictory(self: Types.Round): boolean?
@@ -67,8 +65,8 @@ end
 
 function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.Participant? -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
     if self:GetParticipant(name) or ((self.RoundPhase ~= "Waiting") and (self.RoundPhase ~= "Preparing")) then return end
-    local plr: Player = Players:FindFirstChild(name) :: Player
-    if not plr then return end
+    local plr = Players:FindFirstChild(name) :: Instance
+    if (not plr) or (not plr:IsA("Player")) then return self:warn("Attempt to add non-Player participant: ") end
 
     local _participant: Types.Participant = {
         Player = plr,
@@ -77,7 +75,7 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
 
         Role = nil,
         Credits = 0,
-        Score = 0,
+        Score = {},
 
         Deceased = false,
         SearchedBy = {},
@@ -117,10 +115,7 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
     return participant
 end
 
---[[
-    Starts the round, assigning everyone's roles and the setting up the timeout condition.
-]]
-
+-- Starts the round, assigning roles and setting up the timeout condition.
 function roundHandler.StartRound(self: Types.Round)
     local gm = self.Gamemode
     local roles = gm.Roles
@@ -147,27 +142,38 @@ function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, 
 end
 
 function roundHandler.CompareRoles(self: Types.Round, role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
-    if role2.Name == comparison then return true end
     if comparison == "All" then return true end
     return self:GetRoleRelationship(role1, role2) == comparison
 end
 
 -- Returns a Participant with some fields omitted depending on the target's role or lack there-of
-function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Player, target: Player): Types.Role?
+function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Player, target: Player): Types.PartialRole?
     local viewerParticipant = self:GetParticipant(viewer.Name)
     local targetParticipant = self:GetParticipant(target.Name)
-    if not viewerParticipant then return warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
-    if not targetParticipant then return warn(target.Name.." is not a Participant of Round "..self.ID..".") end
+    if not viewerParticipant then return self:warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
+    if not targetParticipant then return self:warn(target.Name.." is not a Participant of Round "..self.ID..".") end
 
     local viewerRole = viewerParticipant.Role
     local targetRole = targetParticipant.Role
-    if not viewerRole then return warn(viewer.Name.." role is nil in Round "..self.ID..".") end
-    if not targetRole then return warn(target.Name.." role is nil in Round "..self.ID..".") end
+    if not viewerRole then return self:warn(viewer.Name.." role is nil in Round "..self.ID..".") end
+    if not targetRole then return self:warn(target.Name.." role is nil in Round "..self.ID..".") end
 
-    local rules = {}
-    for rule, allow in viewerRole.KnowsRoles do
-        
-    end
+    local relation = self:GetRoleRelationship(viewerRole, targetRole)
+
+    local partialInfo = {
+        Name = targetRole.Name,
+        Colour = targetRole.Colour,
+    }
+    
+    -- First check for explicit role name, then for Ally/Enemy.
+
+    if viewerRole.KnowsRoles[targetRole.Name] == false then return end
+    if viewerRole.KnowsRoles[targetRole.Name] then return partialInfo end
+
+    if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation]) then return partialInfo end
+    if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation] == false) then return end
+
+    if viewerRole.KnowsRoles["All"] then return partialInfo else return end
 end
 
 function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
@@ -271,6 +277,9 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Ty
     self.EndRound = roundHandler.EndRound
 
     self.GetRoleInfo = roundHandler.GetRoleInfo
+
+    function self:warn(message) return warn(message.." from Round: "..self.ID.." ("..self.Category..")") end
+    function self:error(message) return error(message.." from Round: "..self.ID.." ("..self.Category..")", 2) end
     
     module.Rounds[self.ID] = self
     return self
