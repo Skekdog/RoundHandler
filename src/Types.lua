@@ -7,6 +7,7 @@ export type Timestamp = number
 export type RoleName = string
 
 export type Asset = "rbxassetid://" | string
+export type PauseFailReason = "RoundNotInProgress"
 
 --[[
 Round Phases:
@@ -117,9 +118,9 @@ export type Event = {
 export type Round = {
     ID: UUID,                -- Unique identifier of the round
     Category: RoundCategory, -- To be honest I'm not sure what the point of this is
+    Gamemode: Gamemode,      -- A reference to the current gamemode.
 
-    Gamemode: Gamemode, -- A reference to the current gamemode.
-
+    Paused: boolean,          -- Whether the round is paused or not.
     TimeMilestone: Timestamp, -- The timestamp of the next round phase. Used by the client for a round timer.
     RoundPhase: RoundPhase,   -- The current round phase.
 
@@ -129,9 +130,14 @@ export type Round = {
     GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a participant from a username
     JoinRound: (self: Round, name: Username) -> Participant?,      -- Adds a participant to this round
     
+    PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
     StartRound: (self: Round) -> nil,              -- Starts this round. Usually shouldn't be called externally.
     EndRound: (self: Round, victors: Role) -> nil, -- Ends this round. Usually shouldn't be called externally.
     CheckForVictory: (self: Round) -> boolean?,    -- Checks to see if any role has won yet. Usually shouldn't be called externally.
+
+    IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting
+    IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission
+    IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing
 
     GetRoleInfo: (self: Round, name: RoleName) -> Role?,                                            -- Shortcut method to get a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Compares whether two roles are related.
@@ -140,6 +146,12 @@ export type Round = {
 
     warn: (self: Round, message: string) -> nil,  -- Calls built-in warn, also adding a round identifier.
     error: (self: Round, message: string) -> nil, -- Calls built-in error, also adding a round identifier.
+
+    -- Private members, should not be used from outside the module
+    _roundTimerThread: thread?,      -- The current task.delay() thread responsible for ending the round after the timer expires. nil if no timer is active.
+    _roundTimerContinueFor: number?, -- Length of time to continue the round timer for when resumed
+    _roundTimerResumedAt: number,    -- The time that the round timer was resumed at
+    _roundTimerTargetDuration: number -- The target duration the round timer started at
 }
 
 
@@ -246,9 +258,9 @@ export type Gamemode = {
 
     -- Note that default functions are implementation-dependent.
     Duration: (numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
-    OnDeath: (victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies. A default system is in place.
-    AssignRoles: (participants: {Participant}) -> nil,      -- Function that assigns all Participants roles. A default system is in place.
-    CheckForVictory: (round: Round) -> nil,                 -- Function that is called whenever someone dies (yes, it can be fully implemented in OnDeath). Responsible for calling Round:EndRound() with the relevant victorious role. A default system is in place.
+    OnDeath: (victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
+    AssignRoles: (participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
+    CheckForVictory: (round: Round) -> nil,                 -- Function that is called whenever someone dies (yes, it can be fully implemented in OnDeath). Responsible for calling Round:EndRound() with the relevant victorious role.
 }
 
 --[[

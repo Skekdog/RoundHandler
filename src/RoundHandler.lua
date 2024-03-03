@@ -8,8 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
-local Types = require("Types")
-local API = require("API")
+local Types = require("src/Types")
+local API = require("src/API")
 
 local module = {}
 local participant: Types.Participant = {} :: Types.Participant
@@ -32,14 +32,21 @@ end
 
 function participant.LeaveRound(self: Types.Participant)
     local plr = self.Player
-    for i,v in self.Round.Participants do if v == self then table.remove(self.Round.Participants,i) end end
+    for i,v in self.Round.Participants do if v == self then table.remove(self.Round.Participants, i) end end
     if plr and plr.Character then plr.Character:Destroy() end
+
+    if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
+        local timerThread = self.Round._roundTimerThread
+        if not timerThread then return end
+        coroutine.close(timerThread)
+    end
+
     return
 end
 
 function participant.GetAllegiance(self: Types.Participant): Types.Role?
     if not self.Role then return end
-    return self.Round:GetRoleInfo(self.Role.Allegiance or self.Role.Name)
+    return self.Round:GetRoleInfo(self.Role.Allegiance)
 end
 
 function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equipment): nil
@@ -52,10 +59,6 @@ function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Type
     return self:error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
-function roundHandler.CheckForVictory(self: Types.Round): boolean?
-    return
-end
-
 function roundHandler.GetParticipant(self: Types.Round, name: Types.Username): Types.Participant? -- Returns Participant if successful.
     for _, participant in self.Participants do
         if participant.Name == name then return participant end
@@ -63,10 +66,22 @@ function roundHandler.GetParticipant(self: Types.Round, name: Types.Username): T
     return
 end
 
+function roundHandler.IsRoundPreparing(self: Types.Round): boolean
+    return self.RoundPhase == "Waiting" or self.RoundPhase == "Preparing"
+end
+
+function roundHandler.IsRoundOver(self: Types.Round): boolean
+    return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
+end
+
+function roundHandler.IsRoundInProgress(self: Types.Round): boolean
+    return self.RoundPhase == "Playing"
+end
+
 function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.Participant? -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
-    if self:GetParticipant(name) or ((self.RoundPhase ~= "Waiting") and (self.RoundPhase ~= "Preparing")) then return end
+    if self:GetParticipant(name) or (not self:IsRoundPreparing()) then return end
     local plr = Players:FindFirstChild(name) :: Instance
-    if (not plr) or (not plr:IsA("Player")) then return self:warn("Attempt to add non-Player participant: ") end
+    if (not plr) or (not plr:IsA("Player")) then return self:warn("Attempt to add non-Player participant: "..tostring(plr)) end
 
     local _participant: Types.Participant = {
         Player = plr,
@@ -103,16 +118,36 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
 
     local spawns = (workspace:FindFirstChild("__Spawns_"..self.Category) :: Folder):GetChildren()
     plr.CharacterAppearanceLoaded:Once(function(char)
-        local chosen = math.random(1,#spawns)
+        local chosen = math.random(1, #spawns)
         char:PivotTo((spawns[chosen] :: BasePart).CFrame)
         local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
-        hum.Died:Connect(self.Gamemode.OnDeath and function() self.Gamemode.OnDeath(participant) end or function()
-            
+        hum.Died:Once(function()
+            if self:IsRoundPreparing() then
+                -- Respawn if the round hasn't started
+                _participant:LeaveRound()
+                self:JoinRound(name)
+                return
+            end
+            self.Gamemode.OnDeath(_participant)
         end)
     end)
     plr:LoadCharacter()
 
+    if #self.Participants >= self.Gamemode.MinimumPlayers then
+        self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
+    end
+
     return participant
+end
+
+-- (un)Pauses the round. Timer will resume at the same duration
+function roundHandler.PauseRound(self: Types.Round): Types.PauseFailReason?
+    if not self:IsRoundInProgress() then return "RoundNotInProgress" end
+    self.Paused = not self.Paused
+    if self.Paused then
+        self._roundTimerContinueFor = self._roundTimerTargetDuration - (workspace:GetServerTimeNow() - self._roundTimerResumedAt)
+    end
+    return
 end
 
 -- Starts the round, assigning roles and setting up the timeout condition.
@@ -280,6 +315,8 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Ty
 
     function self:warn(message) return warn(message.." from Round: "..self.ID.." ("..self.Category..")") end
     function self:error(message) return error(message.." from Round: "..self.ID.." ("..self.Category..")", 2) end
+
+    self._roundTimerThread = nil
     
     module.Rounds[self.ID] = self
     return self
@@ -298,7 +335,7 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
 
     -- Test with some functions
     if gamemode.Duration(gamemode.MinimumPlayers) <= 0 then i("Gamemode duration is negative with MinimumPlayers.") end
-    if gamemode.Duration(gamemode.MaximumPlayers or 700) <= 0 then i("Gamemode duration is negative with "..tostring(gamemode.MaximumPlayers or "700 (max. size of a server in theory)").." players") end
+    if gamemode.Duration(gamemode.MaximumPlayers) <= 0 then i("Gamemode duration is negative with "..tostring(gamemode.MaximumPlayers).." players") end
 
     local equipmentNames = {}
     for _, equipment in gamemode.AvailableEquipment do table.insert(equipmentNames, equipment.Name) end
