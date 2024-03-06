@@ -1,8 +1,5 @@
 --!strict
-
---[[
-    The main RoundHandler. Used to create and interact with rounds.
-]]
+-- The main RoundHandler. Used to create and interact with rounds.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
@@ -11,19 +8,23 @@ local Players = game:GetService("Players")
 local Types = require("src/Types")
 local API = require("src/API")
 
+local Configuration = require("adapters/Configuration")
+local Inventory = require("adapters/Inventory")
+
 local module = {}
 local participant: Types.Participant = {} :: Types.Participant
 local roundHandler: Types.Round = {} :: Types.Round
 
 module.Rounds = {}
 
-local PREPARING_TIME = 10 -- Duration of the preparing phase
-local HIGHLIGHTS_TIME = 10 -- Duration of the highlights phase
-local INTERMISSION_TIME = 10 -- Duration of map voting
+local PREPARING_TIME = Configuration.PREPARING_TIME -- Duration of the preparing phase
+local HIGHLIGHTS_TIME = Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local INTERMISSION_TIME = Configuration.INTERMISSION_TIME -- Duration of map voting
 
+local ServerClient = ReplicatedStorage:FindFirstChild("ServerClient") :: Folder -- Replace with wherever Server -> Client (-> Server) remotes are
+local ClientServer = ReplicatedStorage:FindFirstChild("ClientServer") :: Folder -- Replace with wherever Client -> Server (-> Client) remotes are
 
 -- self is explicitly defined to specify the type.
-
 function participant.AssignRole(self: Types.Participant, role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
     self.Role = role
     self.Credits = overrideCredits and role.StartingCredits or (self.Credits + role.StartingCredits)
@@ -50,8 +51,7 @@ function participant.GetAllegiance(self: Types.Participant): Types.Role?
 end
 
 function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equipment): nil
-    if type(equipment.Item) == "function" then return equipment.Item(self, equipment.Name) end
-    return
+    return Inventory.GiveEquipment(self, equipment)
 end
 
 function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Types.Role?
@@ -116,7 +116,7 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
 
     table.insert(self.Participants, _participant)
 
-    local spawns = (workspace:FindFirstChild("__Spawns_"..self.Category) :: Folder):GetChildren()
+    local spawns = (workspace:FindFirstChild("__Spawns_"..self.ID) :: Folder):GetChildren()
     plr.CharacterAppearanceLoaded:Once(function(char)
         local chosen = math.random(1, #spawns)
         char:PivotTo((spawns[chosen] :: BasePart).CFrame)
@@ -128,7 +128,7 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
                 self:JoinRound(name)
                 return
             end
-            self.Gamemode.OnDeath(_participant)
+            self.Gamemode:OnDeath(_participant)
         end)
     end)
     plr:LoadCharacter()
@@ -153,23 +153,10 @@ end
 -- Starts the round, assigning roles and setting up the timeout condition.
 function roundHandler.StartRound(self: Types.Round)
     local gm = self.Gamemode
-    local roles = gm.Roles
     local participants = self.Participants
     API.ShuffleInPlace(participants)
 
-    if gm.AssignRoles then gm.AssignRoles(participants) else
-        table.sort(roles, function(role1, role2) return role1.AssignmentPriority < role2.AssignmentPriority end)
-        local last, num = 0, #participants
-        for _,role in roles do
-            assert(role.AssignmentProportion)
-            for i,v in participants do
-                if i > last then
-                    if i <= math.floor(num*role.AssignmentProportion) then v:AssignRole(role) else last = i-1; break end
-                end
-            end
-        end
-    end
-    return
+    return gm:AssignRoles(participants)
 end
 
 function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
@@ -212,23 +199,27 @@ function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Playe
 end
 
 function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
+    self.RoundPhase = "Highlights"
+    for _, v in self.Participants do
+        ServerClient:FindFirstChild("")
+    end
     return
 end
 
-function module.LoadMap(map: Folder, category: string): nil -- Loads a map.
+function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
     map = map:Clone()
 
     local physicalMap = map:FindFirstChild("Map")
     if not physicalMap then return error(map.Name.." is missing a Map folder!") end
 
-    local spawns = workspace:FindFirstChild("__Spawns_"..category) or API.NamedInstance("Folder", "__Spawns_"..category, workspace)
-    local weapons = workspace:FindFirstChild("__Weapons_"..category) or API.NamedInstance("Folder", "__Weapons_"..category, workspace)
+    local spawns = workspace:FindFirstChild("__Spawns_"..id) or API.NamedInstance("Folder", "__Spawns_"..id, workspace)
+    local weapons = workspace:FindFirstChild("__Weapons_"..id) or API.NamedInstance("Folder", "__Weapons_"..id, workspace)
     local bounds
 
-    Instance.new("Folder",ReplicatedStorage).Name = "Lighting_"..category
-    Instance.new("Folder",ReplicatedStorage).Name = "FIBLighting_"..category
+    Instance.new("Folder",ReplicatedStorage).Name = "Lighting_"..id
+    Instance.new("Folder",ReplicatedStorage).Name = "FIBLighting_"..id
 
-    local oldMap = workspace:FindFirstChild("__Map_"..category)
+    local oldMap = workspace:FindFirstChild("__Map_"..id)
     if oldMap then for _, v in oldMap:GetChildren() do v:ClearAllChildren() end else
         oldMap = Instance.new("Folder")
         if not oldMap then error("Type-checker should not have been shut up...") end -- Shuts the type-checker up
@@ -237,11 +228,11 @@ function module.LoadMap(map: Folder, category: string): nil -- Loads a map.
         API.NamedInstance("Folder", "Props", oldMap)
         API.NamedInstance("Folder", "Map", oldMap)
 
-        oldMap.Name = "__Map_"..category
+        oldMap.Name = "__Map_"..id
         oldMap.Parent = workspace
     end
 
-    for _, v in physicalMap:GetChildren() do v.Parent = (workspace:FindFirstChild("__Map_"..category):: Folder):FindFirstChild("Map") end
+    for _, v in physicalMap:GetChildren() do v.Parent = (workspace:FindFirstChild("__Map_"..id):: Folder):FindFirstChild("Map") end
 
     for _, v in map:GetChildren() do
         task.wait()
@@ -259,7 +250,7 @@ function module.LoadMap(map: Folder, category: string): nil -- Loads a map.
             continue
         end
         if v.Name == "Lighting" or v.Name == "FIBLighting" then -- Lighting is handled on client
-            local prev = ReplicatedStorage:FindFirstChild(v.Name..category)
+            local prev = ReplicatedStorage:FindFirstChild(v.Name..id)
             if prev then prev:ClearAllChildren() end
             v.Parent = ReplicatedStorage
             continue
@@ -289,13 +280,12 @@ function module.LoadMap(map: Folder, category: string): nil -- Loads a map.
 end
 
 --Gamemode and map should be non-negotiable. ? for testing purposes.
-function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Types.RoundCategory?): Types.Round -- Creates a new Round and returns it.
+function module.CreateRound(map: Folder, gamemode: Types.Gamemode?): Types.Round -- Creates a new Round and returns it.
     local self: Types.Round = {} :: Types.Round
 
-    self.ID = HttpService:GenerateGUID() -- Randomly generated UUID for... ID purposes.
-    self.Category = category or "Main" -- Category used for simultaneous rounds.
+    self.ID = HttpService:GenerateGUID() -- Randomly generated UUID for round identification.
 
-    module.LoadMap(map,self.Category)
+    module.LoadMap(map, self.ID)
 
     self.Gamemode = gamemode :: Types.Gamemode -- The current gamemode.
 
@@ -313,8 +303,8 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Ty
 
     self.GetRoleInfo = roundHandler.GetRoleInfo
 
-    function self:warn(message) return warn(message.." from Round: "..self.ID.." ("..self.Category..")") end
-    function self:error(message) return error(message.." from Round: "..self.ID.." ("..self.Category..")", 2) end
+    function self:warn(message) return warn(message.." from Round: "..self.ID) end
+    function self:error(message) return error(message.." from Round: "..self.ID, 2) end
 
     self._roundTimerThread = nil
     
@@ -322,67 +312,9 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?, category: Ty
     return self
 end
 
-function module.GetRound(identifier: Types.RoundCategory | Types.UUID): Types.Round?
-    for _,v in module.Rounds do if v.ID == identifier then return v end end -- Look for ID first
-    for _,v in module.Rounds do if v.Category == identifier then return v end end
+function module.GetRound(identifier: Types.UUID): Types.Round?
+    for _,v in module.Rounds do if v.ID == identifier then return v end end -- Look for ID
     return
-end
-
--- Returns whether the gamemode is valid, and a list of issues with the gamemode
-function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean): (boolean, {string})
-    local issues = {}
-    local i = function(issue: string) table.insert(issues, issue) end
-
-    -- Test with some functions
-    if gamemode.Duration(gamemode.MinimumPlayers) <= 0 then i("Gamemode duration is negative with MinimumPlayers.") end
-    if gamemode.Duration(gamemode.MaximumPlayers) <= 0 then i("Gamemode duration is negative with "..tostring(gamemode.MaximumPlayers).." players") end
-
-    local equipmentNames = {}
-    for _, equipment in gamemode.AvailableEquipment do table.insert(equipmentNames, equipment.Name) end
-
-    local hasOwnAssignmentFunction = gamemode.AssignRoles ~= nil
-    local roleNames = {}
-    for _, role in gamemode.Roles do
-        table.insert(roleNames, role.Name)
-        if not role.AssignmentPriority and not hasOwnAssignmentFunction then i("Role "..role.Name.." does not have an AssignmentPriority. Define Gamemode.AssignRoles() or set a priority.") end
-        if not role.AssignmentProportion and not hasOwnAssignmentFunction then i("Role "..role.Name.." does not have an AssignmentProportion. Define Gamemode.AssignRoles() or set a proportion.") end
-
-        if table.find({"All", "Ally", "Enemy"}, role.Name) then i("Role name "..role.Name.." is reserved.") end
-        
-        for _, equipmentName in role.StartingEquipment do
-            if not table.find(equipmentNames, equipmentName) then
-                i("Equipment "..equipmentName.." of "..role.Name..".StartingEquipment ".." is not defined in Gamemode.AvailableEquipment.")
-            end
-        end
-        for _, equipmentName in role.EquipmentShop do
-            if not table.find(equipmentNames, equipmentName) then
-                i("Equipment "..equipmentName.." of "..role.Name..".EquipmentShop ".." is not defined in Gamemode.EquipmentShop.")
-            end
-        end
-    end
-
-    local function validateRoleRelationship(list: {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
-        for relationship, _ in list do
-            if not table.find({"All", "Ally", "Enemy"}, relationship) and not table.find(roleNames, relationship) then
-                i(relationship.." is not a valid RoleRelationship in "..info..".")
-            end
-        end
-    end
-
-    for _, role in gamemode.Roles do
-        for _, ally in role.Allies do
-            if not table.find(roleNames, ally) then i("Role "..role.Name.." has an undefined Ally: "..ally) end
-        end
-        if not table.find(roleNames, role.Allegiance) then
-            i("Role "..role.Name.." has an undefined Allegiance: "..role.Allegiance)
-        end
-
-        validateRoleRelationship(role.KnowsRoles, role.Name..".KnowsRoles")
-        validateRoleRelationship(role.HighlightRules, role.Name..".HighlightRules")
-        validateRoleRelationship(role.AwardOnDeath, role.Name..".AwardOnDeath")
-    end
-
-    return #issues<1, issues
 end
 
 return module

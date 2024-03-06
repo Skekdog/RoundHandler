@@ -35,7 +35,6 @@ export type FreeKillReason = "Teamkill" | string
 export type DeathType = "Firearm" | "Blunt" | "Blade" | "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation" | "Other"
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 
-export type RoundCategory = "Main" | string
 export type UUID = "00000000-0000-0000-0000-000000000000" | string
 export type RoundTime = "00:00" | string
 
@@ -93,6 +92,7 @@ export type Equipment = {
     Description: string, -- Description of this equipment.
     Icon: Asset,         -- Icon of this equipment.
     Cost: Integer,       -- The number of credits that this equipment costs to buy.
+    Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
 
     Item: Model | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
 }
@@ -117,7 +117,6 @@ export type Event = {
 ]]
 export type Round = {
     ID: UUID,                -- Unique identifier of the round
-    Category: RoundCategory, -- To be honest I'm not sure what the point of this is
     Gamemode: Gamemode,      -- A reference to the current gamemode.
 
     Paused: boolean,          -- Whether the round is paused or not.
@@ -197,13 +196,11 @@ export type Role = {
     Name: string,        -- Name of this role. Must not be 'Ally', 'Enemy', or 'All'.
     Description: string, -- Description of this role.
     Colour: Color3,      -- Colour of this role. Not color.
+    Extras: {[any]: any}?, -- Any extra info about the role, for use in custom functions.
 
     Allegiance: RoleName,  -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
-    VictoryMusic: {Sound}, -- Music that plays when this role wins.
-    VictoryText: string?,  -- Text shown in event log. Defaults to "The {role}s have won!".
-
-    AssignmentPriority: Integer?,  -- Lower value will be assigned first. Used for default AssignRoles().
-    AssignmentProportion: number?, -- Proportion of total players that will have this role. Rounds down. Used for default AssignRoles().
+    VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
+    VictoryText: string?,  -- Text shown in event log. Must not be nil for the Allegiance roles, no effect on other roles.
     
     StartingCredits: Integer,           -- Added onto gamemode StartingCredits.
     StartingEquipment: {EquipmentName}, -- Added onto gamemode StartingEquipment.
@@ -234,6 +231,7 @@ export type Role = {
 export type Gamemode = {
     Name: string,        -- Name of the gamemode.
     Description: string, -- Description of the gamemode.
+    Extras: {[any]: any}?, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
     GamemodeVersion: string, -- Indicates the version of this gamemode.
@@ -256,11 +254,22 @@ export type Gamemode = {
 
     Roles: {Role}, -- Defines roles for this gamemode.
 
-    -- Note that default functions are implementation-dependent.
-    Duration: (numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
-    OnDeath: (victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
-    AssignRoles: (participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
-    CheckForVictory: (round: Round) -> nil,                 -- Function that is called whenever someone dies (yes, it can be fully implemented in OnDeath). Responsible for calling Round:EndRound() with the relevant victorious role.
+    Duration: (self: Gamemode, numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
+    OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
+    AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
+    CheckForVictory: (self: Gamemode, round: Round) -> nil,                 -- Function that is called whenever someone dies (yes, it can be fully implemented in OnDeath). Responsible for calling Round:EndRound() with the relevant victorious role.
+}
+
+
+export type RoundHandlerConfiguration = {
+    PREPARING_TIME: number,
+    HIGHLIGHTS_TIME: number,
+    INTERMISSION_TIME: number,
+}
+
+export type InventoryManager = {
+    GiveEquipment: (plr: Participant, item: Equipment) -> nil,
+    RemoveEquipment: (plr: Participant, item: EquipmentName) -> nil,
 }
 
 --[[
