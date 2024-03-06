@@ -2,7 +2,7 @@
 --[[
     Specifies various constants in use by RoundHandler.
 ]]
-local Types = require("src/Types.lua")
+local Types = require("src/Types")
 
 local module: Types.RoundHandlerConfiguration = {
     PREPARING_TIME = 10,

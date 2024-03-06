@@ -24,14 +24,13 @@ local INTERMISSION_TIME = Configuration.INTERMISSION_TIME -- Duration of map vot
 local ServerClient = ReplicatedStorage:FindFirstChild("ServerClient") :: Folder -- Replace with wherever Server -> Client (-> Server) remotes are
 local ClientServer = ReplicatedStorage:FindFirstChild("ClientServer") :: Folder -- Replace with wherever Client -> Server (-> Client) remotes are
 
--- self is explicitly defined to specify the type.
-function participant.AssignRole(self: Types.Participant, role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
+function participant:AssignRole(role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
     self.Role = role
     self.Credits = overrideCredits and role.StartingCredits or (self.Credits + role.StartingCredits)
     return
 end
 
-function participant.LeaveRound(self: Types.Participant)
+function participant:LeaveRound()
     local plr = self.Player
     for i,v in self.Round.Participants do if v == self then table.remove(self.Round.Participants, i) end end
     if plr and plr.Character then plr.Character:Destroy() end
@@ -45,40 +44,40 @@ function participant.LeaveRound(self: Types.Participant)
     return
 end
 
-function participant.GetAllegiance(self: Types.Participant): Types.Role?
+function participant:GetAllegiance(): Types.Role?
     if not self.Role then return end
     return self.Round:GetRoleInfo(self.Role.Allegiance)
 end
 
-function participant.GiveEquipment(self: Types.Participant, equipment: Types.Equipment): nil
+function participant:GiveEquipment(equipment: Types.Equipment): nil
     return Inventory.GiveEquipment(self, equipment)
 end
 
-function roundHandler.GetRoleInfo(self: Types.Round, name: Types.RoleName): Types.Role?
+function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role?
     for _,v in self.Gamemode.Roles do if v.Name == name then return v end end
     return self:error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
-function roundHandler.GetParticipant(self: Types.Round, name: Types.Username): Types.Participant? -- Returns Participant if successful.
+function roundHandler:GetParticipant(name: Types.Username): Types.Participant? -- Returns Participant if successful.
     for _, participant in self.Participants do
         if participant.Name == name then return participant end
     end
     return
 end
 
-function roundHandler.IsRoundPreparing(self: Types.Round): boolean
+function roundHandler:IsRoundPreparing(): boolean
     return self.RoundPhase == "Waiting" or self.RoundPhase == "Preparing"
 end
 
-function roundHandler.IsRoundOver(self: Types.Round): boolean
+function roundHandler:IsRoundOver(): boolean
     return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
 end
 
-function roundHandler.IsRoundInProgress(self: Types.Round): boolean
+function roundHandler:IsRoundInProgress(): boolean
     return self.RoundPhase == "Playing"
 end
 
-function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.Participant? -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
+function roundHandler:JoinRound(name: Types.Username): Types.Participant? -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
     if self:GetParticipant(name) or (not self:IsRoundPreparing()) then return end
     local plr = Players:FindFirstChild(name) :: Instance
     if (not plr) or (not plr:IsA("Player")) then return self:warn("Attempt to add non-Player participant: "..tostring(plr)) end
@@ -141,7 +140,7 @@ function roundHandler.JoinRound(self: Types.Round, name: Types.Username): Types.
 end
 
 -- (un)Pauses the round. Timer will resume at the same duration
-function roundHandler.PauseRound(self: Types.Round): Types.PauseFailReason?
+function roundHandler:PauseRound(): Types.PauseFailReason?
     if not self:IsRoundInProgress() then return "RoundNotInProgress" end
     self.Paused = not self.Paused
     if self.Paused then
@@ -151,7 +150,7 @@ function roundHandler.PauseRound(self: Types.Round): Types.PauseFailReason?
 end
 
 -- Starts the round, assigning roles and setting up the timeout condition.
-function roundHandler.StartRound(self: Types.Round)
+function roundHandler:StartRound()
     local gm = self.Gamemode
     local participants = self.Participants
     API.ShuffleInPlace(participants)
@@ -159,17 +158,17 @@ function roundHandler.StartRound(self: Types.Round)
     return gm:AssignRoles(participants)
 end
 
-function roundHandler.GetRoleRelationship(self: Types.Round, role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
+function roundHandler:GetRoleRelationship(role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
     return (table.find(role1.Allies, role2.Name) and "Ally") or "Enemy"
 end
 
-function roundHandler.CompareRoles(self: Types.Round, role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
+function roundHandler:CompareRoles(role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
     if comparison == "All" then return true end
     return self:GetRoleRelationship(role1, role2) == comparison
 end
 
 -- Returns a Participant with some fields omitted depending on the target's role or lack there-of
-function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Player, target: Player): Types.PartialRole?
+function roundHandler:GetLimitedParticipantInfo(viewer: Player, target: Player): Types.PartialRole?
     local viewerParticipant = self:GetParticipant(viewer.Name)
     local targetParticipant = self:GetParticipant(target.Name)
     if not viewerParticipant then return self:warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
@@ -198,7 +197,7 @@ function roundHandler.GetLimitedParticipantInfo(self: Types.Round, viewer: Playe
     if viewerRole.KnowsRoles["All"] then return partialInfo else return end
 end
 
-function roundHandler.EndRound(self: Types.Round, victors: Types.Role)
+function roundHandler:EndRound(victors: Types.Role)
     self.RoundPhase = "Highlights"
     for _, v in self.Participants do
         ServerClient:FindFirstChild("")
@@ -313,7 +312,11 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode?): Types.Round
 end
 
 function module.GetRound(identifier: Types.UUID): Types.Round?
-    for _,v in module.Rounds do if v.ID == identifier then return v end end -- Look for ID
+    for _,v in module.Rounds do
+        if v.ID == identifier then
+            return v
+        end
+    end
     return
 end
 

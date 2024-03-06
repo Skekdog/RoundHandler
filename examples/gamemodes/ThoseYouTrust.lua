@@ -1,5 +1,5 @@
 --!strict
-local Types = require("src/Types.lua")
+local Types = require("src/Types")
 local RS = game:GetService("ReplicatedStorage")
 local items = RS:WaitForChild("Items")
 
