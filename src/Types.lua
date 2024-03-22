@@ -126,6 +126,9 @@ export type Round = {
     Participants: {Participant}, -- A list of participants in this round.
     EventLog: {Event},           -- A list of events that have taken place.
 
+    RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
+    RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
+
     GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a participant from a username
     JoinRound: (self: Round, name: Username) -> Participant?,      -- Adds a participant to this round
     

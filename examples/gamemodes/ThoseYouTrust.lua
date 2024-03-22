@@ -170,21 +170,32 @@ local ThoseYouTrust: Types.Gamemode = {
     },
 
     AssignRoles = function(self, participants)
-        local roles = self.Roles
-        table.sort(roles, function(role1, role2)
-            assert(role1.Extras and role2.Extras)
-            return role1.Extras.AssignmentPriority < role2.Extras.AssignmentPriority
-        end)
-        local last, num = 0, #participants
-        for _,role in roles do
-            assert(role.Extras)
-            for i,v in participants do
-                if i > last then
-                    if i <= math.floor(num*role.Extras.AssignmentProportion) then v:AssignRole(role) else last = i-1; break end
-                end
-            end
-        end
-    end,
+		local roles = self.Roles
+		-- Sort roles by lowest AssignmentPriority. These roles will be assigned first.
+		-- The greatest value for AssignmentPriority is used as a backup role for anyone who did not receive their role.
+		-- Lower AssignmentPriority values will be used first, if there are not enough players for a proper round.
+		-- e.g, Traitor will be assigned first, then detective. In a one player server, there will only be a Traitor.
+		table.sort(roles, function(role1, role2)
+			assert(role1.Extras and role2.Extras) -- Extras is not standard, but this gamemode also isn't standard.
+			return role1.Extras.AssignmentPriority < role2.Extras.AssignmentPriority
+		end)
+		
+		local roleToAssign, roleToAssignIndex = roles[1], 1
+		local total, subtractFromI = #participants, 0
+		for i, v in participants do
+			assert(roleToAssign.Extras) -- Extras is still not standard, but this gamemode also still isn't standard.
+			
+			-- The greatest AssignmentPriority is used as a bargain bin, anyone who wasn't assigned to the other roles gets assigned here
+			if ((i - subtractFromI) > math.max(total * roleToAssign.Extras.AssignmentProportion, 1)) and roleToAssignIndex < #roles then
+				-- If we have already assigned enough people to this role, start assigning to the next role
+				
+				roleToAssignIndex += 1
+				roleToAssign = roles[roleToAssignIndex] -- Go to the next role
+				subtractFromI = i - 1 -- Start counting for how many people to assign from where we start assigning. -1 because lua is 1-indexed
+			end
+			v:AssignRole(roleToAssign) -- Hand it over to the module to assign the role
+		end
+	end,
     OnDeath = function(self, victim)
 
     end,

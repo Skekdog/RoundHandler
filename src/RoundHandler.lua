@@ -15,7 +15,7 @@ local module = {}
 local participant: Types.Participant = {} :: Types.Participant
 local roundHandler: Types.Round = {} :: Types.Round
 
-module.Rounds = {}
+module.Rounds = {} :: {[Types.UUID]: Types.Round}
 
 local PREPARING_TIME = Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
@@ -54,7 +54,7 @@ function participant:GiveEquipment(equipment: Types.Equipment): nil
 end
 
 function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role?
-    for _,v in self.Gamemode.Roles do if v.Name == name then return v end end
+    for _, v in self.Gamemode.Roles do if v.Name == name then return v end end
     return self:error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
@@ -155,7 +155,9 @@ function roundHandler:StartRound()
     local participants = self.Participants
     API.ShuffleInPlace(participants)
 
-    return gm:AssignRoles(participants)
+    gm:AssignRoles(participants)
+
+    return self.RoundStartEvent:Fire()
 end
 
 function roundHandler:GetRoleRelationship(role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
@@ -202,7 +204,25 @@ function roundHandler:EndRound(victors: Types.Role)
     for _, v in self.Participants do
         ServerClient:FindFirstChild("")
     end
+
+    -- Destroy the round
+    task.wait(HIGHLIGHTS_TIME)
+
+    self.RoundEndEvent:Fire()
+
+    self.RoundEndEvent:Destroy()
+    self.RoundStartEvent:Destroy()
+
+    module.Rounds[self.ID] = nil
     return
+end
+
+function roundHandler:warn(message: string)
+    return warn(message.." from Round: "..self.ID, 2)
+end
+
+function roundHandler:error(message: string)
+    return error(message.." from Round: "..self.ID, 2) 
 end
 
 function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
@@ -215,13 +235,13 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
     local weapons = workspace:FindFirstChild("__Weapons_"..id) or API.NamedInstance("Folder", "__Weapons_"..id, workspace)
     local bounds
 
-    Instance.new("Folder",ReplicatedStorage).Name = "Lighting_"..id
-    Instance.new("Folder",ReplicatedStorage).Name = "FIBLighting_"..id
+    Instance.new("Folder", ReplicatedStorage).Name = "Lighting_"..id
+    Instance.new("Folder", ReplicatedStorage).Name = "FIBLighting_"..id
 
     local oldMap = workspace:FindFirstChild("__Map_"..id)
     if oldMap then for _, v in oldMap:GetChildren() do v:ClearAllChildren() end else
         oldMap = Instance.new("Folder")
-        if not oldMap then error("Type-checker should not have been shut up...") end -- Shuts the type-checker up
+        if not oldMap then error("Somehow failed to create a Folder instance!") end -- This line only exists to shut up the type-checker
 
         bounds = API.NamedInstance("Folder", "Bounds", oldMap)
         API.NamedInstance("Folder", "Props", oldMap)
@@ -231,7 +251,9 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
         oldMap.Parent = workspace
     end
 
-    for _, v in physicalMap:GetChildren() do v.Parent = (workspace:FindFirstChild("__Map_"..id):: Folder):FindFirstChild("Map") end
+    for _, v in physicalMap:GetChildren() do
+        v.Parent = (workspace:FindFirstChild("__Map_"..id) :: Folder):FindFirstChild("Map")
+    end
 
     for _, v in map:GetChildren() do
         task.wait()
@@ -266,7 +288,9 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
         if v.Name == "WeaponSpawns" then
             weapons:ClearAllChildren()
             for _, weapon in v:GetChildren() do
-                if not weapon:IsA("BasePart") then continue end
+                if not weapon:IsA("BasePart") then
+                    continue
+                end
                 weapon.CanCollide = true
                 weapon.CanTouch = true
                 weapon.Anchored = false
@@ -278,34 +302,49 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
     return
 end
 
---Gamemode and map should be non-negotiable. ? for testing purposes.
-function module.CreateRound(map: Folder, gamemode: Types.Gamemode?): Types.Round -- Creates a new Round and returns it.
-    local self: Types.Round = {} :: Types.Round
+function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round -- Creates a new Round and returns it.
+    local self: Types.Round = {
+        ID = HttpService:GenerateGUID(),
+        Gamemode = gamemode,
 
-    self.ID = HttpService:GenerateGUID() -- Randomly generated UUID for round identification.
+        TimeMilestone = workspace:GetServerTimeNow()+PREPARING_TIME,
+        RoundPhase = "Waiting",
+        Paused = false,
+
+        RoundStartEvent = Instance.new("BindableEvent"),
+        RoundEndEvent = Instance.new("BindableEvent"),
+
+        Participants = {},
+        EventLog = {},
+
+        GetParticipant = roundHandler.GetParticipant,
+        JoinRound = roundHandler.JoinRound,
+
+        GetRoleInfo = roundHandler.GetRoleInfo,
+
+        StartRound = roundHandler.StartRound,
+        PauseRound = roundHandler.PauseRound,
+        EndRound = roundHandler.EndRound,
+        CheckForVictory = roundHandler.CheckForVictory,
+
+        IsRoundPreparing = roundHandler.IsRoundPreparing,
+        IsRoundInProgress = roundHandler.IsRoundInProgress,
+        IsRoundOver = roundHandler.IsRoundOver,
+
+        CompareRoles = roundHandler.CompareRoles,
+        GetLimitedParticipantInfo = roundHandler.GetLimitedParticipantInfo,
+        GetRoleRelationship = roundHandler.GetRoleRelationship,
+
+        warn = roundHandler.warn,
+        error = roundHandler.error,
+
+        _roundTimerThread = nil,
+        _roundTimerContinueFor = 0,
+        _roundTimerResumedAt = 0,
+        _roundTimerTargetDuration = 0,
+    }
 
     module.LoadMap(map, self.ID)
-
-    self.Gamemode = gamemode :: Types.Gamemode -- The current gamemode.
-
-    self.TimeMilestone = workspace:GetServerTimeNow()+PREPARING_TIME -- Timestamp of the next round phase.
-    self.RoundPhase = "Waiting" -- Current round phase. Waiting - not enough players; Preparing - enough players, giving time for others to join; Playing - round in progress; Highlights - round ended, but still loaded; Intermission - round unloaded, voting time if applicable.
-
-    self.Participants = {} :: {Types.Participant} -- List of all Participants.
-    self.EventLog = {} :: {Types.Event} -- List of all Events.
-
-    self.GetParticipant = roundHandler.GetParticipant
-    self.JoinRound = roundHandler.JoinRound
-    
-    self.StartRound = roundHandler.StartRound -- Starts the round, assigning everyone's roles. Also sets up the timeout condition.
-    self.EndRound = roundHandler.EndRound
-
-    self.GetRoleInfo = roundHandler.GetRoleInfo
-
-    function self:warn(message) return warn(message.." from Round: "..self.ID) end
-    function self:error(message) return error(message.." from Round: "..self.ID, 2) end
-
-    self._roundTimerThread = nil
     
     module.Rounds[self.ID] = self
     return self
