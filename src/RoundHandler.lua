@@ -2,14 +2,13 @@
 -- The main RoundHandler. Used to create and interact with rounds.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
+local Adapters = require("example_implementation/Adapters")
 local Types = require("src/Types")
 local API = require("src/API")
-
-local Configuration = require("adapters/Configuration")
-local Inventory = require("adapters/Inventory")
 
 local module = {}
 local participant: Types.Participant = {} :: Types.Participant
@@ -17,9 +16,9 @@ local roundHandler: Types.Round = {} :: Types.Round
 
 module.Rounds = {} :: {[Types.UUID]: Types.Round}
 
-local PREPARING_TIME = Configuration.PREPARING_TIME -- Duration of the preparing phase
-local HIGHLIGHTS_TIME = Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
-local INTERMISSION_TIME = Configuration.INTERMISSION_TIME -- Duration of map voting
+local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
+local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local INTERMISSION_TIME = Adapters.Configuration.INTERMISSION_TIME -- Duration of map voting
 
 local ServerClient = ReplicatedStorage:FindFirstChild("ServerClient") :: Folder -- Replace with wherever Server -> Client (-> Server) remotes are
 local ClientServer = ReplicatedStorage:FindFirstChild("ClientServer") :: Folder -- Replace with wherever Client -> Server (-> Client) remotes are
@@ -37,32 +36,51 @@ function participant:LeaveRound()
 
     if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
         local timerThread = self.Round._roundTimerThread
-        if not timerThread then return end
+        if not timerThread then
+            return
+        end
         coroutine.close(timerThread)
     end
-
+    
     return
 end
 
-function participant:GetAllegiance(): Types.Role?
-    if not self.Role then return end
+function participant:GetAllegiance(): Types.Role
+    if not self.Role then
+        error("Participant "..self.Name.." does not have a role")
+    end
     return self.Round:GetRoleInfo(self.Role.Allegiance)
 end
 
-function participant:GiveEquipment(equipment: Types.Equipment): nil
-    return Inventory.GiveEquipment(self, equipment)
+function participant:GiveEquipment(equipment: Types.Equipment)
+    return Adapters.GiveEquipment(self, equipment)
 end
 
-function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role?
-    for _, v in self.Gamemode.Roles do if v.Name == name then return v end end
-    return self:error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
-end
-
-function roundHandler:GetParticipant(name: Types.Username): Types.Participant? -- Returns Participant if successful.
-    for _, participant in self.Participants do
-        if participant.Name == name then return participant end
+function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role
+    for _, v in self.Gamemode.Roles do
+        if v.Name == name then
+            return v
+        end
     end
-    return
+    error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
+end
+
+function roundHandler:HasParticipant(name: Types.Username): boolean -- Returns true if Participant is already in Round
+    for _, participant in self.Participants do
+        if participant.Name == name then
+            return true
+        end
+    end
+    return false
+end
+
+function roundHandler:GetParticipant(name: Types.Username): Types.Participant -- Returns Participant
+    for _, participant in self.Participants do
+        if participant.Name == name then
+            return participant
+        end
+    end
+    error("Could not find Participant "..name.." in Round "..self.ID)
 end
 
 function roundHandler:IsRoundPreparing(): boolean
@@ -77,10 +95,17 @@ function roundHandler:IsRoundInProgress(): boolean
     return self.RoundPhase == "Playing"
 end
 
-function roundHandler:JoinRound(name: Types.Username): Types.Participant? -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
-    if self:GetParticipant(name) or (not self:IsRoundPreparing()) then return end
+function roundHandler:JoinRound(name: Types.Username): Types.Participant -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
+    if self:HasParticipant(name) then
+        error(name.." is already a Participant in Round "..self.ID)
+    end
+    if not self:IsRoundPreparing() then
+       error("Failed to add "..name.." to Round "..self.ID.." because the Round has already started")
+    end
     local plr = Players:FindFirstChild(name) :: Instance
-    if (not plr) or (not plr:IsA("Player")) then return self:warn("Attempt to add non-Player participant: "..tostring(plr)) end
+    if (not plr) or (not plr:IsA("Player")) then 
+        error("Attempt to add non-Player participant: "..tostring(plr))
+    end
 
     local _participant: Types.Participant = {
         Player = plr,
@@ -196,7 +221,10 @@ function roundHandler:GetLimitedParticipantInfo(viewer: Player, target: Player):
     if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation]) then return partialInfo end
     if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation] == false) then return end
 
-    if viewerRole.KnowsRoles["All"] then return partialInfo else return end
+    if viewerRole.KnowsRoles["All"] then
+        return partialInfo
+    end
+    return
 end
 
 function roundHandler:EndRound(victors: Types.Role)
@@ -205,8 +233,19 @@ function roundHandler:EndRound(victors: Types.Role)
         ServerClient:FindFirstChild("")
     end
 
+    local updateNeeded = Adapters.CheckForUpdate(self)
+    if updateNeeded then
+        Players.PlayerAdded:Connect(function(plr)
+            plr:Kick("This server is shutting down.")
+        end)
+        Adapters.SendMessage(Players:GetPlayers(), "This server is outdated and will restart soon.", "error")
+    end
+
     -- Destroy the round
     task.wait(HIGHLIGHTS_TIME)
+
+    Adapters.SendMessage(Players:GetPlayers(), "Server restarting...", "error")
+    TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
 
     self.RoundEndEvent:Fire()
 
@@ -239,7 +278,11 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
     Instance.new("Folder", ReplicatedStorage).Name = "FIBLighting_"..id
 
     local oldMap = workspace:FindFirstChild("__Map_"..id)
-    if oldMap then for _, v in oldMap:GetChildren() do v:ClearAllChildren() end else
+    if oldMap then
+        for _, v in oldMap:GetChildren() do
+            v:ClearAllChildren() 
+        end
+    else
         oldMap = Instance.new("Folder")
         if not oldMap then error("Somehow failed to create a Folder instance!") end -- This line only exists to shut up the type-checker
 
@@ -260,7 +303,9 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
         if v.Name == "Spawns" then
             spawns:ClearAllChildren()
             for _, spawn in v:GetChildren() do
-                if not spawn:IsA("BasePart") then continue end
+                if not spawn:IsA("BasePart") then
+                    continue
+                end
                 spawn.Anchored = true
                 spawn.Transparency = 1
                 spawn.CanCollide = false
@@ -272,13 +317,17 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
         end
         if v.Name == "Lighting" or v.Name == "FIBLighting" then -- Lighting is handled on client
             local prev = ReplicatedStorage:FindFirstChild(v.Name..id)
-            if prev then prev:ClearAllChildren() end
+            if prev then
+                prev:ClearAllChildren()
+            end
             v.Parent = ReplicatedStorage
             continue
         end
         if v.Name == "Bounds" then
             for _, bound in v:GetChildren() do
-                if not bound:IsA("BasePart") then continue end
+                if not bound:IsA("BasePart") then
+                    continue
+                end
                 bound.CanCollide = false
                 bound.Transparency = 1
                 bound.Parent = bounds
@@ -317,6 +366,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         Participants = {},
         EventLog = {},
 
+        HasParticipant = roundHandler.HasParticipant,
         GetParticipant = roundHandler.GetParticipant,
         JoinRound = roundHandler.JoinRound,
 
@@ -325,8 +375,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         StartRound = roundHandler.StartRound,
         PauseRound = roundHandler.PauseRound,
         EndRound = roundHandler.EndRound,
-        CheckForVictory = roundHandler.CheckForVictory,
-
+        
         IsRoundPreparing = roundHandler.IsRoundPreparing,
         IsRoundInProgress = roundHandler.IsRoundInProgress,
         IsRoundOver = roundHandler.IsRoundOver,
@@ -350,13 +399,13 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
     return self
 end
 
-function module.GetRound(identifier: Types.UUID): Types.Round?
+function module.GetRound(identifier: Types.UUID): Types.Round
     for _,v in module.Rounds do
         if v.ID == identifier then
             return v
         end
     end
-    return
+    error("Could not find round with ID: "..identifier)
 end
 
 return module

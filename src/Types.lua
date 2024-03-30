@@ -79,7 +79,7 @@ export type Participant = {
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> nil, -- Assigns Role to this Participant. By default does not override inventory or credits.
     LeaveRound: (self: Participant) -> nil,                                                                     -- Removes this Participant from the Round.
 
-    GetAllegiance: (self: Participant) -> Role?,                     -- Returns this participant's Role allegiance.
+    GetAllegiance: (self: Participant) -> Role,                     -- Returns this participant's Role allegiance.
     GiveEquipment: (self: Participant, equipment: Equipment) -> nil, -- Adds this equipment to the participant's inventory.
 }
 
@@ -94,7 +94,7 @@ export type Equipment = {
     Cost: Integer,       -- The number of credits that this equipment costs to buy.
     Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
 
-    Item: Model | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
+    Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
 }
 
 --[[
@@ -129,21 +129,21 @@ export type Round = {
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
-    GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a participant from a username
-    JoinRound: (self: Round, name: Username) -> Participant?,      -- Adds a participant to this round
+    HasParticipant: (self: Round, name: Username) -> boolean, -- Returns true if participant is in round. Does not error.
+    GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a participant from a username. Errors if participant is not in round.
+    JoinRound: (self: Round, name: Username) -> Participant,      -- Adds a participant to this round
     
     PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
     StartRound: (self: Round) -> nil,              -- Starts this round. Usually shouldn't be called externally.
     EndRound: (self: Round, victors: Role) -> nil, -- Ends this round. Usually shouldn't be called externally.
-    CheckForVictory: (self: Round) -> boolean?,    -- Checks to see if any role has won yet. Usually shouldn't be called externally.
 
     IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing
 
-    GetRoleInfo: (self: Round, name: RoleName) -> Role?,                                            -- Shortcut method to get a Role.
+    GetRoleInfo: (self: Round, name: RoleName) -> Role,                                            -- Shortcut method to get a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Compares whether two roles are related.
-    GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> RoleRelationship?,              -- Returns the relationship between two roles. Either Ally or Enemy.
+    GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> RoleRelationship,              -- Returns the relationship between two roles. Either Ally or Enemy.
     GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> PartialRole?,       -- Returns a RoleColour and Name if available to the viewer.
 
     warn: (self: Round, message: string) -> nil,  -- Calls built-in warn, also adding a round identifier.
@@ -260,22 +260,21 @@ export type Gamemode = {
     Duration: (self: Gamemode, numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
-    CheckForVictory: (self: Gamemode, round: Round) -> nil,                 -- Function that is called whenever someone dies (yes, it can be fully implemented in OnDeath). Responsible for calling Round:EndRound() with the relevant victorious role.
 }
 
+export type Adapter = {
+    Configuration: {
+        PREPARING_TIME: number,
+        HIGHLIGHTS_TIME: number,
+        INTERMISSION_TIME: number,
+    },
 
-export type RoundHandlerConfiguration = {
-    PREPARING_TIME: number,
-    HIGHLIGHTS_TIME: number,
-    INTERMISSION_TIME: number,
-}
-
-export type InventoryManager = {
     GiveEquipment: (plr: Participant, item: Equipment) -> nil,
     RemoveEquipment: (plr: Participant, item: EquipmentName) -> nil,
+
+    SendMessage: (recipients : {Player}, message: string, severity: "info" | "warn" | "error") -> nil,
+    CheckForUpdate: (round: Round) -> boolean?,
 }
 
---[[
-    Defines all custom types used by Round Handler.
-]]
+-- Defines all custom types used by RoundHandler.
 return {}
