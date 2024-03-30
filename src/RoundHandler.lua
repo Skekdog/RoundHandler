@@ -6,7 +6,7 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
-local Adapters = require("example_implementation/Adapters")
+local Adapters = require("src/Adapters")
 local Types = require("src/Types")
 local API = require("src/API")
 
@@ -258,10 +258,6 @@ end
 
 function roundHandler:warn(message: string)
     return warn(message.." from Round: "..self.ID, 2)
-end
-
-function roundHandler:error(message: string)
-    return error(message.." from Round: "..self.ID, 2) 
 end
 
 function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
