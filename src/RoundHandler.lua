@@ -21,13 +21,19 @@ local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the 
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local INTERMISSION_TIME = Adapters.Configuration.INTERMISSION_TIME -- Duration of map voting
 
-local ServerClient = ReplicatedStorage:FindFirstChild("ServerClient") :: Folder -- Replace with wherever Server -> Client (-> Server) remotes are
-local ClientServer = ReplicatedStorage:FindFirstChild("ClientServer") :: Folder -- Replace with wherever Client -> Server (-> Client) remotes are
-
 function participant:AssignRole(role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
     self.Role = role
     self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
     return
+end
+
+local function onDeath(self: Types.Participant, killedBy: Types.DeathType, weapon: Types.EquipmentName?)
+    -- create ragdoll and set properties
+    self.Deceased = true
+    self.KilledBy = killedBy
+    self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
+    
+    self.Round.Gamemode:OnDeath(self)
 end
 
 function participant:LeaveRound()
@@ -51,11 +57,10 @@ function participant:LeaveRound()
     end
 
     if self.Role and self.Role.AnnounceDisconnect then
-        Adapters.SendMessage(self.Round:GetPlayers(), ("%s has disconnected. They were a %s."):format(self.Name, self.Role.Name), "info", "disconnect")
+        Adapters.SendMessage(self.Round:GetConnectedParticipants(), ("%s has disconnected. They were a %s."):format(self.Name, self.Role.Name), "info", "disconnect")
     end
 
-    -- Create a ragdoll and make sure their character is not removed.
-    -- Should probably be combined with OnDeath(). Maybe local function createRagdoll().
+    onDeath(self, "Suicide")
     
     return
 end
@@ -67,8 +72,45 @@ function participant:GetAllegiance()
     return self.Round:GetRoleInfo(self.Role.Allegiance)
 end
 
+function participant:RemoveEquipment(equipment)
+    return Adapters.RemoveEquipment(self, equipment)
+end
+
 function participant:GiveEquipment(equipment)
     return Adapters.GiveEquipment(self, equipment)
+end
+
+function participant:AddKill(victim, ignoreKarma)
+    local round = self.Round
+    if not round:IsRoundInProgress() then
+        return
+    end
+    if not ignoreKarma then
+        assert(victim.Role and self.Role)
+
+        local isAlly = round:GetRoleRelationship(victim.Role, self.Role) == "__Ally"
+        if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
+            table.insert(self.FreeKillReasons, "Teamkill")
+        end
+    end
+    return table.insert(self.KillList, victim)
+end
+
+function participant:AddSelfDefense(against, duration)
+    table.insert(self.SelfDefenseList, {
+        Against = against,
+        Until = workspace:GetServerTimeNow() + duration
+    })
+    return
+end
+
+function participant:HasSelfDefenseAgainst(against)
+    for _, v in self.SelfDefenseList do
+        if (v.Against == against) and (v.Until < workspace:GetServerTimeNow()) then
+            return true
+        end
+    end
+    return false
 end
 
 function roundHandler:GetRoleInfo(name)
@@ -80,14 +122,14 @@ function roundHandler:GetRoleInfo(name)
     error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
-function roundHandler:GetPlayers()
-    local players = {}
+function roundHandler:GetConnectedParticipants()
+    local participants = {}
     for _, v in self.Participants do
-        if v.Player then
-            table.insert(players, v.Player)
+        if v.Player and v.Player:IsDescendantOf(Players) then
+            table.insert(participants, v :: Types.ConnectedParticipant)
         end
     end
-    return players
+    return participants
 end
 
 function roundHandler:HasParticipant(name) -- Returns true if Participant is already in Round
@@ -137,6 +179,7 @@ function roundHandler:JoinRound(name) -- Adds a player to the round and returns 
         Name = plr.Name,
         Round = self,
 
+        Karma = if self.Gamemode.UseKarma then Adapters.GetKarma(plr) else 1000,
         Role = nil,
         Credits = 0,
         Score = {},
@@ -161,6 +204,10 @@ function roundHandler:JoinRound(name) -- Adds a player to the round and returns 
         LeaveRound = participant.LeaveRound,
         GiveEquipment = participant.GiveEquipment,
         GetAllegiance = participant.GetAllegiance,
+        HasSelfDefenseAgainst = participant.HasSelfDefenseAgainst,
+        AddKill = participant.AddKill,
+        AddSelfDefense = participant.AddSelfDefense,
+        RemoveEquipment = participant.RemoveEquipment,
     }
 
     table.insert(self.Participants, _participant)
@@ -181,7 +228,9 @@ function roundHandler:JoinRound(name) -- Adds a player to the round and returns 
                 self:JoinRound(name)
                 return
             end
-            self.Gamemode:OnDeath(_participant)
+
+            -- participant.KilledBy can be set by a script before they die
+            onDeath(_participant, if _participant.KilledBy ~= "Suicide" then _participant.KilledBy else "Suicide")
         end)
     end)
     plr:LoadCharacter()
@@ -270,22 +319,20 @@ end
 
 function roundHandler:EndRound(victors: Types.Role)
     self.RoundPhase = "Highlights"
-    for _, v in self.Participants do
-        ServerClient:FindFirstChild("")
-    end
+    Adapters.SendRoundHighlights(self:GetConnectedParticipants())
 
     local updateNeeded = Adapters.CheckForUpdate(self)
     if updateNeeded then
         Players.PlayerAdded:Connect(function(plr)
             plr:Kick("This server is shutting down.")
         end)
-        Adapters.SendMessage(Players:GetPlayers(), "This server is outdated and will restart soon.", "error", "update")
+        Adapters.SendMessage({}, "This server is outdated and will restart soon.", "error", "update", true)
     end
 
     -- Destroy the round
     task.wait(HIGHLIGHTS_TIME)
 
-    Adapters.SendMessage(Players:GetPlayers(), "Server restarting...", "error", "update")
+    Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
     TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
 
     self.RoundEndEvent:Fire()
@@ -403,7 +450,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         Participants = {},
         EventLog = {},
 
-        GetPlayers = roundHandler.GetPlayers,
+        GetConnectedParticipants = roundHandler.GetConnectedParticipants,
         HasParticipant = roundHandler.HasParticipant,
         GetParticipant = roundHandler.GetParticipant,
         JoinRound = roundHandler.JoinRound,

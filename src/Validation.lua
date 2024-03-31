@@ -10,9 +10,9 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
     end
 
     -- Dunders are reserved
-    local function checkString(str: string, issue: string)
+    local function checkString(str: string, name: string)
         if str:sub(1, 2) == "__" then
-            i(issue.." must not start with 2 underscores.")
+            i(name.." must not start with 2 underscores.")
         end
     end
 
