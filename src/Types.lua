@@ -1,4 +1,5 @@
 --!strict
+local module = {}
 export type Integer = number
 export type PositiveNumber = number
 export type Username = string
@@ -147,13 +148,10 @@ export type Round = {
     GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> PartialRole?,       -- Returns a RoleColour and Name if available to the viewer.
 
     warn: (self: Round, message: string) -> nil,  -- Calls built-in warn, also adding a round identifier.
-    error: (self: Round, message: string) -> nil, -- Calls built-in error, also adding a round identifier.
 
     -- Private members, should not be used from outside the module
-    _roundTimerThread: thread?,      -- The current task.delay() thread responsible for ending the round after the timer expires. nil if no timer is active.
-    _roundTimerContinueFor: number?, -- Length of time to continue the round timer for when resumed
-    _roundTimerResumedAt: number,    -- The time that the round timer was resumed at
-    _roundTimerTargetDuration: number -- The target duration the round timer started at
+    _roundTimerThread: thread?,
+    _roundTimerContinueFor: number?
 }
 
 
@@ -179,7 +177,10 @@ export type RoundHighlight = {
     Defines the relationship between two (or more) roles.
     Used to identify and group Roles for HighlightRules et al.
 ]]
-export type RoleRelationship = "All" | "Ally" | "Enemy" | RoleName
+
+-- When keyof() becomes available consider this
+module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
+export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
 
 --[[
     A partial Role which only contains the Name and Colour.
@@ -244,7 +245,7 @@ export type Gamemode = {
     MaximumPlayers: Integer,     -- The gamemode will not appear in voting if there are more players than this value.
 
     PyrrhicVictors: RoleName,                       -- Which role wins if everyone is killed simultaneously?
-    TimeoutVictors: RoleName | (Round) -> RoleName, -- Which role wins if the round timer expires? Can be a function.
+    TimeoutVictors: (Round) -> RoleName, -- Which role wins if the round timer expires?
     Highlights: {RoundHighlight},                   -- List of available round highlights.
 
     FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.
@@ -272,9 +273,9 @@ export type Adapter = {
     GiveEquipment: (plr: Participant, item: Equipment) -> nil,
     RemoveEquipment: (plr: Participant, item: EquipmentName) -> nil,
 
-    SendMessage: (recipients : {Player}, message: string, severity: "info" | "warn" | "error") -> nil,
+    SendMessage: (recipients : {Player}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound") -> nil,
     CheckForUpdate: (round: Round) -> boolean?,
 }
 
 -- Defines all custom types used by RoundHandler.
-return {}
+return module

@@ -60,7 +60,9 @@ local module: {[string]: Types.Gamemode} = {
         MaximumPlayers = 32,
     
         PyrrhicVictors = "Traitor",
-        TimeoutVictors = "Innocent",
+        TimeoutVictors = function()
+            return "Innocent"
+        end,
         Highlights = {},
     
         FriendlyFire = true,
@@ -268,7 +270,9 @@ local module: {[string]: Types.Gamemode} = {
         MinimumPlayers = 2,
     
         PyrrhicVictors = "Murderer",
-        TimeoutVictors = "Innocent",
+        TimeoutVictors = function()
+            return "Bystander"
+        end,
         Highlights = {},
     
         FriendlyFire = true,

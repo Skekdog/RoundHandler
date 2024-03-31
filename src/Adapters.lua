@@ -45,7 +45,7 @@ local module: Types.Adapter = {
         return false
     end,
 
-    SendMessage = function(recipients, message, severity)
+    SendMessage = function(recipients, message, severity, messageType)
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
         

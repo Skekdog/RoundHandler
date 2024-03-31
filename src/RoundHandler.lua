@@ -10,6 +10,7 @@ local Adapters = require("src/Adapters")
 local Types = require("src/Types")
 local API = require("src/API")
 
+--- The main module. New rounds are created from here via module.CreateRound().
 local module = {}
 local participant: Types.Participant = {} :: Types.Participant
 local roundHandler: Types.Round = {} :: Types.Round
@@ -25,21 +26,29 @@ local ClientServer = ReplicatedStorage:FindFirstChild("ClientServer") :: Folder 
 
 function participant:AssignRole(role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
     self.Role = role
-    self.Credits = overrideCredits and role.StartingCredits or (self.Credits + role.StartingCredits)
+    self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
     return
 end
 
 function participant:LeaveRound()
     local plr = self.Player
-    for i,v in self.Round.Participants do if v == self then table.remove(self.Round.Participants, i) end end
-    if plr and plr.Character then plr.Character:Destroy() end
+    for i, v in self.Round.Participants do
+        if v == self then
+            table.remove(self.Round.Participants, i)
+            break
+        end
+    end
+
+    if plr and plr.Character then
+        plr.Character:Destroy()
+    end
 
     if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
         local timerThread = self.Round._roundTimerThread
         if not timerThread then
             return
         end
-        coroutine.close(timerThread)
+        task.cancel(timerThread)
     end
     
     return
@@ -140,6 +149,10 @@ function roundHandler:JoinRound(name: Types.Username): Types.Participant -- Adds
 
     table.insert(self.Participants, _participant)
 
+    plr.Destroying:Connect(function()
+        _participant:LeaveRound()
+    end)
+
     local spawns = (workspace:FindFirstChild("__Spawns_"..self.ID) :: Folder):GetChildren()
     plr.CharacterAppearanceLoaded:Once(function(char)
         local chosen = math.random(1, #spawns)
@@ -166,11 +179,23 @@ end
 
 -- (un)Pauses the round. Timer will resume at the same duration
 function roundHandler:PauseRound(): Types.PauseFailReason?
-    if not self:IsRoundInProgress() then return "RoundNotInProgress" end
-    self.Paused = not self.Paused
-    if self.Paused then
-        self._roundTimerContinueFor = self._roundTimerTargetDuration - (workspace:GetServerTimeNow() - self._roundTimerResumedAt)
+    if not self:IsRoundInProgress() then
+        return "RoundNotInProgress"
     end
+
+    self.Paused = not self.Paused
+    
+    if self.Paused then
+        assert(self._roundTimerThread)
+        task.cancel(self._roundTimerThread)
+        self._roundTimerThread = nil
+        self._roundTimerContinueFor = self.TimeMilestone - workspace:GetServerTimeNow()
+    else
+        assert(self._roundTimerContinueFor)
+        self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
+        self._roundTimerThread = task.delay(self._roundTimerContinueFor, self.EndRound, self, self:GetRoleInfo(self.Gamemode.TimeoutVictors(self)))
+    end
+
     return
 end
 
@@ -185,12 +210,12 @@ function roundHandler:StartRound()
     return self.RoundStartEvent:Fire()
 end
 
-function roundHandler:GetRoleRelationship(role1: Types.Role, role2: Types.Role): "Ally" | "Enemy"
-    return (table.find(role1.Allies, role2.Name) and "Ally") or "Enemy"
+function roundHandler:GetRoleRelationship(role1: Types.Role, role2: Types.Role): "__Ally" | "__Enemy"
+    return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
 end
 
 function roundHandler:CompareRoles(role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
-    if comparison == "All" then return true end
+    if comparison == "__All" then return true end
     return self:GetRoleRelationship(role1, role2) == comparison
 end
 
@@ -218,10 +243,10 @@ function roundHandler:GetLimitedParticipantInfo(viewer: Player, target: Player):
     if viewerRole.KnowsRoles[targetRole.Name] == false then return end
     if viewerRole.KnowsRoles[targetRole.Name] then return partialInfo end
 
-    if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation]) then return partialInfo end
-    if (relation == "Ally" or relation == "Enemy") and (viewerRole.KnowsRoles[relation] == false) then return end
+    if (relation == "__Ally" or relation == "__Enemy") and (viewerRole.KnowsRoles[relation]) then return partialInfo end
+    if (relation == "__Ally" or relation == "__Enemy") and (viewerRole.KnowsRoles[relation] == false) then return end
 
-    if viewerRole.KnowsRoles["All"] then
+    if viewerRole.KnowsRoles["__All"] then
         return partialInfo
     end
     return
@@ -238,13 +263,13 @@ function roundHandler:EndRound(victors: Types.Role)
         Players.PlayerAdded:Connect(function(plr)
             plr:Kick("This server is shutting down.")
         end)
-        Adapters.SendMessage(Players:GetPlayers(), "This server is outdated and will restart soon.", "error")
+        Adapters.SendMessage(Players:GetPlayers(), "This server is outdated and will restart soon.", "error", "update")
     end
 
     -- Destroy the round
     task.wait(HIGHLIGHTS_TIME)
 
-    Adapters.SendMessage(Players:GetPlayers(), "Server restarting...", "error")
+    Adapters.SendMessage(Players:GetPlayers(), "Server restarting...", "error", "update")
     TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
 
     self.RoundEndEvent:Fire()
@@ -349,7 +374,7 @@ end
 
 function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round -- Creates a new Round and returns it.
     local self: Types.Round = {
-        ID = HttpService:GenerateGUID(),
+        ID = HttpService:GenerateGUID(), -- Unique identifier of the round
         Gamemode = gamemode,
 
         TimeMilestone = workspace:GetServerTimeNow()+PREPARING_TIME,
@@ -381,12 +406,9 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         GetRoleRelationship = roundHandler.GetRoleRelationship,
 
         warn = roundHandler.warn,
-        error = roundHandler.error,
 
         _roundTimerThread = nil,
-        _roundTimerContinueFor = 0,
-        _roundTimerResumedAt = 0,
-        _roundTimerTargetDuration = 0,
+        _roundTimerContinueFor = nil,
     }
 
     module.LoadMap(map, self.ID)

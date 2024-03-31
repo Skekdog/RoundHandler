@@ -5,7 +5,16 @@ local module = {}
 
 function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean): (boolean, {string})
     local issues = {}
-    local i = function(issue: string) table.insert(issues, issue) end
+    local i = function(issue: string)
+        table.insert(issues, issue)
+    end
+
+    -- Dunders are reserved
+    local function checkString(str: string, issue: string)
+        if str:sub(1, 2) == "__" then
+            i(issue.." must not start with 2 underscores.")
+        end
+    end
 
     -- Test with some functions
     if gamemode:Duration(gamemode.MinimumPlayers) <= 0 then i("Gamemode duration is negative with MinimumPlayers.") end
@@ -23,23 +32,25 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
             table.insert(allegianceNames, role.Allegiance)
         end
 
-        if table.find({"All", "Ally", "Enemy"}, role.Name) then i("Role name "..role.Name.." is reserved.") end
+        checkString(role.Name, "Role Name")
         
         for _, equipmentName in role.StartingEquipment do
+            checkString(equipmentName, "Equipment Name")
             if not table.find(equipmentNames, equipmentName) then
-                i("Equipment "..equipmentName.." of "..role.Name..".StartingEquipment ".." is not defined in Gamemode.AvailableEquipment.")
+                i(("Equipment %s of %s.StartingEquipment is not defined in Gamemode.AvailableEquipment."):format(equipmentName, role.Name))
             end
         end
         for _, equipmentName in role.EquipmentShop do
+            checkString(equipmentName, "Equipment Name")
             if not table.find(equipmentNames, equipmentName) then
-                i("Equipment "..equipmentName.." of "..role.Name..".EquipmentShop ".." is not defined in Gamemode.EquipmentShop.")
+                i(("Equipment %s of %s.EquipmentShop is not defined in Gamemode.AvailableEquipment."):format(equipmentName, role.Name))
             end
         end
     end
 
     local function validateRoleRelationship(list: {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
         for relationship, _ in list do
-            if not table.find({"All", "Ally", "Enemy"}, relationship) and not table.find(roleNames, relationship) then
+            if not table.find(Types.RoleRelationships, relationship) and not table.find(roleNames, relationship) then
                 i(relationship.." is not a valid RoleRelationship in "..info..".")
             end
         end
