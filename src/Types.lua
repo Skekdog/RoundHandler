@@ -54,9 +54,10 @@ export type SelfDefenseEntry = {
     Created by Round:JoinRound().
 ]]
 export type Participant = {
-    Player: Player?, -- A reference to the Player object. Can be nil if the Player has disconnected.
-    Name: string,    -- Separates Participant from Player, in case of disconnection.
-    Round: Round,    -- A reference to the round.
+    Player: Player?,  -- A reference to the Player object. Can be nil if the Player has disconnected.
+    Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
+    Name: string,     -- Separates Participant from Player, in case of disconnection.
+    Round: Round,     -- A reference to the round.
 
     Role: Role?,                     -- A reference to their role. nil if Round hasn't started.
     Credits: number,                 -- Available credits that can be spent in Equipment Shop.
@@ -130,6 +131,7 @@ export type Round = {
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
+    GetPlayers: (self: Round) -> {Player}, -- Not to be confused with GetParticipant. Returns a list of Players who are in this round.
     HasParticipant: (self: Round, name: Username) -> boolean, -- Returns true if participant is in round. Does not error.
     GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a participant from a username. Errors if participant is not in round.
     JoinRound: (self: Round, name: Username) -> Participant,      -- Adds a participant to this round
@@ -144,7 +146,7 @@ export type Round = {
 
     GetRoleInfo: (self: Round, name: RoleName) -> Role,                                            -- Shortcut method to get a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Compares whether two roles are related.
-    GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> RoleRelationship,              -- Returns the relationship between two roles. Either Ally or Enemy.
+    GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",              -- Returns the relationship between two roles. Either Ally or Enemy.
     GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> PartialRole?,       -- Returns a RoleColour and Name if available to the viewer.
 
     warn: (self: Round, message: string) -> nil,  -- Calls built-in warn, also adding a round identifier.
@@ -210,6 +212,7 @@ export type Role = {
     StartingEquipment: {EquipmentName}, -- Added onto gamemode StartingEquipment.
     EquipmentShop: {EquipmentName},     -- List of equipment available to this role.
 
+    AnnounceDisconnect: boolean,                 -- If true, a message is sent to all participants when this player leaves the round.
     CorpseResultsPublicised: boolean,            -- Whether this role will publicise the results from searching a corpse.
     CanStealCredits: boolean,                    -- Whether this role can steal credits from corpses.
     AwardOnDeath: {[RoleRelationship]: Integer}, -- How many credits to award to other roles when this role is killed.
@@ -225,7 +228,7 @@ export type Role = {
     TeamChat: boolean,                             -- Can this role chat in private to other role members?
 
     OnRoleAssigned: (self: Role, participant: Participant) -> nil, -- Any extra code that should run for AssignRole.
-    OnRoleRemoved: (self: Role, participant: Participant) -> nil,  -- Any extra code that should when AssignRole is called on a Participant that previously had this role.
+    OnRoleRemoved: (self: Role, participant: Participant) -> nil,  -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
 }
 
 --[[
@@ -273,7 +276,7 @@ export type Adapter = {
     GiveEquipment: (plr: Participant, item: Equipment) -> nil,
     RemoveEquipment: (plr: Participant, item: EquipmentName) -> nil,
 
-    SendMessage: (recipients : {Player}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound") -> nil,
+    SendMessage: (recipients : {Player}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect") -> nil,
     CheckForUpdate: (round: Round) -> boolean?,
 }
 

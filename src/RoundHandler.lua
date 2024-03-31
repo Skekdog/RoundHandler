@@ -32,11 +32,10 @@ end
 
 function participant:LeaveRound()
     local plr = self.Player
-    for i, v in self.Round.Participants do
-        if v == self then
-            table.remove(self.Round.Participants, i)
-            break
-        end
+
+    local index = table.find(self.Round.Participants, self)
+    if index then
+        table.remove(self.Round.Participants, index)
     end
 
     if plr and plr.Character then
@@ -50,22 +49,29 @@ function participant:LeaveRound()
         end
         task.cancel(timerThread)
     end
+
+    if self.Role and self.Role.AnnounceDisconnect then
+        Adapters.SendMessage(self.Round:GetPlayers(), ("%s has disconnected. They were a %s."):format(self.Name, self.Role.Name), "info", "disconnect")
+    end
+
+    -- Create a ragdoll and make sure their character is not removed.
+    -- Should probably be combined with OnDeath(). Maybe local function createRagdoll().
     
     return
 end
 
-function participant:GetAllegiance(): Types.Role
+function participant:GetAllegiance()
     if not self.Role then
         error("Participant "..self.Name.." does not have a role")
     end
     return self.Round:GetRoleInfo(self.Role.Allegiance)
 end
 
-function participant:GiveEquipment(equipment: Types.Equipment)
+function participant:GiveEquipment(equipment)
     return Adapters.GiveEquipment(self, equipment)
 end
 
-function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role
+function roundHandler:GetRoleInfo(name)
     for _, v in self.Gamemode.Roles do
         if v.Name == name then
             return v
@@ -74,7 +80,17 @@ function roundHandler:GetRoleInfo(name: Types.RoleName): Types.Role
     error(("Role '%s' not found in gamemode '%s'"):format(name, self.Gamemode.Name))
 end
 
-function roundHandler:HasParticipant(name: Types.Username): boolean -- Returns true if Participant is already in Round
+function roundHandler:GetPlayers()
+    local players = {}
+    for _, v in self.Participants do
+        if v.Player then
+            table.insert(players, v.Player)
+        end
+    end
+    return players
+end
+
+function roundHandler:HasParticipant(name) -- Returns true if Participant is already in Round
     for _, participant in self.Participants do
         if participant.Name == name then
             return true
@@ -83,7 +99,7 @@ function roundHandler:HasParticipant(name: Types.Username): boolean -- Returns t
     return false
 end
 
-function roundHandler:GetParticipant(name: Types.Username): Types.Participant -- Returns Participant
+function roundHandler:GetParticipant(name) -- Returns Participant
     for _, participant in self.Participants do
         if participant.Name == name then
             return participant
@@ -92,19 +108,19 @@ function roundHandler:GetParticipant(name: Types.Username): Types.Participant --
     error("Could not find Participant "..name.." in Round "..self.ID)
 end
 
-function roundHandler:IsRoundPreparing(): boolean
+function roundHandler:IsRoundPreparing()
     return self.RoundPhase == "Waiting" or self.RoundPhase == "Preparing"
 end
 
-function roundHandler:IsRoundOver(): boolean
+function roundHandler:IsRoundOver()
     return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
 end
 
-function roundHandler:IsRoundInProgress(): boolean
+function roundHandler:IsRoundInProgress()
     return self.RoundPhase == "Playing"
 end
 
-function roundHandler:JoinRound(name: Types.Username): Types.Participant -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
+function roundHandler:JoinRound(name) -- Adds a player to the round and returns a new Participant if successful. For the sake of consistency, `plr` is a `string` of the player's username.
     if self:HasParticipant(name) then
         error(name.." is already a Participant in Round "..self.ID)
     end
@@ -119,7 +135,7 @@ function roundHandler:JoinRound(name: Types.Username): Types.Participant -- Adds
     local _participant: Types.Participant = {
         Player = plr,
         Name = plr.Name,
-        Round = self :: Types.Round,
+        Round = self,
 
         Role = nil,
         Credits = 0,
@@ -178,7 +194,7 @@ function roundHandler:JoinRound(name: Types.Username): Types.Participant -- Adds
 end
 
 -- (un)Pauses the round. Timer will resume at the same duration
-function roundHandler:PauseRound(): Types.PauseFailReason?
+function roundHandler:PauseRound()
     if not self:IsRoundInProgress() then
         return "RoundNotInProgress"
     end
@@ -210,17 +226,17 @@ function roundHandler:StartRound()
     return self.RoundStartEvent:Fire()
 end
 
-function roundHandler:GetRoleRelationship(role1: Types.Role, role2: Types.Role): "__Ally" | "__Enemy"
+function roundHandler:GetRoleRelationship(role1, role2)
     return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
 end
 
-function roundHandler:CompareRoles(role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship): boolean
+function roundHandler:CompareRoles(role1: Types.Role, role2: Types.Role, comparison: Types.RoleRelationship)
     if comparison == "__All" then return true end
     return self:GetRoleRelationship(role1, role2) == comparison
 end
 
 -- Returns a Participant with some fields omitted depending on the target's role or lack there-of
-function roundHandler:GetLimitedParticipantInfo(viewer: Player, target: Player): Types.PartialRole?
+function roundHandler:GetLimitedParticipantInfo(viewer: Player, target: Player)
     local viewerParticipant = self:GetParticipant(viewer.Name)
     local targetParticipant = self:GetParticipant(target.Name)
     if not viewerParticipant then return self:warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
@@ -387,6 +403,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         Participants = {},
         EventLog = {},
 
+        GetPlayers = roundHandler.GetPlayers,
         HasParticipant = roundHandler.HasParticipant,
         GetParticipant = roundHandler.GetParticipant,
         JoinRound = roundHandler.JoinRound,

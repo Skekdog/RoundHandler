@@ -1,6 +1,7 @@
 --!strict
 local Types = require("src/Types")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local items = ReplicatedStorage:WaitForChild("Items")
 
 --- A simple victory checker. If only one allegiance is alive, they win.
@@ -115,6 +116,7 @@ local module: {[string]: Types.Gamemode} = {
                 VictoryMusic = {},
                 VictoryText = "The dastardly traitors have won the round!",
     
+                AnnounceDisconnect = true,
                 CanStealCredits = true,
                 AwardOnDeath = {
                     Detective = 1,
@@ -154,6 +156,7 @@ local module: {[string]: Types.Gamemode} = {
                 Allies = {"Innocent", "Detective"},
                 Allegiance = "Innocent",
     
+                AnnounceDisconnect = true,
                 CanStealCredits = true,
                 AwardOnDeath = {
                     Traitor = 1,
@@ -192,6 +195,7 @@ local module: {[string]: Types.Gamemode} = {
                 VictoryMusic = {},
                 VictoryText = "The loveable innocents have won the round!",
     
+                AnnounceDisconnect = false,
                 CanStealCredits = false,
                 AwardOnDeath = {},
                 CorpseResultsPublicised = false,
@@ -310,6 +314,7 @@ local module: {[string]: Types.Gamemode} = {
                 StartingCredits = 0,
                 StartingEquipment = {},
     
+                AnnounceDisconnect = false,
                 CanStealCredits = false,
                 EquipmentShop = {},
                 AwardOnDeath = {},
@@ -339,6 +344,7 @@ local module: {[string]: Types.Gamemode} = {
                 StartingCredits = 0,
                 StartingEquipment = {"Gun"},
     
+                AnnounceDisconnect = false,
                 CanStealCredits = false,
                 EquipmentShop = {},
                 AwardOnDeath = {},
@@ -368,6 +374,7 @@ local module: {[string]: Types.Gamemode} = {
                 StartingCredits = 0,
                 StartingEquipment = {},
     
+                AnnounceDisconnect = true,
                 CanStealCredits = false,
                 EquipmentShop = {},
                 AwardOnDeath = {},
@@ -407,6 +414,35 @@ local module: {[string]: Types.Gamemode} = {
     
         OnDeath = function(self, victim)
             local round = victim.Round
+
+            if victim.Role and victim.Role.Name == "Sheriff" then
+                local char = victim.Character
+                if char and char:IsDescendantOf(workspace) then
+                    local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
+                    local handle = gun:FindFirstChild("Handle") :: Part
+                    gun:PivotTo(char:GetPivot())
+                    
+                    local particles = Instance.new("Sparkles")
+                    particles.Parent = handle
+
+                    handle.Touched:Connect(function(part)
+                        local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
+                        if not plr then
+                            return
+                        end
+
+                        local participant = round:GetParticipant(plr.Name)
+                        if participant:GetAllegiance().Name ~= "Bystander" then
+                            return
+                        end
+
+                        participant:GiveEquipment(self.AvailableEquipment[2])
+                        gun:Destroy()
+
+                        -- Does handle.Touched get disconnected?
+                    end)
+                end
+            end
     
             local winner = TestForOneSurvivingRole(self, round)
             if winner then

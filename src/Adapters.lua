@@ -49,7 +49,7 @@ local module: Types.Adapter = {
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
         
-        print(("Sending %s '%s' to {%s}"):format(severity, message, table.concat(recipients, ", ")))
+        print(("Sending %s '%s' to {%s} through medium %s"):format(severity, message, table.concat(recipients, ", "), messageType))
     end
 }
 
