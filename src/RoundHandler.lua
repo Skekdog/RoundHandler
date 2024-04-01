@@ -1,7 +1,6 @@
 --!strict
 -- The main RoundHandler. Used to create and interact with rounds.
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -19,7 +18,6 @@ module.Rounds = {} :: {[Types.UUID]: Types.Round}
 
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
-local INTERMISSION_TIME = Adapters.Configuration.INTERMISSION_TIME -- Duration of map voting
 
 function participant:AssignRole(role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
     self.Role = role
@@ -323,17 +321,19 @@ function roundHandler:EndRound(victors: Types.Role)
 
     local updateNeeded = Adapters.CheckForUpdate(self)
     if updateNeeded then
-        Players.PlayerAdded:Connect(function(plr)
-            plr:Kick("This server is shutting down.")
-        end)
         Adapters.SendMessage({}, "This server is outdated and will restart soon.", "error", "update", true)
     end
 
     -- Destroy the round
     task.wait(HIGHLIGHTS_TIME)
 
-    Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
-    TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
+    if updateNeeded then
+        Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
+        TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
+        Players.PlayerAdded:Connect(function(plr)
+            plr:Kick("This server is shutting down.")
+        end)
+    end
 
     self.RoundEndEvent:Fire()
 
@@ -348,44 +348,19 @@ function roundHandler:warn(message: string)
     return warn(message.." from Round: "..self.ID, 2)
 end
 
-function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
+function roundHandler:LoadMap(map: Folder): nil -- Loads a map.
+    if map:FindFirstChild("Map") then
+        error(("Map %s does not have a Map folder!"):format(map.Name))
+    end
+
     map = map:Clone()
 
-    local physicalMap = map:FindFirstChild("Map")
-    if not physicalMap then return error(map.Name.." is missing a Map folder!") end
-
-    local spawns = workspace:FindFirstChild("__Spawns_"..id) or API.NamedInstance("Folder", "__Spawns_"..id, workspace)
-    local weapons = workspace:FindFirstChild("__Weapons_"..id) or API.NamedInstance("Folder", "__Weapons_"..id, workspace)
-    local bounds
-
-    Instance.new("Folder", ReplicatedStorage).Name = "Lighting_"..id
-    Instance.new("Folder", ReplicatedStorage).Name = "FIBLighting_"..id
-
-    local oldMap = workspace:FindFirstChild("__Map_"..id)
-    if oldMap then
-        for _, v in oldMap:GetChildren() do
-            v:ClearAllChildren() 
-        end
-    else
-        oldMap = Instance.new("Folder")
-        if not oldMap then error("Somehow failed to create a Folder instance!") end -- This line only exists to shut up the type-checker
-
-        bounds = API.NamedInstance("Folder", "Bounds", oldMap)
-        API.NamedInstance("Folder", "Props", oldMap)
-        API.NamedInstance("Folder", "Map", oldMap)
-
-        oldMap.Name = "__Map_"..id
-        oldMap.Parent = workspace
-    end
-
-    for _, v in physicalMap:GetChildren() do
-        v.Parent = (workspace:FindFirstChild("__Map_"..id) :: Folder):FindFirstChild("Map")
-    end
+    local mapFolder = Instance.new("Folder")
+    mapFolder.Name = "__Map_"..self.ID
 
     for _, v in map:GetChildren() do
         task.wait()
         if v.Name == "Spawns" then
-            spawns:ClearAllChildren()
             for _, spawn in v:GetChildren() do
                 if not spawn:IsA("BasePart") then
                     continue
@@ -395,31 +370,8 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
                 spawn.CanCollide = false
                 spawn.CanTouch = false
                 spawn.CanQuery = false
-                spawn.Parent = spawns
             end
-            continue
-        end
-        if v.Name == "Lighting" or v.Name == "FIBLighting" then -- Lighting is handled on client
-            local prev = ReplicatedStorage:FindFirstChild(v.Name..id)
-            if prev then
-                prev:ClearAllChildren()
-            end
-            v.Parent = ReplicatedStorage
-            continue
-        end
-        if v.Name == "Bounds" then
-            for _, bound in v:GetChildren() do
-                if not bound:IsA("BasePart") then
-                    continue
-                end
-                bound.CanCollide = false
-                bound.Transparency = 1
-                bound.Parent = bounds
-            end
-            continue
-        end
-        if v.Name == "WeaponSpawns" then
-            weapons:ClearAllChildren()
+        elseif v.Name == "WeaponSpawns" then
             for _, weapon in v:GetChildren() do
                 if not weapon:IsA("BasePart") then
                     continue
@@ -427,11 +379,15 @@ function module.LoadMap(map: Folder, id: Types.UUID): nil -- Loads a map.
                 weapon.CanCollide = true
                 weapon.CanTouch = true
                 weapon.Anchored = false
-                weapon.Parent = weapons
             end
-            continue
+        elseif v.Name == "Props" then
+            
         end
+
+        v.Parent = v
     end
+
+    mapFolder.Parent = workspace
     return
 end
 
@@ -439,6 +395,7 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
     local self: Types.Round = {
         ID = HttpService:GenerateGUID(), -- Unique identifier of the round
         Gamemode = gamemode,
+        Map = nil,
 
         TimeMilestone = workspace:GetServerTimeNow()+PREPARING_TIME,
         RoundPhase = "Waiting",
@@ -469,13 +426,15 @@ function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round 
         GetLimitedParticipantInfo = roundHandler.GetLimitedParticipantInfo,
         GetRoleRelationship = roundHandler.GetRoleRelationship,
 
+        LoadMap = roundHandler.LoadMap,
+
         warn = roundHandler.warn,
 
         _roundTimerThread = nil,
         _roundTimerContinueFor = nil,
     }
 
-    module.LoadMap(map, self.ID)
+    roundHandler:LoadMap(map)
     
     module.Rounds[self.ID] = self
     return self

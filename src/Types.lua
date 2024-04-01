@@ -129,6 +129,7 @@ export type ScoreBreakdown = {
 export type Round = {
     ID: UUID,                -- Unique identifier of the round.
     Gamemode: Gamemode,      -- A reference to the current gamemode.
+    Map: Folder?,             -- A reference to the loaded map folder.
 
     Paused: boolean,          -- Whether the round is paused or not.
     TimeMilestone: Timestamp, -- The timestamp of the next round phase. Used by the client for a round timer.
@@ -157,6 +158,8 @@ export type Round = {
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
     GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> PartialRole?,       -- Returns a RoleColour and Name if available to the viewer.
+
+    LoadMap: (self: Round, map: Folder) -> nil,   -- Loads a map.
 
     warn: (self: Round, message: string) -> nil,  -- Calls built-in warn, also adding a round identifier.
 
@@ -287,7 +290,6 @@ export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
         HIGHLIGHTS_TIME: number,
-        INTERMISSION_TIME: number,
     },
 
     GetKarma: (plr: Player) -> number,
