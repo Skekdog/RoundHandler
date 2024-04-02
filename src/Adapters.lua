@@ -60,7 +60,7 @@ local module: Types.Adapter = {
             fontColour = "#0000ff"
         end
 
-        message = ("<font color='%s'>%s</font>"):format(fontColour, message)
+        message = `<font color='{fontColour}'>{message}</font>`
 
         local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
 

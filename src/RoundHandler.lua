@@ -27,6 +27,62 @@ local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weap
     self.Round.Gamemode:OnDeath(self)
 end
 
+local function calculateRoundHighlights(self: Types.Round): {Types.RoundHighlight}
+    local highlights: {Types.RoundHighlight & {Priority: number?}} = {}
+
+    for _, highlight in self.Gamemode.Highlights do
+        local number = 0
+        local highlightTarget: Types.Participant
+        if highlight.Condition == "AllyKills" or highlight.Condition == "EnemyKills" then
+            local relationTarget = if highlight.Condition == "AllyKills" then "__Ally" else "__Enemy"
+            local highestKills = 0
+            for _, participant in self.Participants do
+                local thisParticipantKills = 0
+                for _, victim in participant.KillList do
+                    if not victim.Role or not participant.Role then
+                        continue
+                    end
+                    if (self:GetRoleRelationship(victim.Role, participant.Role) == relationTarget) then
+                        thisParticipantKills += 1
+                    end
+                end
+
+                if thisParticipantKills > highestKills then
+                    highestKills = thisParticipantKills
+                    highlightTarget = participant
+                end
+            end
+            number = highestKills
+        end
+
+        local targetLevel
+        for i, level in highlight.Levels do
+            if (level.Threshold > number) and (i > 1) then
+                targetLevel = highlight.Levels[i-1]
+            end
+        end
+
+        if targetLevel then
+            table.insert(highlights, {
+                Name = targetLevel.Name,
+                Description = targetLevel.Description:gsub("{__USERNAME", highlightTarget.Name):gsub("{__AMOUNT}", tostring(number)),
+                Priority = targetLevel.Priority,
+                Participant = highlightTarget,
+            })
+        end
+    end
+
+    table.sort(highlights, function(a, b)
+        return a.Priority < b.Priority
+    end)
+
+    for _, v in highlights do
+        v.Priority = nil
+    end
+
+    return highlights
+end
+
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
@@ -88,7 +144,7 @@ local function newParticipant(round, plr): Types.Participant
             end
         
             if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round:GetConnectedParticipants(), ("%s has disconnected. They were a %s."):format(self.Name, self.Role.Name), "info", "disconnect")
+                Adapters.SendMessage(self.Round:GetConnectedParticipants(), (`{self.Name} has disconnected. They were a {self.Role.Name}.`), "info", "disconnect")
             end
         
             onDeath(self, "Suicide")
@@ -133,7 +189,7 @@ end
 
 local function newRound(gamemode): Types.Round
     return {
-        ID = HttpService:GenerateGUID(), -- Unique identifier of the round
+        ID = HttpService:GenerateGUID(),
         Gamemode = gamemode,
         Map = nil :: any,
 
@@ -279,7 +335,8 @@ local function newRound(gamemode): Types.Round
         end,
         EndRound = function(self)
             self.RoundPhase = "Highlights"
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants())
+
+            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), calculateRoundHighlights(self), {}, {})
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -306,7 +363,7 @@ local function newRound(gamemode): Types.Round
         end,
         LoadMap = function(self, map)
             if map:FindFirstChild("Map") then
-                error(("Map %s does not have a Map folder!"):format(map.Name))
+                error(`Map {map.Name} does not have a Map folder!`)
             end
         
             map = map:Clone()
@@ -363,7 +420,7 @@ local function newRound(gamemode): Types.Round
                     return v
                 end
             end
-            error(("Role '%s' not found in gamemode '%s'"):format(roleName, self.Gamemode.Name))
+            error(`Role '{roleName}' not found in gamemode '{self.Gamemode.Name}'`)
         end,
         CompareRoles = function(self, role1, role2, comparison)
             if comparison == "__All" then

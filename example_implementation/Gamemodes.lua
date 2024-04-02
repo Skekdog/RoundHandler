@@ -277,7 +277,57 @@ local module: {[string]: Types.Gamemode} = {
         TimeoutVictors = function()
             return "Bystander"
         end,
-        Highlights = {},
+        Highlights = {
+            {
+                Condition = "EnemyKills",
+                Levels = {
+                    {
+                        Name = "Murderer",
+                        Description = "{__USERNAME} killed a single Bystander. Good job!",
+                        Threshold = 1,
+                        Priority = 1,
+                    },
+                    {
+                        Name = "Killer",
+                        Description = "{__USERNAME} killed {__AMOUNT} people. Nice!",
+                        Threshold = 2,
+                        Priority = 1,
+                    },
+                    {
+                        Name = "Serial Killer",
+                        Description = "{__USERNAME} killed {__AMOUNT} people. Brutal!",
+                        Threshold = 5,
+                        Priority = 1,
+                    },
+                    {
+                        Name = "Mass Murderer",
+                        Description = "{__USERNAME} killed {__AMOUNT} people. Very scary indeed.",
+                        Threshold = 10,
+                        Priority = 1,
+                    }
+                }
+            },
+            {
+                Condition = "AllyKills",
+                Levels = {
+                    {
+                        Name = "Butterfingers",
+                        Description = "{__USERNAME} had their finger slip when they were just aiming at a Bystander.",
+                        Threshold = 1,
+                        Priority = 1,
+                    }
+                }
+            }
+        },
+
+        EditRoundHighlights = function(highlights)
+            for _, v in highlights do
+                if v.Participant.Role and v.Participant.Role.Name == "Sheriff" then
+                    v.Name = "Defender of the innocent"
+                    v.Description = (`{v.Participant.Name} did a backflip, shot the bad guy's face and saved the day!`)
+                end
+            end
+        end,
     
         FriendlyFire = true,
         SelfDefense = false,
@@ -415,32 +465,56 @@ local module: {[string]: Types.Gamemode} = {
         OnDeath = function(self, victim)
             local round = victim.Round
 
-            if victim.Role and victim.Role.Name == "Sheriff" then
-                local char = victim.Character
-                if char and char:IsDescendantOf(workspace) then
-                    local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
-                    local handle = gun:FindFirstChild("Handle") :: Part
-                    gun:PivotTo(char:GetPivot())
-                    
-                    local particles = Instance.new("Sparkles")
-                    particles.Parent = handle
-
-                    handle.Touched:Connect(function(part)
-                        local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
-                        if not plr then
-                            return
+            local role = victim.Role
+            if role then
+                if role.Name == "Bystander" then
+                    local assailant
+                    for _, v in round.Participants do
+                        for _, kill in v.KillList do
+                            if kill.Name == victim.Name then
+                                assailant = v
+                                break
+                            end
+                            if assailant then
+                                break
+                            end
                         end
+                    end
 
-                        local participant = round:GetParticipant(plr.Name)
-                        if participant:GetAllegiance().Name ~= "Bystander" then
-                            return
+                    if assailant and assailant.Role and (assailant.Role.Name == "Sheriff") and assailant.Character then
+                        local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            hum.Health = 0
                         end
+                    end
+                    return
+                elseif role.Name == "Sheriff" then
+                    local char = victim.Character
+                    if char and char:IsDescendantOf(workspace) then
+                        local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
+                        local handle = gun:FindFirstChild("Handle") :: Part
+                        gun:PivotTo(char:GetPivot())
+                        
+                        local particles = Instance.new("Sparkles")
+                        particles.Parent = handle
 
-                        participant:GiveEquipment(self.AvailableEquipment[2])
-                        gun:Destroy()
+                        handle.Touched:Connect(function(part)
+                            local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
+                            if not plr then
+                                return
+                            end
 
-                        -- Does handle.Touched get disconnected?
-                    end)
+                            local participant = round:GetParticipant(plr.Name)
+                            if participant:GetAllegiance().Name ~= "Bystander" then
+                                return
+                            end
+
+                            participant:GiveEquipment(self.AvailableEquipment[2])
+                            gun:Destroy()
+
+                            -- Does handle.Touched get disconnected?
+                        end)
+                    end
                 end
             end
     

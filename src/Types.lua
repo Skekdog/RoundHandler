@@ -78,31 +78,21 @@ export type ScoreBreakdown = {
     [ScoreReason]: Integer
 }
 
-
--- TODO: This is all very dodgy
--- RoundHighlight can be a list of sub-highlights.
--- i.e, HUGE Kills: {"A huge spread", "used their huge and killed many people", 2 kills needed}
---                 {"A patient para", "@Scelly_Dog's patience was rewarded with 4 kills", 4 kills needed}
--- Or they can be a function that returns a table of highlight Name and Description.
-export type RoundHighlightCondition = "HeadshotKills" | "KillsWithWeapon" | "CorrectKills" | "IncorrectKills"
-export type RoundHighlight = {
-    Condition: RoundHighlightCondition, -- Condition.
-    Subcondition: EquipmentName?, -- Only applicable for KillsWithWeapon.
-    Levels: { -- Varying levels of this highlight.
-        Name: string, -- Title.
-        Description: string, -- Description.
-        Threshold: Integer, -- Minimum number of condition for this particular highlight to activate.
-    }
-} | (Round) -> {Name: string, Description: string}
-
 export type RoundHighlightTrigger = {
     Condition: "EnemyKills" | "AllyKills" | "",
     Levels: {
-        Name: string,
-        Description: string,
-        Threshold: number,
-        Priority: number, -- Higher priorities will be displayed prioritised over other types of highlights. In
+        {
+            Name: string,
+            Description: string, -- %s can be used to substitute the Participant's name, %d can be used to substitute the number they did
+            Threshold: number,
+            Priority: number, -- Higher priorities will be displayed prioritised over other types of highlights.
+        }
     }
+}
+export type RoundHighlight = {
+    Name: string,
+    Description: string,
+    Participant: Participant
 }
 
 
@@ -206,7 +196,7 @@ export type Gamemode = {
 
     PyrrhicVictors: RoleName,                       -- Which role wins if everyone is killed simultaneously?
     TimeoutVictors: (Round) -> RoleName, -- Which role wins if the round timer expires?
-    Highlights: {RoundHighlight},                   -- List of available round highlights.
+    Highlights: {RoundHighlightTrigger},                   -- List of available round highlights.
 
     FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.
     SelfDefense: boolean,  -- Whether self-defense is allowed.
@@ -221,6 +211,7 @@ export type Gamemode = {
     Duration: (self: Gamemode, numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
+    EditRoundHighlights: (({RoundHighlight}) -> nil)?,                      -- Called when the round ends to allow the gamemode to edit the highlights if needed. Substitutions have already been made.
 }
 
 --[[

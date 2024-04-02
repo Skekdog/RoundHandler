@@ -37,13 +37,13 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
         for _, equipmentName in role.StartingEquipment do
             checkString(equipmentName, "Equipment Name")
             if not table.find(equipmentNames, equipmentName) then
-                i(("Equipment %s of %s.StartingEquipment is not defined in Gamemode.AvailableEquipment."):format(equipmentName, role.Name))
+                i((`Equipment {equipmentName} of {role.Name}.StartingEquipment is not defined in Gamemode.AvailableEquipment.`))
             end
         end
         for _, equipmentName in role.EquipmentShop do
             checkString(equipmentName, "Equipment Name")
             if not table.find(equipmentNames, equipmentName) then
-                i(("Equipment %s of %s.EquipmentShop is not defined in Gamemode.AvailableEquipment."):format(equipmentName, role.Name))
+                i((`Equipment {equipmentName} of {role.Name}.EquipmentShop is not defined in Gamemode.AvailableEquipment.`))
             end
         end
     end
@@ -76,6 +76,15 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
         validateRoleRelationship(role.KnowsRoles, role.Name..".KnowsRoles")
         validateRoleRelationship(role.HighlightRules, role.Name..".HighlightRules")
         validateRoleRelationship(role.AwardOnDeath, role.Name..".AwardOnDeath")
+    end
+
+    local foundConditions = {}
+    for _, highlight in gamemode.Highlights do
+        if table.find(foundConditions, highlight.Condition) then
+            i(highlight.Condition.." Highlight is defined in multiple places!")
+            continue
+        end
+        table.insert(foundConditions, highlight.Condition)
     end
 
     return #issues<1, issues
