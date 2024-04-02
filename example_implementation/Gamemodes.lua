@@ -64,7 +64,72 @@ local module: {[string]: Types.Gamemode} = {
         TimeoutVictors = function()
             return "Innocent"
         end,
-        Highlights = {},
+        Highlights = {
+            {
+                Condition = "AllyKills",
+                Levels = {
+                    {
+                        Name = "Butterfingers",
+                        Description = "{__USERNAME} had their finger slip whilst they were just aiming at a buddy.",
+                        Threshold = 1,
+                        Priority = 1
+                    },
+                    {
+                        Name = "Double Oops",
+                        Description = '{__USERNAME} accidentally shot a "friend" and then another "friend". Oopsies!',
+                        Threshold = 2,
+                        Priority = 1
+                    },
+                    {
+                        Name = "Roleplayer",
+                        Description = "{__USERNAME} was roleplaying a madman, honest. That's why they killed most of their team.",
+                        Threshold = 3,
+                        Priority = 3
+                    }
+                }
+            },
+            {
+                -- these must be processed by EditRoundHighlights. Feels like there should be a better system for this though, only question is what
+                Condition = "EnemyKills",
+                Levels = {
+                    {
+                        Name = "enemy 1",
+                        Description = "",
+                        Threshold = 1,
+                        Priority = 1
+                    },
+                    {
+                        Name = "enemy 2",
+                        Description = "",
+                        Threshold = 2,
+                        Priority = 1
+                    },
+                    {
+                        Name = "enemy 3",
+                        Description = "",
+                        Threshold = 4,
+                        Priority = 2
+                    },
+                }
+            }
+        },
+
+        EditRoundHighlights = function(highlights)
+            for _, highlight in highlights do
+                local name = highlight.Participant.Name
+                local isInnocent = highlight.Participant:GetAllegiance().Name == "Innocent"
+                if highlight.Name == "enemy 1" then
+                    highlight.Name = if isInnocent then "Traitor Down" else "I got one, boss!"
+                    highlight.Description = if isInnocent then `{name} took down a traitor.` else `{name} managed to eliminate a single innocent. Sweet!`
+                elseif highlight.Name == "enemy 2" then
+                    highlight.Name = if isInnocent then "Do Traitors dream of Traitorous sheep?" else "I got another, boss!"
+                    highlight.Description = if isInnocent then `{name} put {highlight.Amount} traitors to rest.` else `{name} managed to eliminate a single innocent, and then another one!`
+                elseif highlight.Name == "enemy 3" then
+                    highlight.Name = if isInnocent then "Counter-Counter-Espionage Operative" else "Seasoned Veteran"
+                    highlight.Description = if isInnocent then `{name} gets paid per kill. Can now afford a luxury yacht.` else `{name} gets paid per kill. Can now afford a swimming pool.`
+                end
+            end
+        end,
     
         FriendlyFire = true,
         SelfDefense = true,
@@ -283,7 +348,7 @@ local module: {[string]: Types.Gamemode} = {
                 Levels = {
                     {
                         Name = "Murderer",
-                        Description = "{__USERNAME} killed a single Bystander. Good job!",
+                        Description = "{__USERNAME} killed a single person. Good job!",
                         Threshold = 1,
                         Priority = 1,
                     },
@@ -312,7 +377,7 @@ local module: {[string]: Types.Gamemode} = {
                 Levels = {
                     {
                         Name = "Butterfingers",
-                        Description = "{__USERNAME} had their finger slip when they were just aiming at a Bystander.",
+                        Description = "{__USERNAME} had their finger slip when they were just aiming at a Bystander. And then they couldn't take it anymore.",
                         Threshold = 1,
                         Priority = 1,
                     }

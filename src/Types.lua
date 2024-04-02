@@ -64,10 +64,16 @@ export type RoundHighlightTrigger = {
     }
 }
 
+
+
 export type RoundHighlight = {
     Name: string,
-    Description: string,
-    Participant: Participant
+    Description: string
+}
+
+export type BloatwareHighlight = RoundHighlight & {
+    Participant: Participant,
+    Amount: number
 }
 
 export type RoundEventType = "Round" | "Death" | "Damage" | "Search" | "Purchase" | "Equipment"
@@ -163,7 +169,7 @@ export type Gamemode = {
     Duration: (self: Gamemode, numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
-    EditRoundHighlights: (({RoundHighlight}) -> nil)?,                      -- Called when the round ends to allow the gamemode to edit the highlights if needed. Substitutions have already been made.
+    EditRoundHighlights: (({BloatwareHighlight}) -> nil)?,                      -- Called when the round ends to allow the gamemode to edit the highlights if needed. Substitutions have already been made.
 }
 
 --[[

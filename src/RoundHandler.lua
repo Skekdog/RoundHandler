@@ -27,8 +27,8 @@ local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weap
     self.Round.Gamemode:OnDeath(self)
 end
 
-local function calculateRoundHighlights(self: Types.Round): {Types.RoundHighlight}
-    local highlights: {Types.RoundHighlight & {Priority: number?}} = {}
+local function calculateRoundHighlights(self: Types.Round): {Types.BloatwareHighlight}
+    local highlights: {Types.BloatwareHighlight & {Priority: number?}} = {}
 
     for _, highlight in self.Gamemode.Highlights do
         local number = 0
@@ -68,6 +68,7 @@ local function calculateRoundHighlights(self: Types.Round): {Types.RoundHighligh
                 Description = targetLevel.Description:gsub("{__USERNAME", highlightTarget.Name):gsub("{__AMOUNT}", tostring(number)),
                 Priority = targetLevel.Priority,
                 Participant = highlightTarget,
+                Amount = targetLevel.Threshold
             })
         end
     end
@@ -362,7 +363,7 @@ local function newRound(gamemode): Types.Round
                 Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
                 TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
                 Players.PlayerAdded:Connect(function(plr)
-                    plr:Kick("This server is shutting down.")
+                    plr:Kick("This server is shutting down for an update.")
                 end)
             end
 
