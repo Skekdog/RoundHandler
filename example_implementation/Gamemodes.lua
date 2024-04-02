@@ -96,7 +96,7 @@ local module: {[string]: Types.Gamemode} = {
                 Icon = "rbxassetid://",
     
                 Item = function(participant, item)
-                    print(participant.Name.." got radar")
+                    print(`{participant.Name} got radar`)
                 end
             },
         },

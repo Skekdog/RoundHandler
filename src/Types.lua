@@ -10,110 +10,6 @@ export type RoleName = string
 export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
---[[
-Round Phases:
-    Waiting: Not enough players, waiting indefinitely
-    Preparing: Enough players, giving time for others to join
-    Playing: Round in progress
-    Highlights: Round ended but still loaded
-    Intermission: Round unloaded and voting time if applicable
-]]
-export type RoundPhase = "Waiting" | "Preparing" | "Playing" | "Highlights" | "Intermission"
-
---[[
-Round Event Types:
-    Round: Started, paused, ended, etc.
-    Death: Participant died
-    Damage: Participant took damage
-    Search: A corpse was searched, or credits were taken
-    Purchase: Something purchased in equipment shop
-    Equipment: Something picked up (includes whether it was taken from a corpse or living player)
-]]
-
-export type FreeKillReason = "Teamkill" | string
-export type DeathType = "Firearm" | "Blunt" | "Blade" | "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
--- Mutation: DNA mutated by teleporter (in a deadly way)
-
-export type UUID = "00000000-0000-0000-0000-000000000000" | string
-export type RoundTime = "00:00" | string
-
---[[
-    Represents a Self Defense entry in a Participant's SelfDefenseList.
-    ]]
-export type SelfDefenseEntry = {
-    Against: Participant, -- A reference to the Participant who is able to freely kill this participant until the entry expires.
-    Until: Timestamp,  -- The timestamp at which this Self Defense entry expires. Always compare this, as opposed to checking the presence of an entry against the Participant, because the entry may not be removed.
-}
-
---[[
-    Represents an item, possibly purchased from the Equipment shop.
-    All items available in a Round should be in Gamemode.AvailableEquipment.
-]]
-export type Equipment = {
-    Name: EquipmentName, -- Name of the equipment.
-    Description: string, -- Description of this equipment.
-    Icon: Asset,         -- Icon of this equipment.
-    Cost: Integer,       -- The number of credits that this equipment costs to buy.
-    Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
-
-    Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
-}
-
-export type RoundEventType = "Round" | "Death" | "Damage" | "Search" | "Purchase" | "Equipment"
---[[
-    Represents an Event that occured during a Round.
-    Non-unique, multiple of the same Event can exist in the same Round.
-    ]]
-export type RoundEvent = {
-    RoundTime: RoundTime,     -- The local time that this event occured at.
-    Text: string,             -- The user-facing text of this event.
-    Category: RoundEventType, -- The category that this event falls under.
-    Correct: boolean?,        -- true if a Tick should be displayed, false if Cross, nil if nothing should be displayed.
-    FreeKill: boolean,        -- true if Free Kill icon should be displayed
-    SelfDefense: boolean,     -- true if Self Defense icon should be displayed
-}
-
-export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
-export type ScoreBreakdown = {
-    [ScoreReason]: Integer
-}
-
-export type RoundHighlightTrigger = {
-    Condition: "EnemyKills" | "AllyKills" | "",
-    Levels: {
-        {
-            Name: string,
-            Description: string, -- %s can be used to substitute the Participant's name, %d can be used to substitute the number they did
-            Threshold: number,
-            Priority: number, -- Higher priorities will be displayed prioritised over other types of highlights.
-        }
-    }
-}
-export type RoundHighlight = {
-    Name: string,
-    Description: string,
-    Participant: Participant
-}
-
-
---[[
-    Defines the relationship between two (or more) roles.
-    Used to identify and group Roles for HighlightRules et al.
-]]
-
--- When keyof() becomes available consider this
-module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
-export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
-
---[[
-    A partial Role which only contains the Name and Colour.
-    Returned by Round:GetLimitedParticipantInfo().
-]]
-export type PartialRole = {
-    Name: string,   -- Name of the original Role.
-    Colour: Color3, -- Colour of the original Role.
-}
-
 export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
@@ -128,16 +24,70 @@ export type Adapter = {
 
     SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> nil,
     CheckForUpdate: (round: Round) -> boolean,
-    SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {RoundEvent}, scores: {[Player]: ScoreBreakdown}) -> nil,
+    SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {RoundEvent}, scores: {[Player]: {[ScoreReason]: Integer}}) -> nil,
 }
 
+export type Equipment = {
+    Name: EquipmentName, -- Name of the equipment.
+    Description: string, -- Description of this equipment.
+    Icon: Asset,         -- Icon of this equipment.
+    Cost: Integer,       -- The number of credits that this equipment costs to buy.
+    Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
 
+    Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
+}
+
+module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
+export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName -- when keyof() becomes available consider this
+
+export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
+
+export type PartialRole = {
+    Name: string,   -- Name of the original Role.
+    Colour: Color3, -- Colour of the original Role.
+}
+
+export type SelfDefenseEntry = {
+    Against: Participant, -- A reference to the Participant who is able to freely kill this participant until the entry expires.
+    Until: Timestamp,  -- The timestamp at which this Self Defense entry expires. Always compare this, as opposed to checking the presence of an entry against the Participant, because the entry may not be removed.
+}
+
+export type RoundHighlightTrigger = {
+    Condition: "EnemyKills" | "AllyKills" | "",
+    Levels: {
+        {
+            Name: string,
+            Description: string, -- %s can be used to substitute the Participant's name, %d can be used to substitute the number they did
+            Threshold: number,
+            Priority: number, -- Higher priorities will be displayed prioritised over other types of highlights.
+        }
+    }
+}
+
+export type RoundHighlight = {
+    Name: string,
+    Description: string,
+    Participant: Participant
+}
+
+export type RoundEventType = "Round" | "Death" | "Damage" | "Search" | "Purchase" | "Equipment"
+export type RoundEvent = {
+    Time: Timestamp,          -- The time that this event occured at.
+    Text: string,             -- The user-facing text of this event.
+    Category: RoundEventType, -- The category that this event falls under.
+    Icons: {Asset},           -- A list of Icons to display, order should be preserved by implementation
+}
+
+export type UUID = "00000000-0000-0000-0000-000000000000" | string
+export type RoundPhase = "Waiting" | "Preparing" | "Playing" | "Highlights" | "Intermission"
 --[[
-    Represents a game Round, identified by a UUID or category.
-    Responsible for managing Participants, deaths, timers, etc.
-    Created by RoundHandler.CreateRound().
+Round Phases:
+    Waiting: Not enough players, waiting indefinitely
+    Preparing: Enough players, giving time for others to join
+    Playing: Round in progress
+    Highlights: Round ended but still loaded
+    Intermission: Round unloaded and voting time if applicable
 ]]
-
 export type Round = {
     ID: UUID,                -- Unique identifier of the round.
     Gamemode: Gamemode,      -- A reference to the current gamemode.
@@ -148,7 +98,9 @@ export type Round = {
     RoundPhase: RoundPhase,   -- The current round phase.
 
     Participants: {Participant}, -- A list of participants in this round.
-    EventLog: {RoundEvent},      -- A list of events that have taken place.
+
+    AddEvent: (self: Round, text: string, category: RoundEventType, icons: {Asset}) -> nil, -- Adds an event to the round.
+    EventLog: {RoundEvent},                                                    -- A list of events that have taken place.
 
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
@@ -258,6 +210,9 @@ export type Role = {
     Independent of Player.
     Created by Round:JoinRound().
 ]]
+export type FreeKillReason = "Teamkill" | string
+export type DeathType = "Firearm" | "Blunt" | "Blade" | "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
+-- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
     Player: Player?,  -- A reference to the Player object. Can be nil if the Player has disconnected.
     Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
@@ -266,7 +221,7 @@ export type Participant = {
     
     Role: Role?,                     -- A reference to their role. nil if Round hasn't started.
     Credits: number,                 -- Available credits that can be spent in Equipment Shop.
-    Score: ScoreBreakdown,           -- Dictionary of score reason = total score for this reason
+    Score: {[ScoreReason]: Integer},           -- Dictionary of score reason = total score for this reason
 
     Karma: number,                  -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     Deceased: boolean,              -- Dead or not

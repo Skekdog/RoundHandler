@@ -118,7 +118,7 @@ local function newParticipant(round, plr): Types.Participant
 
         GetAllegiance = function(self)
             if not self.Role then
-                error("Participant "..self.Name.." does not have a role")
+                error(`Participant {self.Name} does not have a role`)
             end
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
@@ -218,7 +218,7 @@ local function newRound(gamemode): Types.Round
                     return participant
                 end
             end
-            error("Could not find Participant "..name.." in Round "..self.ID)
+            error(`Could not find Participant "{name} in Round {self.ID}`)
         end,
         HasParticipant = function(self, name)
             for _, participant in self.Participants do
@@ -231,13 +231,13 @@ local function newRound(gamemode): Types.Round
         GetLimitedParticipantInfo = function(self, viewer, target)
             local viewerParticipant = self:GetParticipant(viewer.Name)
             local targetParticipant = self:GetParticipant(target.Name)
-            if not viewerParticipant then return warn(viewer.Name.." is not a Participant of Round "..self.ID..".") end
-            if not targetParticipant then return warn(target.Name.." is not a Participant of Round "..self.ID..".") end
+            if not viewerParticipant then return warn(`{viewer.Name} is not a Participant of Round {self.ID}.`) end
+            if not targetParticipant then return warn(`{target.Name} is not a Participant of Round {self.ID}.`) end
 
             local viewerRole = viewerParticipant.Role
             local targetRole = targetParticipant.Role
-            if not viewerRole then return warn(viewer.Name.." role is nil in Round "..self.ID..".") end
-            if not targetRole then return warn(target.Name.." role is nil in Round "..self.ID..".") end
+            if not viewerRole then return warn(`{viewer.Name} role is nil in Round {self.ID}.`) end
+            if not targetRole then return warn(`{target.Name} role is nil in Round {self.ID}.`) end
 
             local relation = self:GetRoleRelationship(viewerRole, targetRole)
 
@@ -262,14 +262,14 @@ local function newRound(gamemode): Types.Round
         
         JoinRound = function(self, name)
             if self:HasParticipant(name) then
-                error(name.." is already a Participant in Round "..self.ID)
+                error(`{name} is already a Participant in Round {self.ID}`)
             end
             if not self:IsRoundPreparing() then
-               error("Failed to add "..name.." to Round "..self.ID.." because the Round has already started")
+               error(`Failed to add {name} to Round {self.ID} because the Round has already started`)
             end
             local plr = Players:FindFirstChild(name) :: Instance
             if (not plr) or (not plr:IsA("Player")) then 
-                error("Attempt to add non-Player participant: "..tostring(plr))
+                error(`Attempt to add non-Player participant: {tostring(plr)}`)
             end
         
             local participant = newParticipant(self, plr)
@@ -280,7 +280,7 @@ local function newRound(gamemode): Types.Round
                 participant:LeaveRound()
             end)
         
-            local spawns = (self.Map:FindFirstChild("Spawns"..self.ID) :: Folder):GetChildren()
+            local spawns = (self.Map:FindFirstChild(`Spawns{self.ID}`) :: Folder):GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
                 local chosen = math.random(1, #spawns)
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
@@ -369,7 +369,7 @@ local function newRound(gamemode): Types.Round
             map = map:Clone()
         
             local mapFolder = Instance.new("Folder")
-            mapFolder.Name = "__Map_"..self.ID
+            mapFolder.Name = `__Map_{self.ID}`
         
             for _, v in map:GetChildren() do
                 task.wait()
@@ -433,6 +433,16 @@ local function newRound(gamemode): Types.Round
             return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
         end,
 
+        AddEvent = function(self, text, category, icons)
+            local event: Types.RoundEvent = {
+                Text = text,
+                Category = category,
+                Time = workspace:GetServerTimeNow(),
+                Icons = icons
+            }
+            table.insert(self.EventLog, event)
+        end,
+
         _roundTimerThread = nil,
         _roundTimerContinueFor = nil,
     }
@@ -452,7 +462,7 @@ function module.GetRound(identifier: Types.UUID): Types.Round
             return v
         end
     end
-    error("Could not find round with ID: "..identifier)
+    error(`Could not find round with ID: {identifier}`)
 end
 
 return module
