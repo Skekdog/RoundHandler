@@ -24,7 +24,7 @@ export type Adapter = {
 
     SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> nil,
     CheckForUpdate: (round: Round) -> boolean,
-    SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {RoundEvent}, scores: {[Player]: {[ScoreReason]: Integer}}) -> nil,
+    SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {RoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> nil,
 }
 
 export type Equipment = {
@@ -237,6 +237,7 @@ export type Participant = {
     KillList: {Participant},                -- A list of references to Participants this player has killed.
     EquipmentPurchases: {[EquipmentName]: Integer?}, -- The equipment this participant purchased, and how many times.
     
+    AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> nil,         -- Adds score to this Participant
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> nil,     -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> nil, -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,        -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.

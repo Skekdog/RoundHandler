@@ -183,7 +183,15 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
             return false
-        end
+        end,
+
+        AddScore = function(self, reason, amount)
+            if not self.Score[reason] then
+                self.Score[reason] = amount
+            else
+                self.Score[reason] += amount
+            end
+        end,
     }
 end
 
@@ -336,7 +344,11 @@ local function newRound(gamemode): Types.Round
         EndRound = function(self)
             self.RoundPhase = "Highlights"
 
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), calculateRoundHighlights(self), {}, {})
+            local scores = {}
+            for _, v in self.Participants do
+                scores[v] = v.Score
+            end
+            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), calculateRoundHighlights(self), self.EventLog, scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
