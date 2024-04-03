@@ -2,6 +2,7 @@
 local module = {}
 export type Integer = number
 export type PositiveNumber = number
+export type PositiveInteger = number
 export type Username = string
 export type EquipmentName = string
 export type Timestamp = number
@@ -63,8 +64,6 @@ export type RoundHighlightTrigger = {
         }
     }
 }
-
-
 
 export type RoundHighlight = {
     Name: string,
@@ -141,20 +140,20 @@ export type Round = {
     Must be defined manually. Roles form a significant part of Gamemodes.
 ]]
 export type Gamemode = {
-    Name: string,        -- Name of the gamemode.
-    Description: string, -- Description of the gamemode.
+    Name: string,          -- Name of the gamemode.
+    Description: string,   -- Description of the gamemode.
     Extras: {[any]: any}?, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
     GamemodeVersion: string, -- Indicates the version of this gamemode.
 
-    MinimumPlayers: Integer,     -- The gamemode will not start without at least this many players.
-    RecommendedPlayers: Integer, -- The gamemode will not appear in voting without at least this many players.
-    MaximumPlayers: Integer,     -- The gamemode will not appear in voting if there are more players than this value.
+    MinimumPlayers: PositiveInteger,     -- The gamemode will not start without at least this many players.
+    RecommendedPlayers: PositiveInteger, -- The gamemode will not appear in voting without at least this many players.
+    MaximumPlayers: PositiveInteger,     -- The gamemode will not appear in voting if there are more players than this value.
 
-    PyrrhicVictors: RoleName,                       -- Which role wins if everyone is killed simultaneously?
+    PyrrhicVictors: RoleName,            -- Which role wins if everyone is killed simultaneously?
     TimeoutVictors: (Round) -> RoleName, -- Which role wins if the round timer expires?
-    Highlights: {RoundHighlightTrigger},                   -- List of available round highlights.
+    Highlights: {RoundHighlightTrigger}, -- List of available round highlights.
 
     FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.
     SelfDefense: boolean,  -- Whether self-defense is allowed.
@@ -166,7 +165,7 @@ export type Gamemode = {
 
     Roles: {Role}, -- Defines roles for this gamemode.
 
-    Duration: (self: Gamemode, numParticipants: Integer) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
+    Duration: (self: Gamemode, numParticipants: PositiveInteger) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
     EditRoundHighlights: (({BloatwareHighlight}) -> nil)?,                      -- Called when the round ends to allow the gamemode to edit the highlights if needed. Substitutions have already been made.
@@ -178,7 +177,7 @@ export type Gamemode = {
     Must be defined in a Gamemode.
 ]]
 export type Role = {
-    Name: string,        -- Name of this role. Must not be 'Ally', 'Enemy', or 'All'.
+    Name: string,        -- Name of this role.
     Description: string, -- Description of this role.
     Colour: Color3,      -- Colour of this role. Not color.
     Extras: {[any]: any}?, -- Any extra info about the role, for use in custom functions.
@@ -237,11 +236,11 @@ export type Participant = {
     KilledInSelfDefense: boolean,   -- Whether they were killed in self defense.
     
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
-    SlayVotes: Integer,                -- The number of players who voted to Slay this Participant due to being RDM'ed by them.
+    SlayVotes: PositiveInteger,                -- The number of players who voted to Slay this Participant due to being RDM'ed by them.
 
     SelfDefenseList: {SelfDefenseEntry}, -- A list of participants who this participant can freely kill in self-defense.
     KillList: {Participant},                -- A list of references to Participants this player has killed.
-    EquipmentPurchases: {[EquipmentName]: Integer?}, -- The equipment this participant purchased, and how many times.
+    EquipmentPurchases: {[EquipmentName]: PositiveInteger?}, -- The equipment this participant purchased, and how many times.
     
     AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> nil,         -- Adds score to this Participant
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> nil,     -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.

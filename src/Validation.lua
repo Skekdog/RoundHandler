@@ -1,9 +1,10 @@
 -- Returns whether the gamemode is valid, and a list of issues with the gamemode
 local Types = require("src/Types")
+local EngineVersion = "0.0.1"
 
 local module = {}
 
-function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean): (boolean, {string})
+function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean, checkVersion: boolean): (boolean, {string})
     local issues = {}
     local i = function(issue: string)
         table.insert(issues, issue)
@@ -14,6 +15,22 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
         if str:sub(1, 2) == "__" then
             i(`{name} must not start with 2 underscores.`)
         end
+    end
+
+    if gamemode.MinimumPlayers <= 0 then
+        i("MinimumPlayers must be greater than 0.")
+    end
+    if gamemode.MaximumPlayers <= 0 then
+        i("MaximumPlayers must be greater than 0.")
+    end
+    if gamemode.RecommendedPlayers <= 0 then
+        i("RecommendedPlayers must be greater than 0.")
+    end
+    if (gamemode.RecommendedPlayers < gamemode.MinimumPlayers) or (gamemode.RecommendedPlayers > gamemode.MaximumPlayers) then
+        i("RecommendedPlayers must be between MinimumPlayers and MaximumPlayers.")
+    end
+    if gamemode.MinimumPlayers > gamemode.MaximumPlayers then
+        i("MinimumPlayers must not be greater than MaximumPlayers.")
     end
 
     -- Good enough
@@ -89,6 +106,34 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
             continue
         end
         table.insert(foundConditions, highlight.Condition)
+    end
+
+    local function doCheckVersion()
+        local version = EngineVersion
+        local major = tonumber(version:split(".")[1])
+        local minor = tonumber(version:split(".")[2])
+
+        local gmVersion = gamemode.EngineVersion
+        local gmMajor = tonumber(gmVersion:split(".")[1])
+        local gmMinor = tonumber(gmVersion:split(".")[2])
+
+        if gmMajor ~= major then
+            if gmMajor < major then
+                i(`This gamemode was designed for an older version of RoundHandler ({gmVersion} < {version}) and is very likely to not work.`)
+            else
+                i(`This gamemode was designed for a newer version of RoundHandler ({gmVersion} > {version}) and is very likely to not work.`)
+            end
+        elseif gmMinor ~= minor then
+            if gmMinor < minor then
+                i(`This gamemode was designed for an older version of RoundHandler ({gmVersion} < {version}) and may not work.`)
+            else
+                i(`This gamemode was designed for a newer version of RoundHandler ({gmVersion} > {version}) and may not work.`)
+            end
+        end
+    end
+
+    if checkVersion then
+        doCheckVersion()
     end
 
     return #issues<1, issues

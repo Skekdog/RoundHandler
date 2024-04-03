@@ -198,7 +198,7 @@ local module: {[string]: Types.Gamemode} = {
                 JumpPower = 18,
     
                 HighlightRules = {
-                    Ally = true,
+                    __Ally = true,
                 },
                 KnowsRoles = {
                     Traitor = true,
@@ -425,6 +425,9 @@ local module: {[string]: Types.Gamemode} = {
     
                 Allegiance = "Bystander",
                 Allies = {"Bystander", "Sheriff"},
+
+                VictoryText = "The loveable bystanders have survived the day!",
+                VictoryMusic = {},
     
                 StartingCredits = 0,
                 StartingEquipment = {},
@@ -485,6 +488,9 @@ local module: {[string]: Types.Gamemode} = {
     
                 Allegiance = "Murderer",
                 Allies = {"Murderer"},
+
+                VictoryText = "The evil murderer has won the round...",
+                VictoryMusic = {},
     
                 StartingCredits = 0,
                 StartingEquipment = {},
