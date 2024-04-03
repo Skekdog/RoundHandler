@@ -79,7 +79,7 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
 
     for _, role in gamemode.Roles do
         for _, ally in role.Allies do
-            if not table.find(roleNames, ally) then i(`Role {role.Name} has an undefined Ally: {ally}`) end
+            if not table.find(roleNames, ally) then i(`Role {role.Name}.Ally is undefined: {ally}`) end
         end
         if not table.find(roleNames, role.Allegiance) then
             i(`Role {role.Name} has an undefined Allegiance: {role.Allegiance}`)
@@ -92,6 +92,10 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
             if not role.VictoryText then
                 i(`Role {role.Name} is an allegiance and therefore must have VictoryText.`)
             end
+        end
+
+        if role.Health <= 0 then
+            i(`Role {role.Name}.Health must be greater than 0.`)
         end
 
         validateRoleRelationship(role.KnowsRoles, `{role.Name}.KnowsRoles`)
