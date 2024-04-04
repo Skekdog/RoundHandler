@@ -1,4 +1,5 @@
 # This is a Work In Progress!
+And as of yet, not actually tested
 
 ## Round Handler
 A Roblox round engine. Initially developed for [Those You Trust](https://www.roblox.com/games/2848381272). Provides a simple way to create role-based gamemodes, with support for advanced functions.
