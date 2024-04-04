@@ -53,26 +53,9 @@ export type SelfDefenseEntry = {
     Until: Timestamp,  -- The timestamp at which this Self Defense entry expires. Always compare this, as opposed to checking the presence of an entry against the Participant, because the entry may not be removed.
 }
 
-export type RoundHighlightTrigger = {
-    Condition: "EnemyKills" | "AllyKills" | "",
-    Levels: {
-        {
-            Name: string,
-            Description: string, -- %s can be used to substitute the Participant's name, %d can be used to substitute the number they did
-            Threshold: number,
-            Priority: number, -- Higher priorities will be displayed prioritised over other types of highlights.
-        }
-    }
-}
-
 export type RoundHighlight = {
     Name: string,
     Description: string
-}
-
-export type BloatwareHighlight = RoundHighlight & {
-    Participant: Participant,
-    Amount: number
 }
 
 export type RoundEventType = "Round" | "Death" | "Damage" | "Search" | "Purchase" | "Equipment"
@@ -98,6 +81,7 @@ export type Round = {
     Gamemode: Gamemode,      -- A reference to the current gamemode.
     Map: Folder,             -- A reference to the loaded map folder.
 
+    Winners: Role?,
     Paused: boolean,          -- Whether the round is paused or not.
     TimeMilestone: Timestamp, -- The timestamp of the next round phase. Used by the client for a round timer.
     RoundPhase: RoundPhase,   -- The current round phase.
@@ -123,6 +107,7 @@ export type Round = {
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing
 
+    GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant},                        -- Returns a list of Participants with the specified role.
     GetRoleInfo: (self: Round, name: RoleName) -> Role,                                             -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
@@ -153,7 +138,6 @@ export type Gamemode = {
 
     PyrrhicVictors: RoleName,            -- Which role wins if everyone is killed simultaneously?
     TimeoutVictors: (Round) -> RoleName, -- Which role wins if the round timer expires?
-    Highlights: {RoundHighlightTrigger}, -- List of available round highlights.
 
     FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.
     SelfDefense: boolean,  -- Whether self-defense is allowed.
@@ -168,7 +152,6 @@ export type Gamemode = {
     Duration: (self: Gamemode, numParticipants: PositiveInteger) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> nil,                  -- Called when a Participant in this gamemode dies.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> nil,      -- Function that assigns all Participants roles.
-    EditRoundHighlights: (({BloatwareHighlight}) -> nil)?,                      -- Called when the round ends to allow the gamemode to edit the highlights if needed. Substitutions have already been made.
 }
 
 --[[

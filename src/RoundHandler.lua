@@ -11,8 +11,6 @@ local API = require("src/API")
 
 --- The main module. New rounds are created from here via module.CreateRound().
 local module = {}
-local roundHandler: Types.Round = {} :: Types.Round
-
 module.Rounds = {} :: {[Types.UUID]: Types.Round}
 
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
@@ -25,63 +23,6 @@ local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weap
     self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
     
     self.Round.Gamemode:OnDeath(self)
-end
-
-local function calculateRoundHighlights(self: Types.Round): {Types.BloatwareHighlight}
-    local highlights: {Types.BloatwareHighlight & {Priority: number?}} = {}
-
-    for _, highlight in self.Gamemode.Highlights do
-        local number = 0
-        local highlightTarget: Types.Participant
-        if highlight.Condition == "AllyKills" or highlight.Condition == "EnemyKills" then
-            local relationTarget = if highlight.Condition == "AllyKills" then "__Ally" else "__Enemy"
-            local highestKills = 0
-            for _, participant in self.Participants do
-                local thisParticipantKills = 0
-                for _, victim in participant.KillList do
-                    if not victim.Role or not participant.Role then
-                        continue
-                    end
-                    if (self:GetRoleRelationship(victim.Role, participant.Role) == relationTarget) then
-                        thisParticipantKills += 1
-                    end
-                end
-
-                if thisParticipantKills > highestKills then
-                    highestKills = thisParticipantKills
-                    highlightTarget = participant
-                end
-            end
-            number = highestKills
-        end
-
-        local targetLevel
-        for i, level in highlight.Levels do
-            if (level.Threshold > number) and (i > 1) then
-                targetLevel = highlight.Levels[i-1]
-            end
-        end
-
-        if targetLevel then
-            table.insert(highlights, {
-                Name = targetLevel.Name,
-                Description = targetLevel.Description:gsub("{__USERNAME", highlightTarget.Name):gsub("{__AMOUNT}", tostring(number)),
-                Priority = targetLevel.Priority,
-                Participant = highlightTarget,
-                Amount = targetLevel.Threshold
-            })
-        end
-    end
-
-    table.sort(highlights, function(a, b)
-        return a.Priority < b.Priority
-    end)
-
-    for _, v in highlights do
-        v.Priority = nil
-    end
-
-    return highlights
 end
 
 local function newParticipant(round, plr): Types.Participant
@@ -268,6 +209,16 @@ local function newRound(gamemode): Types.Round
             end
             return
         end,
+        GetParticipantsWithRole  = function(self, roleName)
+            local role = self:GetRoleInfo(roleName)
+            local participants = {}
+            for _, v in self.Participants do
+                if v.Role == role then
+                    table.insert(participants, v)
+                end
+            end
+            return participants
+        end,
         
         JoinRound = function(self, name)
             if self:HasParticipant(name) then
@@ -342,14 +293,15 @@ local function newRound(gamemode): Types.Round
             end
             return
         end,
-        EndRound = function(self)
+        EndRound = function(self, victors)
             self.RoundPhase = "Highlights"
+            self.Winners = victors
 
             local scores = {}
             for _, v in self.Participants do
                 scores[v] = v.Score
             end
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), calculateRoundHighlights(self), self.EventLog, scores)
+            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), {}, self.EventLog, scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -461,9 +413,9 @@ local function newRound(gamemode): Types.Round
     }
 end
 
-function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round -- Creates a new Round and returns it.
+function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
-    roundHandler:LoadMap(map)
+    self:LoadMap(map)
     
     module.Rounds[self.ID] = self
     return self

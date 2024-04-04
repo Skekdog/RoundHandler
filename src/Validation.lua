@@ -103,15 +103,6 @@ function module.ValidateGamemode(gamemode: Types.Gamemode, runFunctions: boolean
         validateRoleRelationship(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
     end
 
-    local foundConditions = {}
-    for _, highlight in gamemode.Highlights do
-        if table.find(foundConditions, highlight.Condition) then
-            i(`{highlight.Condition} Highlight is defined in multiple places!`)
-            continue
-        end
-        table.insert(foundConditions, highlight.Condition)
-    end
-
     local function doCheckVersion()
         local version = EngineVersion
         local major = tonumber(version:split(".")[1])
