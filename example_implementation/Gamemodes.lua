@@ -59,8 +59,7 @@ local module: {[string]: Types.Gamemode} = {
         MinimumPlayers = 1,
         RecommendedPlayers = 4,
         MaximumPlayers = 32,
-    
-        PyrrhicVictors = "Traitor",
+        
         TimeoutVictors = function()
             return "Innocent"
         end,

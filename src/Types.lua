@@ -137,7 +137,6 @@ export type Gamemode = {
     RecommendedPlayers: PositiveInteger, -- The gamemode will not appear in voting without at least this many players.
     MaximumPlayers: PositiveInteger,     -- The gamemode will not appear in voting if there are more players than this value.
 
-    PyrrhicVictors: RoleName,            -- Which role wins if everyone is killed simultaneously?
     TimeoutVictors: (Round) -> RoleName, -- Which role wins if the round timer expires?
 
     FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.

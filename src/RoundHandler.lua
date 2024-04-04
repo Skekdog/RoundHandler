@@ -123,6 +123,9 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         AddSelfDefense = function(self, against, duration)
+            if not self.Round.Gamemode.SelfDefense then -- no point if it's not enabled
+                return
+            end
             table.insert(self.SelfDefenseList, {
                 Against = against,
                 Until = workspace:GetServerTimeNow() + duration
@@ -130,6 +133,9 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         HasSelfDefenseAgainst = function(self, against)
+            if not self.Round.Gamemode.SelfDefense then -- if self defense is not enabled we don't care
+                return false
+            end
             for _, v in self.SelfDefenseList do
                 if (v.Against == against) and (v.Until < workspace:GetServerTimeNow()) then
                     return true
