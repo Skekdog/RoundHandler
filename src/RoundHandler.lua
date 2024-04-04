@@ -95,6 +95,17 @@ local function newParticipant(round, plr): Types.Participant
         GiveEquipment = Adapters.GiveEquipment,
         RemoveEquipment = Adapters.RemoveEquipment,
 
+        PurchaseEquipment = function(self, equipment)
+            local purchases = self.EquipmentPurchases
+            if purchases[equipment.Name] >= equipment.MaxStock then
+                return "NotInStock"
+            end
+            if self.Credits < equipment.Cost then
+                return "NotEnoughCredits"
+            end
+            return self:GiveEquipment(equipment)
+        end,
+
         AddKill = function(self, victim, ignoreKarma)
             local round = self.Round
             if not round:IsRoundInProgress() then

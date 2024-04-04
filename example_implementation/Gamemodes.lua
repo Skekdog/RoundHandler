@@ -77,6 +77,7 @@ local module: {[string]: Types.Gamemode} = {
                 Description = "Become a Gordonite",
                 Cost = 0,
                 Icon = "rbxassetid://",
+                MaxStock = 1,
     
                 Item = items:FindFirstChild("Crowbar") :: Tool
             },
@@ -85,6 +86,7 @@ local module: {[string]: Types.Gamemode} = {
                 Description = "Boom",
                 Cost = 1,
                 Icon = "rbxassetid://",
+                MaxStock = 1,
     
                 Item = items:FindFirstChild("Grenade") :: Tool
             },
@@ -93,11 +95,20 @@ local module: {[string]: Types.Gamemode} = {
                 Description = "Beep... beep... beep",
                 Cost = 1,
                 Icon = "rbxassetid://",
+                MaxStock = 1,
     
                 Item = function(participant, item)
                     print(`{participant.Name} got radar`)
-                end
+                end,
             },
+            {
+                Name = "C4",
+                Description = "Kaboom",
+                Cost = 1,
+                Icon = "rbxassetid://",
+                MaxStock = 2,
+                Item = items:FindFirstChild("C4") :: Tool
+            }
         },
     
         Roles = {
@@ -289,14 +300,16 @@ local module: {[string]: Types.Gamemode} = {
                 Description = "Stabby stab stab.",
                 Cost = 0,
                 Icon = "rbxassetid://",
-                Item = ReplicatedStorage:FindFirstChild("Knife") :: Tool
+                Item = ReplicatedStorage:FindFirstChild("Knife") :: Tool,
+                MaxStock = 1,
             },
             {
                 Name = "Gun",
                 Description = "Shooty shoot shoot.",
                 Cost = 0,
                 Icon = "rbxassetid://",
-                Item = ReplicatedStorage:FindFirstChild("Gun") :: Tool
+                Item = ReplicatedStorage:FindFirstChild("Gun") :: Tool,
+                MaxStock = 1,
             },
         },
     

@@ -12,16 +12,24 @@ local module: Types.Adapter = {
         PREPARING_TIME = 10, -- Time to spend after a round is created where players can join the round
     },
 
-    GiveEquipment = function(plr, item)
+    GiveEquipment = function(participant, item)
         -- Gives an item to a player. If the item is a function, calls it. The standard implementation uses the Backpack.
+        -- Returns a string if there was an issue giving the item.
         if type(item.Item) == "function" then
-            return item.Item(plr, item.Name)
-        end
-    
-        if not plr.Player then 
+            item.Item(participant, item.Name)
             return
         end
-        item.Item:Clone().Parent = plr.Player:FindFirstChild("Backpack")
+    
+        local plr = participant.Player
+        if not plr then 
+            return "PlayerNotFound"
+        end
+        
+        local backpack = plr:FindFirstChildOfClass("Backpack")
+        if backpack and backpack:FindFirstChild(item.Item.Name) then
+            return "EquipmentAlreadyInInventory"
+        end
+        item.Item:Clone().Parent = backpack
         return
     end,
 

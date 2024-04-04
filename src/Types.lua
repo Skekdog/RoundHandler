@@ -20,7 +20,7 @@ export type Adapter = {
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> nil,
 
-    GiveEquipment: (plr: Participant, item: Equipment) -> nil,
+    GiveEquipment: (plr: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (plr: Participant, item: Equipment) -> nil,
 
     SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> nil,
@@ -33,6 +33,7 @@ export type Equipment = {
     Description: string, -- Description of this equipment.
     Icon: Asset,         -- Icon of this equipment.
     Cost: Integer,       -- The number of credits that this equipment costs to buy.
+    MaxStock: Integer,   -- The maximum times a single Participant can purchase this equipment, per round
     Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
 
     Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> nil, -- Either a tool added to inventory, or a function that does something.
@@ -200,6 +201,8 @@ export type Role = {
 ]]
 export type FreeKillReason = "Teamkill" | string
 export type DeathType = "Firearm" | "Blunt" | "Blade" | "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
+export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEquipment
+export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
     Player: Player?,  -- A reference to the Player object. Can be nil if the Player has disconnected.
@@ -234,7 +237,8 @@ export type Participant = {
     GetAllegiance: (self: Participant) -> Role,                     -- Returns this participant's Role allegiance.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> nil, -- Assigns Role to this Participant. By default does not override inventory or credits.
     
-    GiveEquipment: (self: Participant, equipment: Equipment) -> nil,   -- Adds this equipment to the participant's inventory.
+    PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives equipment. If GiveEquipment rejects, purchase also rejects.
+    GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?, -- Adds this equipment to the participant's inventory.
     RemoveEquipment: (self: Participant, equipment: Equipment) -> nil, -- Removes this equipment from the Participant's inventory.
 }
 export type ConnectedParticipant = Participant & {Player: Player} -- Represents a connected Participant, i.e Player is not nil
