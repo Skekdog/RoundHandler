@@ -251,7 +251,7 @@ local function newRound(gamemode): Types.Round
                 participant:LeaveRound()
             end)
         
-            local spawns = (self.Map:FindFirstChild(`Spawns{self.ID}`) :: Folder):GetChildren()
+            local spawns = (self.Map:FindFirstChild("Spawns") :: Folder):GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
                 local chosen = math.random(1, #spawns)
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
