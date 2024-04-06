@@ -185,7 +185,7 @@ local function newRound(gamemode): Types.Round
                     return participant
                 end
             end
-            error(`Could not find Participant "{name} in Round {self.ID}`)
+            error(`Could not find Participant {name} in Round {self.ID}`)
         end,
         HasParticipant = function(self, name)
             for _, participant in self.Participants do
@@ -283,6 +283,7 @@ local function newRound(gamemode): Types.Round
             return participant
         end,
         StartRound = function(self)
+            self:LogEvent("Round", "Start")
             local gm = self.Gamemode
             local participants = self.Participants
             API.ShuffleInPlace(participants)
@@ -297,6 +298,7 @@ local function newRound(gamemode): Types.Round
             end
         
             self.Paused = not self.Paused
+            self:LogEvent("Round", if self.Paused then "Pause" else "Resume")
             
             if self.Paused then
                 assert(self._roundTimerThread)
@@ -306,11 +308,12 @@ local function newRound(gamemode): Types.Round
             else
                 assert(self._roundTimerContinueFor)
                 self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
-                self._roundTimerThread = task.delay(self._roundTimerContinueFor, self.EndRound, self, self:GetRoleInfo(self.Gamemode.TimeoutVictors(self)))
+                self._roundTimerThread = task.delay(self._roundTimerContinueFor, self.EndRound, self, self.Gamemode:TimeoutVictors(self))
             end
             return
         end,
         EndRound = function(self, victors)
+            self:LogEvent("Round", "End")
             self.RoundPhase = "Highlights"
             self.Winners = victors
 
@@ -318,7 +321,7 @@ local function newRound(gamemode): Types.Round
             for _, v in self.Participants do
                 scores[v] = v.Score
             end
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), {}, self.EventLog, scores)
+            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), self.Gamemode:CalculateRoundHighlights(self), {}, scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -348,6 +351,7 @@ local function newRound(gamemode): Types.Round
                 error(`Map {map.Name} does not have a Map folder!`)
             end
         
+            self:LogEvent("Round", "NewMapLoaded")
             map = map:Clone()
         
             local mapFolder = Instance.new("Folder")
@@ -415,14 +419,100 @@ local function newRound(gamemode): Types.Round
             return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
         end,
 
-        AddEvent = function(self, text, category, icons)
+        LogEvent = function(self, type, data)
             local event: Types.RoundEvent = {
-                Text = text,
-                Category = category,
-                Time = workspace:GetServerTimeNow(),
-                Icons = icons
+                Timestamp = workspace:GetServerTimeNow(),
+                Data = data,
             }
-            table.insert(self.EventLog, event)
+            if not self.EventLog[type] then
+                self.EventLog[type] = {event}
+                return
+            end
+            table.insert(self.EventLog[type], event)
+        end,
+
+        CalculateUserFacingEvents = function(self)
+            local userFacingLog: {Types.UserFacingRoundEvent} = {}
+            for i: Types.RoundEventType, v in self.EventLog do
+                if i == "Death" then
+                    for _, event in v do
+                        local data: Types.RoundEvent_Death = event.Data :: any
+                        table.insert(userFacingLog, {
+                            Text = `{data.Victim} was killed by {data.Attacker} using a {data.Weapon}`,
+                            Icons = {},
+                            Category = "Death",
+                            Timestamp = event.Timestamp,
+                        })
+                    end
+                elseif i == "MassDeath" then
+                    for _, event in v do
+                        local data: Types.RoundEvent_MassDeath = event.Data :: any
+                        for _, participant in data.Victims do
+                            table.insert(userFacingLog, {
+                                Text = `{participant.Name} was killed by {data.Attacker} using a {data.Weapon}`,
+                                Icons = {},
+                                Category = "Death",
+                                Timestamp = event.Timestamp
+                            })
+                        end
+                    end
+                elseif i == "EquipmentGiven" then
+                    for _, event in v do
+                        local data: Types.RoundEvent_Equipment = event.Data :: any
+                        table.insert(userFacingLog, {
+                            Text = `{data.Target} received a {data.Equipment.Name}`,
+                            Icons = {},
+                            Category = "Equipment",
+                            Timestamp = event.Timestamp,
+                        })
+                    end
+                elseif i == "EquipmentPurchased" then
+                    for _, event in v do
+                        local data: Types.RoundEvent_Equipment = event.Data :: any
+                        table.insert(userFacingLog, {
+                            Text = `{data.Target} purchased a {data.Equipment.Name}`,
+                            Icons = {},
+                            Category = "Equipment",
+                            Timestamp = event.Timestamp,
+                        })
+                    end
+                elseif i == "EquipmentRemoved" then
+                    for _, event in v do
+                        local data: Types.RoundEvent_Equipment = event.Data :: any
+                        table.insert(userFacingLog, {
+                            Text = `{data.Target} lost a {data.Equipment.Name}`,
+                            Icons = {},
+                            Category = "Equipment",
+                            Timestamp = event.Timestamp,
+                        })
+                    end
+                elseif i == "Round" then
+                    for _, event in v do
+                        local phase: Types.RoundPhaseEventType = event.Data :: any
+                        local text: string = ""
+                        if phase == "Start" then
+                            text = "The round begins."
+                        elseif phase == "Pause" then
+                            text = "The round is paused."
+                        elseif phase == "Resume" then
+                            text = "The round is resumed."
+                        elseif phase == "NewMapLoaded" then
+                            text = "A new map is loaded."
+                        elseif phase == "End" then
+                            assert(self.Winners and self.Winners.VictoryText)
+                            text = self.Winners.VictoryText
+                        end
+                        table.insert(userFacingLog, {
+                            Text = text,
+                            Icons = {},
+                            Category = "Round",
+                            Timestamp = event.Timestamp,
+                        })
+                    end
+                end
+            end
+
+            return userFacingLog
         end,
 
         _roundTimerThread = nil,
