@@ -1,4 +1,3 @@
---!strict
 -- Not a Gamemode, but contains some useful functions that are used by multiple Gamemodes.
 -- Not a part of the standard implementation, can be removed to your tastes.
 

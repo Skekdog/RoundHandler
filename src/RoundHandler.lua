@@ -1,4 +1,3 @@
---!strict
 -- The main RoundHandler. Used to create and interact with rounds.
 
 local TeleportService = game:GetService("TeleportService")

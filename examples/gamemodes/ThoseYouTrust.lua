@@ -1,8 +1,4 @@
---!strict
-
--- The Murder gamemode. A secret murderer tries to kill every bystander, one of whom has a secret weapon.
--- Showcases effective usage of OnDeath to drop a weapon where the Sheriff dies.
--- Shows usage of the EventLog to determine good round highlights.
+-- Based off of GMod TTT.
 
 local Types = require("src/Types")
 local common = require("examples/gamemodes/Common")

@@ -1,4 +1,3 @@
---!strict
 local module = {}
 export type Integer = number
 export type PositiveNumber = number

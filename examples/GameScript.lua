@@ -1,8 +1,6 @@
---!strict
---[[
-    A simple implementation of the round system.
-    All players are added to a single round.
-]]
+-- A simple implementation of the round system.
+-- All players are added to a single round.
+
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 
@@ -16,7 +14,9 @@ while true do
 	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: Folder, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
 
 	local function playerAdded(plr: Player)
-		round:JoinRound(plr.Name)
+		if not round:IsRoundInProgress() then
+			round:JoinRound(plr.Name)
+		end
 	end
 
 	local joinCon = Players.PlayerAdded:Connect(playerAdded)

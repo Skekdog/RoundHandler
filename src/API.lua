@@ -1,7 +1,4 @@
---!strict
---[[
-    Includes useful functions for common tasks in the library.
-]]
+-- Includes useful functions for common tasks in the library.
 
 local module = {}
 

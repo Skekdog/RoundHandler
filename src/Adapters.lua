@@ -1,5 +1,3 @@
---!strict
-
 -- Contains various modifiable functions to fit with a particular implementation of RoundHandler
 -- That was a lot of words and it doesn't really mean anything :)
 
