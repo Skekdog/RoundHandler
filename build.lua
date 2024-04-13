@@ -24,6 +24,8 @@ local function makeFolder(path: string, parent: Folder?)
         if not buildExample then
             -- There's no way to know where RoundHandler will be stored so we shouldn't replace anything in examples
             script.Source = fs.readFile(name):gsub('require%("src/(.-)"%)', 'require(script.Parent.%1)')
+        else
+            script.Source = fs.readFile(name)
         end
 
         local splitName = name:split("/")
