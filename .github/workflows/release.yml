@@ -22,7 +22,7 @@ jobs:
         ./aftman self-install | bash
     
     - name: Install Lune
-      run: aftman add lune-org/lune
+      run: ~/.aftman/bin/aftman add lune-org/lune
     
     - name: Build project
       run: |
