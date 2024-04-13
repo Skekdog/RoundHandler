@@ -12,6 +12,7 @@ local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() ::
 
 while true do
 	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: Folder, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
+	ServerStorage:SetAttribute("RoundID", round.ID)
 
 	local function playerAdded(plr: Player)
 		if not round:IsRoundInProgress() then

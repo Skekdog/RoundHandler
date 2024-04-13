@@ -10,7 +10,7 @@ function module.NamedInstance(className: string, name: string, parent: Instance)
 end
 
 function module.ShuffleInPlace(t)
-    math.randomseed(workspace:GetServerTimeNow())
+    math.randomseed(os.clock())
     for i = #t, 2, -1 do
         local j = math.random(i)
         t[i], t[j] = t[j], t[i]

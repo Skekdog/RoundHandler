@@ -17,10 +17,30 @@ local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of th
 
 local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weapon: Types.EquipmentName?)
     -- create ragdoll and set properties
+    local round = self.Round
+
     self.Deceased = true
-    self.KilledBy = if killedBy then killedBy else self.KilledBy
+    self.KilledBy = if killedBy then killedBy else self.KilledBy or "Suicide"
     self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
     
+    local killer = self.KilledByParticipant
+
+    local isCorrectKill, isSelfDefense = false, false
+    if killer then
+        isCorrectKill = round:GetRoleRelationship(self:GetRole(), killer:GetRole()) == "__Ally"
+        isSelfDefense = killer:HasSelfDefenseAgainst(self)
+    end
+
+    local data: Types.RoundEvent_Death = {
+        CorrectKill = isCorrectKill,
+        FreeKill = #self.FreeKillReasons > 0,
+        SelfDefense = isSelfDefense,
+        Victim = self,
+        Weapon = self.KilledBy,
+        Attacker = killer,
+    }
+
+    self.Round:LogEvent("Death", data)
     self.Round.Gamemode:OnDeath(self)
 end
 
@@ -38,6 +58,7 @@ local function newParticipant(round, plr): Types.Participant
         Deceased = false,
         SearchedBy = {},
         KilledBy = "Suicide",
+        KilledByParticipant = nil,
         KilledByWeapon = nil,
         KilledInSelfDefense = false,
 
@@ -54,17 +75,27 @@ local function newParticipant(round, plr): Types.Participant
         AssignRole = function(self, role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
             self.Role = role
             self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
+            for _, v in role.StartingEquipment do
+                Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
+            end
+            Adapters.SendMessage({self :: any}, "You are now a "..role.Name, "info", "bodyFound") -- todo: role alerts should be their own adapter
             role:OnRoleAssigned(self)
         end,
 
+        GetRole = function(self)
+            if not self.Role then
+                error(`Participant {self.Name} does not have a Role!`)
+            end
+            return self.Role
+        end,
         GetAllegiance = function(self)
             if not self.Role then
-                error(`Participant {self.Name} does not have a role`)
+                error(`Participant {self.Name} does not have a Role!`)
             end
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
 
-        LeaveRound = function(self)
+        LeaveRound = function(self, removeOnly)
             local plr = self.Player
 
             local index = table.find(self.Round.Participants, self)
@@ -88,7 +119,9 @@ local function newParticipant(round, plr): Types.Participant
                 Adapters.SendMessage(self.Round:GetConnectedParticipants(), (`{self.Name} has disconnected. They were a {self.Role.Name}.`), "info", "disconnect")
             end
         
-            onDeath(self, "Suicide")
+            if not removeOnly then
+                onDeath(self, "Suicide")
+            end
         end,
 
         GiveEquipment = Adapters.GiveEquipment,
@@ -111,9 +144,7 @@ local function newParticipant(round, plr): Types.Participant
                 return
             end
             if not ignoreKarma then
-                assert(victim.Role and self.Role)
-
-                local isAlly = round:GetRoleRelationship(victim.Role, self.Role) == "__Ally"
+                local isAlly = round:GetRoleRelationship(victim:GetRole(), self:GetRole()) == "__Ally"
                 if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
                     table.insert(self.FreeKillReasons, "Teamkill")
                 end
@@ -249,11 +280,12 @@ local function newRound(gamemode): Types.Round
             end
         
             local participant = newParticipant(self, plr)
+            participant.Credits = self.Gamemode.StartingCredits
         
             table.insert(self.Participants, participant)
         
             plr.Destroying:Connect(function()
-                participant:LeaveRound()
+                participant:LeaveRound(false)
             end)
         
             local spawns = (self.Map:FindFirstChild("Spawns") :: Folder):GetChildren()
@@ -264,7 +296,7 @@ local function newRound(gamemode): Types.Round
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
-                        participant:LeaveRound()
+                        participant:LeaveRound(true)
                         self:JoinRound(name)
                         return
                     end
@@ -274,14 +306,29 @@ local function newRound(gamemode): Types.Round
                 end)
             end)
             plr:LoadCharacter()
+
+            for _, v in self.Gamemode.StartingEquipment do
+                local index = 0
+                for i, a in self.Gamemode.AvailableEquipment do
+                    if a.Name == v then
+                        index = i
+                        break
+                    end
+                end
+                Adapters.GiveEquipment(participant, self.Gamemode.AvailableEquipment[index])
+            end
         
-            if #self.Participants >= self.Gamemode.MinimumPlayers then
+            if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
             end
         
             return participant
         end,
         StartRound = function(self)
+            if self:IsRoundInProgress() then
+                error("Attempt to start round whilst it is already in progress!")
+            end
+            self.RoundPhase = "Playing"
             self:LogEvent("Round", "Start")
             local gm = self.Gamemode
             local participants = self.Participants
@@ -320,7 +367,7 @@ local function newRound(gamemode): Types.Round
             for _, v in self.Participants do
                 scores[v] = v.Score
             end
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), self.Gamemode:CalculateRoundHighlights(self), {}, scores)
+            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -346,8 +393,11 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            if map:FindFirstChild("Map") then
+            if not map:FindFirstChild("Map") then
                 error(`Map {map.Name} does not have a Map folder!`)
+            end
+            if not map:FindFirstChild("Spawns") then
+                error(`Map {map.Name} does not have a Spawns folder!`)
             end
         
             self:LogEvent("Round", "NewMapLoaded")
@@ -399,6 +449,14 @@ local function newRound(gamemode): Types.Round
             return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
         end,
 
+        GetEquipment = function(self, name)
+            for _, v in self.Gamemode.AvailableEquipment do
+                if v.Name == name then
+                    return v
+                end
+            end
+            error(`Equipment {name} not found!`)
+        end,
         GetRoleInfo = function(self, roleName)
             for _, v in self.Gamemode.Roles do
                 if v.Name == roleName then
@@ -432,12 +490,49 @@ local function newRound(gamemode): Types.Round
 
         CalculateUserFacingEvents = function(self)
             local userFacingLog: {Types.UserFacingRoundEvent} = {}
+
+            local function getDeathEvent(data: {Attacker: Types.Participant?, Weapon: string | Types.Equipment, Victim: Types.Participant})
+                local attacker = data.Attacker
+                local weapon = data.Weapon
+                local text = data.Victim.Name
+                if weapon == "Fall" then
+                    text ..= " was doomed to fall"
+                    if attacker then
+                        text ..= ` at the hands of {attacker.Name}`
+                    end
+                elseif weapon == "Drown" then
+                    text ..= " was doomed to fall"
+                    if attacker then
+                        text ..= ` at the hands of {attacker.Name}`
+                    end
+                elseif weapon == "Suicide" then
+                    text ..= " couldn't take it anymore and killed themselves"
+                elseif weapon == "Crush" then
+                    text ..= " was crushed"
+                    if attacker then
+                        text ..= ` by {attacker.Name}`
+                    end
+                elseif weapon == "Mutation" then
+                    text ..= "'s DNA was mutated"
+                    if attacker then
+                        text ..= ` by {attacker.Name}`
+                    end
+                elseif type(weapon) == "table" then
+                    text ..= ` died to a {weapon.Name}`
+                    if attacker then
+                        text ..= ` used by {attacker.Name}`
+                    end
+                end
+                text ..= "."
+                return text
+            end
+
             for i: Types.RoundEventType, v in self.EventLog do
                 if i == "Death" then
                     for _, event in v do
                         local data: Types.RoundEvent_Death = event.Data :: any
                         table.insert(userFacingLog, {
-                            Text = `{data.Victim} was killed by {data.Attacker} using a {data.Weapon}`,
+                            Text = getDeathEvent(data),
                             Icons = {},
                             Category = "Death",
                             Timestamp = event.Timestamp,
@@ -448,7 +543,7 @@ local function newRound(gamemode): Types.Round
                         local data: Types.RoundEvent_MassDeath = event.Data :: any
                         for _, participant in data.Victims do
                             table.insert(userFacingLog, {
-                                Text = `{participant.Name} was killed by {data.Attacker} using a {data.Weapon}`,
+                                Text = getDeathEvent({Attacker = data.Attacker, Victim = participant, Weapon = data.Weapon}),
                                 Icons = {},
                                 Category = "Death",
                                 Timestamp = event.Timestamp

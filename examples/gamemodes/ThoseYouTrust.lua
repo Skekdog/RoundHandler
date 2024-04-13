@@ -104,12 +104,10 @@ local module: Types.Gamemode = {
         local mostAllyKills: {any} = {"", 0} -- username, amount
         local mostEnemyKills: {any} = {"", 0} -- username, amount
         for _, participant in round.Participants do
-            assert(participant.Role)
             local allyKills = 0
             local enemyKills = 0
             for _, kill in participant.KillList do
-                assert(kill.Role)
-                if (round:GetRoleRelationship(participant.Role, kill.Role) == "__Ally") then
+                if (round:GetRoleRelationship(participant:GetRole(), kill:GetRole()) == "__Ally") then
                     if (not kill.KilledInSelfDefense) then
                         allyKills += 1
                     end

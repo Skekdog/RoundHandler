@@ -40,7 +40,7 @@ local module: Types.Gamemode = {
 
         if murdererDeath and murdererDeath.Attacker then
             local title, description = "", ""
-            if murdererDeath.Attacker.Role and murdererDeath.Attacker.Role.Name == "Innocent" then
+            if murdererDeath.Attacker:GetRole().Name == "Innocent" then
                 title = "Now you're a hero"
                 description = `{murdererDeath.Attacker.Name} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
             else
@@ -183,7 +183,7 @@ local module: Types.Gamemode = {
             VictoryMusic = {},
 
             StartingCredits = 0,
-            StartingEquipment = {},
+            StartingEquipment = {"Knife"},
 
             AnnounceDisconnect = true,
             CanStealCredits = false,
@@ -226,54 +226,52 @@ local module: Types.Gamemode = {
     OnDeath = function(self, victim)
         local round = victim.Round
 
-        local role = victim.Role
-        if role then
-            if role.Name == "Bystander" then
-                local assailant
-                for _, v in round.Participants do
-                    for _, kill in v.KillList do
-                        if kill.Name == victim.Name then
-                            assailant = v
-                            break
-                        end
-                        if assailant then
-                            break
-                        end
+        local role = victim:GetRole()
+        if role.Name == "Bystander" then
+            local assailant
+            for _, v in round.Participants do
+                for _, kill in v.KillList do
+                    if kill.Name == victim.Name then
+                        assailant = v
+                        break
+                    end
+                    if assailant then
+                        break
                     end
                 end
+            end
 
-                if assailant and assailant.Role and (assailant.Role.Name == "Sheriff") and assailant.Character then
-                    local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        hum.Health = 0
+            if assailant and (assailant:GetRole().Name == "Sheriff") and assailant.Character then
+                local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.Health = 0
+                end
+            end
+            return
+        elseif role.Name == "Sheriff" then
+            local char = victim.Character
+            if char and char:IsDescendantOf(workspace) then
+                local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
+                local handle = gun:FindFirstChild("Handle") :: Part
+                gun:PivotTo(char:GetPivot())
+                
+                local particles = Instance.new("Sparkles")
+                particles.Parent = handle
+
+                handle.Touched:Connect(function(part)
+                    local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
+                    if not plr then
+                        return
                     end
-                end
-                return
-            elseif role.Name == "Sheriff" then
-                local char = victim.Character
-                if char and char:IsDescendantOf(workspace) then
-                    local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
-                    local handle = gun:FindFirstChild("Handle") :: Part
-                    gun:PivotTo(char:GetPivot())
-                    
-                    local particles = Instance.new("Sparkles")
-                    particles.Parent = handle
 
-                    handle.Touched:Connect(function(part)
-                        local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
-                        if not plr then
-                            return
-                        end
+                    local participant = round:GetParticipant(plr.Name)
+                    if participant:GetAllegiance().Name ~= "Bystander" then
+                        return
+                    end
 
-                        local participant = round:GetParticipant(plr.Name)
-                        if participant:GetAllegiance().Name ~= "Bystander" then
-                            return
-                        end
-
-                        participant:GiveEquipment(self.AvailableEquipment[2])
-                        gun:Destroy()
-                    end)
-                end
+                    participant:GiveEquipment(self.AvailableEquipment[2])
+                    gun:Destroy()
+                end)
             end
         end
 

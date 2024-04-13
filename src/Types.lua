@@ -134,6 +134,7 @@ export type Round = {
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing
 
+    GetEquipment: (self: Round, name: EquipmentName) -> Equipment,                                  -- Returns the Equipment from Gamemode.
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant},                        -- Returns a list of Participants with the specified role.
     GetRoleInfo: (self: Round, name: RoleName) -> Role,                                             -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
@@ -247,6 +248,7 @@ export type Participant = {
     Deceased: boolean,              -- Dead or not
     SearchedBy: {Participant},      -- A list of Participants who have searched this corpse.
     KilledBy: DeathType,            -- How this Participant died.
+    KilledByParticipant: Participant?, -- Which Participant killed this Participant.
     KilledByWeapon: EquipmentName?, -- If DeathType is 'Firearm', indicates the weapon used.
     KilledInSelfDefense: boolean,   -- Whether they were killed in self defense.
     
@@ -262,8 +264,9 @@ export type Participant = {
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,        -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 
-    LeaveRound: (self: Participant) -> (),                         -- Removes this Participant from the Round.
-    GetAllegiance: (self: Participant) -> Role,                     -- Returns this participant's Role allegiance.
+    LeaveRound: (self: Participant, removeOnly: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
+    GetRole: (self: Participant) -> Role,                        -- Returns this Participant's Role. Errors if nil.
+    GetAllegiance: (self: Participant) -> Role,                  -- Returns this participant's Role allegiance.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
     
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives equipment. If GiveEquipment rejects, purchase also rejects.
