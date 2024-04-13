@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+    
+    - name: Install aftman
+      run: |
+        curl -sL https://aftman.dev/install | bash
+        export PATH="$HOME/.aftman/bin:$PATH"
+    
+    - name: Install Lune
+      run: aftman add lune-org/lune
+    
+    - name: Build project
+      run: |
+        lune run build
+        lune run build example
+    
+    - name: Upload release artifacts
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.repository.releases_url }}
+        asset_path: ./RoundHandler.rbxm
+        asset_name: RoundHandler.rbxm
+        asset_content_type: application/octet-stream
+    
+    - name: Upload release artifacts
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.repository.releases_url }}
+        asset_path: ./RoundHandlerExamples.rbxm
+        asset_name: RoundHandlerExamples.rbxm
+        asset_content_type: application/octet-stream
