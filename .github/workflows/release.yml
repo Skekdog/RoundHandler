@@ -15,7 +15,7 @@ jobs:
     
     - name: Install aftman
       run: |
-        apt install unzip
+        sudo apt install unzip
         wget https://github.com/LPGhatguy/aftman/releases/download/v0.2.7/aftman-0.2.7-linux-x86_64.zip
         unzip -u aftman-0.2.7-linux-x86_64.zip
         chmod +x aftman
