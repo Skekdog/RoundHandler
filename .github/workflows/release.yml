@@ -15,11 +15,14 @@ jobs:
     
     - name: Install aftman
       run: |
-        curl -sL https://aftman.dev/install | bash
-        export PATH="$HOME/.aftman/bin:$PATH"
+        apt install unzip
+        wget https://github.com/LPGhatguy/aftman/releases/download/v0.2.7/aftman-0.2.7-linux-x86_64.zip
+        unzip -u aftman-0.2.7-linux-x86_64.zip
+        chmod +x aftman
+        ./aftman self-install
     
     - name: Install Lune
-      run: $HOME/.aftman/bin/aftman add lune-org/lune
+      run: aftman add lune-org/lune
     
     - name: Build project
       run: |
