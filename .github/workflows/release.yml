@@ -19,7 +19,8 @@ jobs:
         wget https://github.com/LPGhatguy/aftman/releases/download/v0.2.7/aftman-0.2.7-linux-x86_64.zip
         unzip -u aftman-0.2.7-linux-x86_64.zip
         chmod +x aftman
-        ./aftman self-install | bash
+        ./aftman self-install
+        . ~/.bashrc
     
     - name: Install Lune
       run: bash | aftman add lune-org/lune
