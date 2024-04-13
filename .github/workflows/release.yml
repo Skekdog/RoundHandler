@@ -23,7 +23,7 @@ jobs:
         . ~/.bashrc
     
     - name: Install Lune
-      run: bash | aftman add lune-org/lune
+      run: aftman add lune-org/lune
     
     - name: Build project
       run: |
