@@ -19,7 +19,7 @@ jobs:
         export PATH="$HOME/.aftman/bin:$PATH"
     
     - name: Install Lune
-      run: aftman add lune-org/lune
+      run: $HOME/.aftman/bin/aftman add lune-org/lune
     
     - name: Build project
       run: |
