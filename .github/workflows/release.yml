@@ -11,21 +11,10 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
-    
-    - name: Install aftman
-      run: |
-        sudo apt install unzip
-        wget https://github.com/LPGhatguy/aftman/releases/download/v0.2.7/aftman-0.2.7-linux-x86_64.zip
-        unzip -u aftman-0.2.7-linux-x86_64.zip
-        chmod +x aftman
-        ./aftman self-install
+      uses: actions/checkout@v2; ok-nick/setup-aftman@v0.4.2
     
     - name: Install Lune
-      run: |
-        export PATH="$HOME/.aftman/bin:$PATH"
-        bash
-        aftman add lune-org/lune
+      run: aftman add lune-org/lune
     
     - name: Build project
       run: |
