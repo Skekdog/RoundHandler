@@ -73,7 +73,35 @@ local function newParticipant(round, plr): Types.Participant
 
         EquipmentPurchases = {},
 
-        AssignRole = function(self, role: Types.Role, overrideCredits: boolean?, overrideInventory: boolean?)
+        TryViewParticipantRole = function(self, target)
+            local ownRole = self.Role
+            local targetRole = target.Role
+            if not ownRole or not targetRole then
+                return
+            end
+
+            local verdict = nil
+            for relation, knows in ownRole.KnowsRoles do
+                -- Explicit references to the role name take priority over things like ally or enemy
+                if relation == ownRole.Name then
+                    verdict = knows
+                    break
+                elseif verdict == nil then
+                    verdict = self.Round:CompareRoles(ownRole, targetRole, relation)
+                end
+            end
+
+            if not verdict then
+                return
+            end
+
+            return {
+                Name = targetRole.Name,
+                Colour = targetRole.Colour
+            }
+        end,
+
+        AssignRole = function(self, role, overrideCredits, overrideInventory)
             self.Role = role
             self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
             for _, v in role.StartingEquipment do
@@ -226,37 +254,6 @@ local function newRound(gamemode): Types.Round
             end
             return false
         end,
-        GetLimitedParticipantInfo = function(self, viewer, target)
-            local viewerParticipant = self:GetParticipant(viewer.Name)
-            local targetParticipant = self:GetParticipant(target.Name)
-            if not viewerParticipant then return warn(`{viewer.Name} is not a Participant of Round {self.ID}.`) end
-            if not targetParticipant then return warn(`{target.Name} is not a Participant of Round {self.ID}.`) end
-
-            local viewerRole = viewerParticipant.Role
-            local targetRole = targetParticipant.Role
-            if not viewerRole then return warn(`{viewer.Name} role is nil in Round {self.ID}.`) end
-            if not targetRole then return warn(`{target.Name} role is nil in Round {self.ID}.`) end
-
-            local relation = self:GetRoleRelationship(viewerRole, targetRole)
-
-            local partialInfo = {
-                Name = targetRole.Name,
-                Colour = targetRole.Colour,
-            }
-            
-            -- First check for explicit role name, then for Ally/Enemy.
-
-            if viewerRole.KnowsRoles[targetRole.Name] == false then return end
-            if viewerRole.KnowsRoles[targetRole.Name] then return partialInfo end
-
-            if (relation == "__Ally" or relation == "__Enemy") and (viewerRole.KnowsRoles[relation]) then return partialInfo end
-            if (relation == "__Ally" or relation == "__Enemy") and (viewerRole.KnowsRoles[relation] == false) then return end
-
-            if viewerRole.KnowsRoles["__All"] then
-                return partialInfo
-            end
-            return
-        end,
         GetParticipantsWithRole  = function(self, roleName)
             local role = self:GetRoleInfo(roleName)
             local participants = {}
@@ -268,16 +265,12 @@ local function newRound(gamemode): Types.Round
             return participants
         end,
         
-        JoinRound = function(self, name)
-            if self:HasParticipant(name) then
-                error(`{name} is already a Participant in Round {self.ID}`)
+        JoinRound = function(self, plr)
+            if self:HasParticipant(plr.Name) then
+                error(`{plr.Name} is already a Participant in Round {self.ID}`)
             end
             if not self:IsRoundPreparing() then
-               error(`Failed to add {name} to Round {self.ID} because the Round has already started`)
-            end
-            local plr = Players:FindFirstChild(name) :: Instance
-            if (not plr) or (not plr:IsA("Player")) then 
-                error(`Attempt to add non-Player participant: {tostring(plr)}`)
+               error(`Failed to add {plr.Name} to Round {self.ID} because the Round has already started`)
             end
         
             local participant = newParticipant(self, plr)
@@ -298,7 +291,7 @@ local function newRound(gamemode): Types.Round
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
                         participant:LeaveRound(true)
-                        self:JoinRound(name)
+                        self:JoinRound(plr)
                         return
                     end
         

@@ -17,7 +17,7 @@ while true do
 
 	local function playerAdded(plr: Player)
 		if not round:IsRoundInProgress() then
-			round:JoinRound(plr.Name)
+			round:JoinRound(plr)
 		end
 	end
 

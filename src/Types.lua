@@ -19,8 +19,8 @@ export type Adapter = {
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),
 
-    GiveEquipment: (plr: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
-    RemoveEquipment: (plr: Participant, item: Equipment) -> (),
+    GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
+    RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
     SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> (),
     CheckForUpdate: (round: Round) -> boolean,
@@ -103,43 +103,42 @@ Round Phases:
     Intermission: Round unloaded and voting time if applicable
 ]]
 export type Round = {
-    ID: UUID,                -- Unique identifier of the round.
-    Gamemode: Gamemode,      -- A reference to the current gamemode.
-    Map: Folder,             -- A reference to the loaded map folder.
+    ID: UUID,           -- Unique identifier of the round.
+    Gamemode: Gamemode, -- A reference to the current gamemode.
+    Map: Folder,        -- A reference to the loaded map folder.
 
-    Winners: Role?,
+    Winners: Role?,           -- The Role of whoever won the Round. Will always be nil until EndRound() is called.
     Paused: boolean,          -- Whether the round is paused or not.
     TimeMilestone: Timestamp, -- The timestamp of the next round phase. Used by the client for a round timer.
     RoundPhase: RoundPhase,   -- The current round phase.
 
     Participants: {Participant}, -- A list of participants in this round.
 
-    CalculateUserFacingEvents: (self: Round) -> {UserFacingRoundEvent},
+    CalculateUserFacingEvents: (self: Round) -> {UserFacingRoundEvent},        -- Returns a list of UserFacingRoundEvents, to display to players.
     LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
-    EventLog: {[RoundEventType]: {RoundEvent}},                                                    -- A list of events that have taken place.
+    EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
 
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
-    GetConnectedParticipants: (self: Round) -> {ConnectedParticipant},          -- Returns a list of Participant's whose Player is still connected to the server.
-    HasParticipant: (self: Round, name: Username) -> boolean,          -- Returns true if participant is in round. Does not error.
-    GetParticipant: (self: Round, name: Username) -> Participant,      -- Returns a participant from a username. Errors if participant is not in round.
-    JoinRound: (self: Round, name: Username) -> Participant,           -- Adds a participant to this round
+    GetConnectedParticipants: (self: Round) -> {ConnectedParticipant}, -- Returns a list of Participants whose Player is still connected to the server.
+    HasParticipant: (self: Round, name: Username) -> boolean,          -- Returns true if Participant is in round. Does not error.
+    GetParticipant: (self: Round, name: Username) -> Participant,      -- Returns a Participant from a username. Errors if Participant is not in round.
+    JoinRound: (self: Round, plr: Player) -> Participant,              -- Adds a Participant to this Round.
     
     PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
     StartRound: (self: Round) -> (),              -- Starts this round. Usually shouldn't be called externally.
-    EndRound: (self: Round, victors: Role) -> (), -- Ends this round. Usually shouldn't be called externally.
+    EndRound: (self: Round, victors: Role) -> (), -- Ends this round.
 
-    IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting
-    IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission
-    IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing
+    IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting.
+    IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission.
+    IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing.
 
     GetEquipment: (self: Round, name: EquipmentName) -> Equipment,                                  -- Returns the Equipment from Gamemode.
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant},                        -- Returns a list of Participants with the specified role.
     GetRoleInfo: (self: Round, name: RoleName) -> Role,                                             -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
-    GetLimitedParticipantInfo: (self: Round, viewer: Player, target: Player) -> PartialRole?,       -- Returns a RoleColour and Name if available to the viewer.
 
     LoadMap: (self: Round, map: Folder) -> (),   -- Loads a map.
 
@@ -235,10 +234,10 @@ export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEqu
 export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
-    Player: Player?,  -- A reference to the Player object. Can be nil if the Player has disconnected.
+    Player: Player?,   -- A reference to the Player object. Can be nil if the Player has disconnected.
     Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
-    Name: string,     -- Separates Participant from Player, in case of disconnection.
-    Round: Round,     -- A reference to the round.
+    Name: string,      -- Separates Participant from Player, in case of disconnection.
+    Round: Round,      -- A reference to the round.
     
     Role: Role?,                     -- A reference to their role. nil if Round hasn't started.
     Credits: number,                 -- Available credits that can be spent in Equipment Shop.
@@ -265,8 +264,9 @@ export type Participant = {
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,        -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 
     LeaveRound: (self: Participant, removeOnly: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
+    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     GetRole: (self: Participant) -> Role,                        -- Returns this Participant's Role. Errors if nil.
-    GetAllegiance: (self: Participant) -> Role,                  -- Returns this participant's Role allegiance.
+    GetAllegiance: (self: Participant) -> Role,                  -- Returns this Participant's Role allegiance.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
     
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives equipment. If GiveEquipment rejects, purchase also rejects.

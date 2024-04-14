@@ -31,12 +31,12 @@ local module: Types.Adapter = {
         return
     end,
 
-    RemoveEquipment = function(plr, item)
+    RemoveEquipment = function(participant, item)
         -- Removes an item from a player. The standard implementation uses the Backpack.
-        if not plr.Player then
+        if not participant.Player then
             return
         end
-        return ((plr.Player:FindFirstChild("Backpack") :: Backpack):FindFirstChild(item.Name) :: Tool):Destroy()
+        return ((participant.Player:FindFirstChild("Backpack") :: Backpack):FindFirstChild(item.Name) :: Tool):Destroy()
     end,
 
     CheckForUpdate = function(round)
@@ -74,7 +74,9 @@ local module: Types.Adapter = {
             return remote:FireAllClients(message)
         end
         for _, v in recipients do
-            remote:FireClient(v.Player, message)
+            if v.Player then
+                remote:FireClient(v.Player, message)
+            end
         end
     end,
 
