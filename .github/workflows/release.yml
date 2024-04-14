@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Generate Changelog
         id: generate-changelog
-        uses: heinrichreimer/action-github-changelog-generator@v2.4
+        uses: heinrichreimer/action-github-changelog-generator@v2.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
         
