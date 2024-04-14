@@ -25,13 +25,18 @@ jobs:
         run: |
               lune run build
               lune run build example
+      
+      - name: Generate Changelog
+        uses: heinrichreimer/action-github-changelog-generator@v2.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: v${{ github.ref }}
-          release_name: Release v${{ github.ref }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: true
         env:
@@ -58,8 +63,3 @@ jobs:
           asset_content_type: application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate Changelog
-        uses: heinrichreimer/action-github-changelog-generator@v2.4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
