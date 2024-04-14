@@ -22,7 +22,9 @@ jobs:
         run: aftman install
 
       - name: Build project
-        run: lune run build
+        run: |
+              lune run build
+              lune run build examples
 
       - name: Create release
         id: create_release

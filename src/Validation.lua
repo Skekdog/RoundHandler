@@ -1,7 +1,6 @@
 -- Returns whether the gamemode is valid, and a list of issues with the gamemode
 local Types = require("src/Types")
 local EngineVersion = "0.0.1"
-print("test")
 
 local module = {}
 
