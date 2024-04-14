@@ -254,21 +254,24 @@ local module: Types.Gamemode = {
         elseif role.Name == "Sheriff" then
             local char = victim.Character
             if char and char:IsDescendantOf(workspace) then
-                local gun = (items:FindFirstChild("Gun") :: Tool):Clone()
-                local handle = gun:FindFirstChild("Handle") :: Part
-                gun:PivotTo(char:GetPivot())
-                
-                local particles = Instance.new("Sparkles")
-                particles.Parent = handle
+                local gun: Part = ((round:GetEquipment("Gun").Item :: any):FindFirstChild("Handle") :: Part):Clone()
+				
+				local particles = Instance.new("Sparkles")
+				particles.Parent = gun
+				
+				gun:PivotTo(char:GetPivot())
+				gun.Anchored = false
+				gun.Name = "Gun"
+				gun.Parent = round.Map
 
-                handle.Touched:Connect(function(part)
+                gun.Touched:Connect(function(part)
                     local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
                     if not plr then
                         return
                     end
 
                     local participant = round:GetParticipant(plr.Name)
-                    if participant:GetAllegiance().Name ~= "Bystander" then
+                    if (participant:GetAllegiance().Name ~= "Bystander") or (participant.Deceased) then
                         return
                     end
 

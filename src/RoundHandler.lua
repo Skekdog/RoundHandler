@@ -48,6 +48,7 @@ end
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
+        Character = nil, -- We can't actually set Character here, because plr hasn't loaded in yet
         Name = plr.Name,
         Round = round,
 
@@ -287,6 +288,7 @@ local function newRound(gamemode): Types.Round
                 local chosen = math.random(1, #spawns)
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
+                participant.Character = char
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
