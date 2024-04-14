@@ -2,6 +2,7 @@
 
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 
 local Adapters = require("src/Adapters")
@@ -430,6 +431,10 @@ local function newRound(gamemode): Types.Round
                     end
                 elseif v.Name == "Props" then
                     
+                elseif v.Name == "Lighting" then
+                    for _, property: any in v:GetChildren() do
+                        (Lighting :: any)[property] = property.Value
+                    end
                 end
         
                 v.Parent = mapFolder
@@ -605,6 +610,10 @@ local function newRound(gamemode): Types.Round
                     end
                 end
             end
+
+            table.sort(userFacingLog, function(a, b)
+                return a.Timestamp < b.Timestamp
+            end)
 
             return userFacingLog
         end,

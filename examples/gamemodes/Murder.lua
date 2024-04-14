@@ -71,7 +71,7 @@ local module: Types.Gamemode = {
             description = `{murderer.Name} did a murder on {mKills} people. Claims they "looked at me funny".`
         elseif mKills == 1 then
             title = "Agree to Disagree"
-            description = `{murderer.Name} settled their differences using a knife.`
+            description = `{murderer.Name} settled their differences with someone using a knife.`
         else
             title = "Cereal Killer"
             description = `{murderer.Name} was upset with their breakfast cereal and so blew it up.`
