@@ -97,7 +97,7 @@ local module: Types.Gamemode = {
             Description = "Stabby stab stab.",
             Cost = 0,
             Icon = "rbxassetid://",
-            Item = ReplicatedStorage:FindFirstChild("Knife") :: Tool,
+            Item = items:FindFirstChild("Knife") :: Tool,
             MaxStock = 1,
         },
         {
