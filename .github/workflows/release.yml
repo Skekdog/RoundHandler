@@ -26,22 +26,27 @@ jobs:
         lune run build
         lune run build example
     
-    - name: Upload release artifacts
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.repository.releases_url }}
-        asset_path: ./RoundHandler.rbxm
-        asset_name: RoundHandler.rbxm
-        asset_content_type: application/octet-stream
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-    
-    - name: Upload release artifacts
-      uses: actions/upload-release-asset@v1
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ github.event.repository.releases_url }}
-        asset_path: ./RoundHandlerExamples.rbxm
-        asset_name: RoundHandlerExamples.rbxm
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: true
+
+    - name: Upload RoundHandler
+      id: upload-roundhandler
+      uses: actions/upload-artifact@v2
+      with:
+        name: RoundHandler.rbxm
+        path: ~/RoundHandler.rbxm
+
+    - name: Upload Examples
+      id: upload-examples
+      uses: actions/upload-artifact@v2
+      with:
+        name: Examples.rbxm
+        path: ~/RoundHandlerExamples.rbxm
