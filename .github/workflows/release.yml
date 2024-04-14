@@ -25,6 +25,7 @@ jobs:
       run: |
         lune run build
         lune run build example
+        dir
     
     - name: Create Release
       id: create_release
@@ -42,11 +43,11 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: RoundHandler.rbxm
-        path: ~/RoundHandler.rbxm
+        path: ./RoundHandler.rbxm
 
     - name: Upload Examples
       id: upload-examples
       uses: actions/upload-artifact@v2
       with:
         name: Examples.rbxm
-        path: ~/RoundHandlerExamples.rbxm
+        path: ./RoundHandlerExamples.rbxm
