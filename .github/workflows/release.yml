@@ -33,6 +33,8 @@ jobs:
         asset_path: ./RoundHandler.rbxm
         asset_name: RoundHandler.rbxm
         asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
     
     - name: Upload release artifacts
       uses: actions/upload-release-asset@v1
@@ -41,3 +43,5 @@ jobs:
         asset_path: ./RoundHandlerExamples.rbxm
         asset_name: RoundHandlerExamples.rbxm
         asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
