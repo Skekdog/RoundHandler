@@ -19,7 +19,7 @@ jobs:
         cache: true
     
     - name: Install Lune
-      run: aftman add lune-org/lune
+      run: aftman install
     
     - name: Build project
       run: |
