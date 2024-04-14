@@ -25,7 +25,6 @@ jobs:
       run: |
         lune run build
         lune run build example
-        dir
     
     - name: Create Release
       id: create_release
@@ -42,12 +41,23 @@ jobs:
       id: upload-roundhandler
       uses: actions/upload-artifact@v2
       with:
-        name: RoundHandler.rbxm
-        path: ./RoundHandler.rbxm
+        name: artifacts
+        path: |
+              ./RoundHandler.rbxm
+              ./RoundHandlerExamples.rbxm
 
-    - name: Upload Examples
-      id: upload-examples
-      uses: actions/upload-artifact@v2
+    - name: Upload RoundHandler
+      uses: actions/upload-release-asset@v1
       with:
-        name: Examples.rbxm
-        path: ./RoundHandlerExamples.rbxm
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./RoundHandler.rbxm
+        asset_name: RoundHandler.rbxm
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Examples
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./RoundHandlerExamples.rbxm
+        asset_name: Examples.rbxm
+        asset_content_type: application/octet-stream
