@@ -1,3 +1,4 @@
+--serverscript
 -- A simple implementation of the round system.
 -- All players are added to a single round.
 

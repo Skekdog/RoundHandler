@@ -19,13 +19,20 @@ local function makeFolder(path: string, parent: Folder?)
             makeFolder(name, subFolder)
             continue
         end
-        local script = Instance.new("ModuleScript")
+
+        local source = fs.readFile(name)
+        local script
+        if source:split("\n")[1]:sub(1, -2) == "--serverscript" then -- sub(1, -2) because invisible character at the end of line
+            script = Instance.new("Script")
+        else
+            script = Instance.new("ModuleScript")
+        end
 
         if not buildExample then
             -- There's no way to know where RoundHandler will be stored so we shouldn't replace anything in examples
-            script.Source = fs.readFile(name):gsub('require%("src/(.-)"%)', 'require(script.Parent.%1)')
+            script.Source = source:gsub('require%("src/(.-)"%)', 'require(script.Parent.%1)')
         else
-            script.Source = fs.readFile(name)
+            script.Source = source
         end
 
         local splitName = name:split("/")
