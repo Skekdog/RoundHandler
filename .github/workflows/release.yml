@@ -24,7 +24,7 @@ jobs:
       - name: Build project
         run: |
               lune run build
-              lune run build examples
+              lune run build example
 
       - name: Create release
         id: create_release
