@@ -20,10 +20,9 @@ jobs:
         unzip -u aftman-0.2.7-linux-x86_64.zip
         chmod +x aftman
         ./aftman self-install
-        dir
-        echo the following will be the $PATH
+        export PATH="$HOME/.aftman/bin:$PATH"
         echo $PATH
-        . ~/.bashrc
+        bash
     
     - name: Install Lune
       run: aftman add lune-org/lune
