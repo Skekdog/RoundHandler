@@ -23,7 +23,7 @@ jobs:
 
       - name: Build project
         run: lune run build
-        
+
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
@@ -33,7 +33,7 @@ jobs:
           draft: false
           prerelease: true
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload RoundHandler
         id: upload-roundhandler
