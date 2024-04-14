@@ -59,7 +59,7 @@ local module: Types.Gamemode = {
         local title, description = "", ""
         if mKills > 10 then
             title = "Mass Murderer"
-            description = `Local man {murderer.Name} goes on unhinged murder spree, killing {mKills}.`
+            description = `Local man {murderer.Name} goes on unhinged murder spree, kills {mKills}.`
         elseif mKills > 6 then
             title = "Serial Killer"
             description = `{murderer.Name} suspected for the accidental stabbings of {mKills} people.`
@@ -69,6 +69,9 @@ local module: Types.Gamemode = {
         elseif mKills > 1 then
             title = "Murderer"
             description = `{murderer.Name} did a murder on {mKills} people. Claims they "looked at me funny".`
+        elseif mKills == 1 then
+            title = "Agree to Disagree"
+            description = `{murderer.Name} settled their differences using a knife.`
         else
             title = "Cereal Killer"
             description = `{murderer.Name} was upset with their breakfast cereal and so blew it up.`
