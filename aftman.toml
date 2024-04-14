@@ -3,4 +3,4 @@
 
 # To add a new tool, add an entry to this table.
 [tools]
-# lune = "lune-org/lune"
+lune = "lune-org/lune"
