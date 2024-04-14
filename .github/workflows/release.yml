@@ -23,12 +23,7 @@ jobs:
 
       - name: Build project
         run: lune run build
-
-  create-release:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
+        
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
