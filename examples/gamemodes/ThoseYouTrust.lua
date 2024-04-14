@@ -4,7 +4,7 @@ local Types = require("src/Types")
 local common = require("examples/gamemodes/Common")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local items = ReplicatedStorage:FindFirstChild("Folder") :: Folder
+local items = ReplicatedStorage:FindFirstChild("Items") :: Folder
 
 local module: Types.Gamemode = {
     Name = "Those You Trust",
