@@ -2,62 +2,56 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install aftman
-      uses: ok-nick/setup-aftman@v0.4.2
-      with:
-        cache: true
-    
-    - name: Install Lune
-      run: aftman install
-    
-    - name: Build project
-      run: |
-        lune run build
-        lune run build example
-    
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: true
+      - name: Install aftman
+        uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          cache: true
 
-    - name: Upload RoundHandler
-      id: upload-roundhandler
-      uses: actions/upload-artifact@v2
-      with:
-        name: artifacts
-        path: |
-              ./RoundHandler.rbxm
-              ./RoundHandlerExamples.rbxm
+      - name: Install Lune
+        run: aftman install
 
-    - name: Upload RoundHandler
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./RoundHandler.rbxm
-        asset_name: RoundHandler.rbxm
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Examples
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./RoundHandlerExamples.rbxm
-        asset_name: Examples.rbxm
-        asset_content_type: application/octet-stream
+      - name: Build project
+        run: lune run build
+
+  create-release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: true
+
+      - name: Upload RoundHandler
+        id: upload-roundhandler
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./RoundHandler.rbxm
+          asset_name: RoundHandler.rbxm
+          asset_content_type: application/octet-stream
+
+      - name: Upload examples
+        id: upload-examples
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./RoundHandlerExamples.rbxm
+          asset_name: Examples.rbxm
+          asset_content_type: application/octet-stream
