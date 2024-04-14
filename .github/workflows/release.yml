@@ -23,6 +23,8 @@ jobs:
         export PATH="$HOME/.aftman/bin:$PATH"
         echo $PATH
         bash
+        dir ~/.aftman/bin
+        aftman
     
     - name: Install Lune
       run: aftman add lune-org/lune
