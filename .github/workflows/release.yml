@@ -37,7 +37,8 @@ jobs:
           release_name: Release v${{ github.run_number }}
           draft: false
           prerelease: true
-          token: ${{ secrets.RELEASE_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Upload RoundHandler
         id: upload-roundhandler
