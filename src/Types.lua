@@ -25,6 +25,8 @@ export type Adapter = {
     SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> (),
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> (),
+
+    OnCharacterLoad: (char: Model) -> (),
 }
 
 export type Equipment = {
@@ -181,6 +183,7 @@ export type Gamemode = {
 
     Duration: (self: Gamemode, numParticipants: PositiveInteger) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
     OnDeath: (self: Gamemode, victim: Participant) -> (),                  -- Called when a Participant in this gamemode dies.
+    OnCharacterLoad: (self: Gamemode, char: Model) -> (),                  -- Called when CharacterAppearanceLoaded fires.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> (),      -- Function that assigns all Participants roles.
 }
 

@@ -358,6 +358,13 @@ local module: Types.Gamemode = {
     
     Duration = function(self, numParticipants)
         return 120 + (numParticipants * 10)
+    end,
+
+    OnCharacterLoad = function(self, char)
+        local healthScript = char:FindFirstChild("Health")
+        if healthScript then
+            healthScript:Destroy()
+        end
     end
 }
 

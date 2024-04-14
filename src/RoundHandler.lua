@@ -289,6 +289,8 @@ local function newRound(gamemode): Types.Round
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
                 participant.Character = char
+                Adapters.OnCharacterLoad(char)
+                self.Gamemode:OnCharacterLoad(char)
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started

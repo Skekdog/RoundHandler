@@ -96,7 +96,11 @@ local module: Types.Adapter = {
 
     SetKarma = function(plr, karma)
         plr:SetAttribute("Karma", karma)
-    end
+    end,
+
+    OnCharacterLoad = function(char)
+        -- You could, for example, implement ragdolls here
+    end,
 }
 
 return module

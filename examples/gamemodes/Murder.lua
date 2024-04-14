@@ -250,7 +250,6 @@ local module: Types.Gamemode = {
                     hum.Health = 0
                 end
             end
-            return
         elseif role.Name == "Sheriff" then
             local char = victim.Character
             if char and char:IsDescendantOf(workspace) then
@@ -285,7 +284,9 @@ local module: Types.Gamemode = {
         if winner then
             round:EndRound(round:GetRoleInfo(winner))
         end
-    end
+    end,
+
+    OnCharacterLoad = function() end
 }
 
 return module
