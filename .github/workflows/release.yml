@@ -43,6 +43,8 @@ jobs:
           asset_path: ./RoundHandler.rbxm
           asset_name: RoundHandler.rbxm
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload examples
         id: upload-examples
@@ -52,3 +54,5 @@ jobs:
           asset_path: ./RoundHandlerExamples.rbxm
           asset_name: Examples.rbxm
           asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
