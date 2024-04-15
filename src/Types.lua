@@ -15,6 +15,7 @@ export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
         HIGHLIGHTS_TIME: number,
+        SLAY_VOTES: Integer,
     },
 
     GetKarma: (plr: Player) -> number,
@@ -23,7 +24,8 @@ export type Adapter = {
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
-    SendMessage: (recipients : {ConnectedParticipant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect", isGlobal: boolean?) -> (),
+    SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
+    SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "roleAlert" | "creditsEarned", isGlobal: boolean?) -> (),
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> (),
 
@@ -226,6 +228,17 @@ export type Role = {
     OnRoleRemoved: (self: Role, participant: Participant) -> (),  -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
 }
 
+export type CorpseInfo = {
+    Name: string,
+    Role: Role,
+    Headshot: boolean,
+    DeathTime: Timestamp,
+    MurderWeapon: Equipment | DeathType,
+    EquipmentList: {Equipment},
+    SelfDefense: boolean,
+    FreeKill: boolean,
+}
+
 --[[
     Represents a Participant in a Round, storing player-related attributes
     such as Role, death info and Credits.
@@ -233,7 +246,7 @@ export type Role = {
     Created by Round:JoinRound().
 ]]
 export type FreeKillReason = "Teamkill" | string
-export type DeathType = "Firearm" | "Blunt" | "Blade" | "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
+export type DeathType = "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
 export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEquipment
 export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 -- Mutation: DNA mutated by teleporter (in a deadly way)
@@ -248,26 +261,30 @@ export type Participant = {
     Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
+    GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
 
     Karma: number,                  -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     Deceased: boolean,              -- Dead or not
     SearchedBy: {Participant},      -- A list of Participants who have searched this corpse.
+    KilledAt: Timestamp,
     KilledBy: DeathType,            -- How this Participant died.
     KilledByParticipant: Participant?, -- Which Participant killed this Participant.
     KilledByWeapon: EquipmentName?, -- If DeathType is 'Firearm', indicates the weapon used.
     KilledInSelfDefense: boolean,   -- Whether they were killed in self defense.
     
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
-    SlayVotes: PositiveInteger,                -- The number of players who voted to Slay this Participant due to being RDM'ed by them.
+    SlayVotes: {Participant},          -- A list of Participants who have voted to slay this person due to RDM.
 
-    SelfDefenseList: {SelfDefenseEntry}, -- A list of participants who this participant can freely kill in self-defense.
-    KillList: {Participant},                -- A list of references to Participants this player has killed.
-    EquipmentPurchases: {[EquipmentName]: PositiveInteger?}, -- The equipment this participant purchased, and how many times.
+    SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
+    KillList: {Participant},             -- A list of Participants this player has killed.
+    EquipmentPurchases: {[EquipmentName]: PositiveInteger}, -- The equipment this participant purchased, and how many times.
+
+    SearchCorpse: (self: Participant, target: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if target is not dead.
     
     AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (),         -- Adds score to this Participant
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (),     -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
-    HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,        -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
+    HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 
     LeaveRound: (self: Participant, removeOnly: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.

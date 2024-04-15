@@ -8,6 +8,7 @@ local module: Types.Adapter = {
     Configuration = {
         HIGHLIGHTS_TIME = 10, -- Time to spend after the round ends before destroying the round
         PREPARING_TIME = 10, -- Time to spend after a round is created where players can join the round
+        SLAY_VOTES = 2, -- Minimum number of votes to slay someone, at which point they will be slain
     },
 
     GiveEquipment = function(participant, item)
@@ -55,6 +56,20 @@ local module: Types.Adapter = {
         -- If isGlobal = true, then recipients is empty. The adapter is expected to send this message to all connected players (Players:GetPlayers()).
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
+
+        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
+
+        if messageType == "roleAlert" then
+            if isGlobal then
+                return remote:FireAllClients(message)
+            end
+            for _, v in recipients do
+                if v.Player then
+                    remote:FireClient(v.Player, message)
+                end
+            end
+            return
+        end
         
         local fontColour = ""
         -- These colours suck
@@ -67,8 +82,6 @@ local module: Types.Adapter = {
         end
 
         message = `<font color='{fontColour}'>{message}</font>`
-
-        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
 
         if isGlobal then
             return remote:FireAllClients(message)
@@ -100,6 +113,14 @@ local module: Types.Adapter = {
 
     OnCharacterLoad = function(char)
         -- You could, for example, implement ragdolls here
+    end,
+
+    SendSlayVote = function(to, target)
+        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SlayVote") :: any
+        if not to.Player then
+            error("Attempt to send slay vote to disconnected Participant.")
+        end
+        remote:FireClient(to.Player, target.Player)
     end,
 }
 

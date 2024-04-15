@@ -10,8 +10,9 @@ local Types = require("src/Types")
 local API = require("src/API")
 
 --- The main module. New rounds are created from here via module.CreateRound().
-local module = {}
-module.Rounds = {} :: {[Types.UUID]: Types.Round}
+local module = {
+    Rounds = {}
+}
 
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
@@ -30,6 +31,7 @@ local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weap
     if killer then
         isCorrectKill = round:GetRoleRelationship(self:GetRole(), killer:GetRole()) == "__Ally"
         isSelfDefense = killer:HasSelfDefenseAgainst(self)
+        killer:AddKill(self, false)
     end
 
     local data: Types.RoundEvent_Death = {
@@ -60,6 +62,7 @@ local function newParticipant(round, plr): Types.Participant
         Deceased = false,
         SearchedBy = {},
         KilledBy = "Suicide",
+        KilledAt = 0,
         KilledByParticipant = nil,
         KilledByWeapon = nil,
         KilledInSelfDefense = false,
@@ -70,7 +73,7 @@ local function newParticipant(round, plr): Types.Participant
         SelfDefenseList = {},
         KillList = {},
 
-        SlayVotes = 0,
+        SlayVotes = {},
 
         EquipmentPurchases = {},
 
@@ -108,8 +111,40 @@ local function newParticipant(round, plr): Types.Participant
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
             end
-            Adapters.SendMessage({self :: any}, "You are now a "..role.Name, "info", "bodyFound") -- todo: role alerts should be their own adapter
+            Adapters.SendMessage({self :: any}, "You are now a "..role.Name, "info", "roleAlert")
             role:OnRoleAssigned(self)
+        end,
+
+        SearchCorpse = function(self, target)
+            if not target.Deceased then
+                error(`Target {target.Name} is not dead!`)
+            end
+
+            if not table.find(target.SearchedBy, self) then
+                if self:GetRole().CorpseResultsPublicised then
+                    target.SearchedBy = self.Round.Participants
+                else
+                    table.insert(target.SearchedBy, self)
+                end
+                Adapters.SendMessage(self.Round:GetConnectedParticipants(), `{self.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
+            end
+
+            if self:GetRole().CanStealCredits then
+                Adapters.SendMessage({self}, `You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned")
+                self.Credits += target.Credits
+                target.Credits = 0
+            end
+
+            return {
+                Name = target:GetFormattedName(),
+                Role = target:GetRole(),
+                DeathTime = target.KilledAt,
+                SelfDefense = target.KilledInSelfDefense,
+                FreeKill = #target.FreeKillReasons > 0,
+                Headshot = false,
+                EquipmentList = {},
+                MurderWeapon = if target.KilledByWeapon then self.Round:GetEquipment(target.KilledByWeapon) else target.KilledBy,
+            }
         end,
 
         GetRole = function(self)
@@ -177,6 +212,7 @@ local function newParticipant(round, plr): Types.Participant
                 local isAlly = round:GetRoleRelationship(victim:GetRole(), self:GetRole()) == "__Ally"
                 if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
                     table.insert(self.FreeKillReasons, "Teamkill")
+                    Adapters.SendSlayVote(victim, self)
                 end
             end
             table.insert(self.KillList, victim)
@@ -218,6 +254,11 @@ local function newParticipant(round, plr): Types.Participant
                 return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Name}</font>`
             end
             return self.Name
+        end,
+
+        GetFormattedRole = function(self)
+            local role = self:GetRole()
+            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
         end
     }
 end
