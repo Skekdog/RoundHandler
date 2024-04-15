@@ -111,7 +111,7 @@ local function newParticipant(round, plr): Types.Participant
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
             end
-            Adapters.SendMessage({self :: any}, "You are now a "..role.Name, "info", "roleAlert")
+            Adapters.SendMessage({self :: any}, `You are now a {self:GetFormattedRole()}`, "info", "roleAlert")
             role:OnRoleAssigned(self)
         end,
 

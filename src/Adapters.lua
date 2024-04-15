@@ -58,30 +58,19 @@ local module: Types.Adapter = {
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
 
         local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
-
-        if messageType == "roleAlert" then
-            if isGlobal then
-                return remote:FireAllClients(message)
-            end
-            for _, v in recipients do
-                if v.Player then
-                    remote:FireClient(v.Player, message)
-                end
-            end
-            return
-        end
         
-        local fontColour = ""
-        -- These colours suck
-        if severity == "error" then
-            fontColour = "#ff0000"
-        elseif severity == "warn" then
-            fontColour = "#ffff00"
-        elseif severity == "info" then
-            fontColour = "#0000ff"
+        if messageType ~= "roleAlert" then
+            local fontColour = ""
+            -- These colours suck
+            if severity == "error" then
+                fontColour = "#ff0000"
+            elseif severity == "warn" then
+                fontColour = "#ffff00"
+            elseif severity == "info" then
+                fontColour = "#0000ff"
+            end
+            message = `<font color='{fontColour}'>{message}</font>`
         end
-
-        message = `<font color='{fontColour}'>{message}</font>`
 
         if isGlobal then
             return remote:FireAllClients(message)
