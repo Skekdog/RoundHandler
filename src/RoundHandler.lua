@@ -211,6 +211,14 @@ local function newParticipant(round, plr): Types.Participant
                 self.Score[reason] += amount
             end
         end,
+
+        GetFormattedName = function(self)
+            local role = self.Role
+            if role then
+                return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Name}</font>`
+            end
+            return self.Name
+        end
     }
 end
 

@@ -17,5 +17,8 @@ function module.ShuffleInPlace(t)
     end
 end
 
+function module.Color3ToHex(color: Color3): string
+	return string.format("#%02X%02X%02X", color.R*0xFF, color.G*0xFF, color.B*0xFF)
+end
 
 return module

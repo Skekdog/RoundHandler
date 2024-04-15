@@ -245,7 +245,9 @@ export type Participant = {
     
     Role: Role?,                     -- A reference to their role. nil if Round hasn't started.
     Credits: number,                 -- Available credits that can be spent in Equipment Shop.
-    Score: {[ScoreReason]: Integer},           -- Dictionary of score reason = total score for this reason
+    Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
+
+    GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
 
     Karma: number,                  -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     Deceased: boolean,              -- Dead or not
