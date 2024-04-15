@@ -17,12 +17,11 @@ local module = {
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 
-local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weapon: Types.EquipmentName?)
+local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types.DeathType)?)
     -- create ragdoll and set properties
     local round = self.Round
 
     self.Deceased = true
-    self.KilledBy = if killedBy then killedBy else self.KilledBy or "Suicide"
     self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
     
     local killer = self.KilledByParticipant
@@ -39,7 +38,7 @@ local function onDeath(self: Types.Participant, killedBy: Types.DeathType?, weap
         FreeKill = #self.FreeKillReasons > 0,
         SelfDefense = isSelfDefense,
         Victim = self,
-        Weapon = self.KilledBy,
+        Weapon = self.KilledByWeapon,
         Attacker = killer,
     }
 
@@ -61,11 +60,11 @@ local function newParticipant(round, plr): Types.Participant
 
         Deceased = false,
         SearchedBy = {},
-        KilledBy = "Suicide",
+        KilledByWeapon = "Suicide",
         KilledAt = 0,
         KilledByParticipant = nil,
-        KilledByWeapon = nil,
         KilledInSelfDefense = false,
+        KilledAsFreeKill = false,
 
         FreeKill = false,
         FreeKillReasons = {},
@@ -143,7 +142,7 @@ local function newParticipant(round, plr): Types.Participant
                 FreeKill = #target.FreeKillReasons > 0,
                 Headshot = false,
                 EquipmentList = {},
-                MurderWeapon = if target.KilledByWeapon then self.Round:GetEquipment(target.KilledByWeapon) else target.KilledBy,
+                MurderWeapon = target.KilledByWeapon,
             }
         end,
 

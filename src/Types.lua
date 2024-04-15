@@ -251,50 +251,52 @@ export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEqu
 export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
+    Round: Round, -- A reference to the round.
+
+    Name: string,      -- Separates Participant from Player, in case of disconnection.
     Player: Player?,   -- A reference to the Player object. Can be nil if the Player has disconnected.
     Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
-    Name: string,      -- Separates Participant from Player, in case of disconnection.
-    Round: Round,      -- A reference to the round.
     
-    Role: Role?,                     -- A reference to their role. nil if Round hasn't started.
-    Credits: number,                 -- Available credits that can be spent in Equipment Shop.
-    Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
+    Role: Role?,                                                                                               -- A reference to their role. nil if Round hasn't started.
+    GetRole: (self: Participant) -> Role,                                                                      -- Returns this Participant's Role. Errors if nil.
+    GetAllegiance: (self: Participant) -> Role,                                                                -- Returns this Participant's Role allegiance. Errors if nil.
+    AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
+    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
+    
+    LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (), -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
     GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
 
-    Karma: number,                  -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
-    Deceased: boolean,              -- Dead or not
-    SearchedBy: {Participant},      -- A list of Participants who have searched this corpse.
-    KilledAt: Timestamp,
-    KilledBy: DeathType,            -- How this Participant died.
-    KilledByParticipant: Participant?, -- Which Participant killed this Participant.
-    KilledByWeapon: EquipmentName?, -- If DeathType is 'Firearm', indicates the weapon used.
-    KilledInSelfDefense: boolean,   -- Whether they were killed in self defense.
+    SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
+    Deceased: boolean,                     -- Dead or not.
+    KilledAt: Timestamp,                   -- Timestamp of the Participant's demise. Initially 0.
+    KilledByWeapon: Equipment | DeathType, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
+    KilledByParticipant: Participant?,     -- Who killed this Participant.
+    KilledInSelfDefense: boolean,          -- Whether this Participant was killed in self defense or not.
+    KilledAsFreeKill: boolean,             -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
     
+    Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
     SlayVotes: {Participant},          -- A list of Participants who have voted to slay this person due to RDM.
-
-    SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
-    KillList: {Participant},             -- A list of Participants this player has killed.
-    EquipmentPurchases: {[EquipmentName]: PositiveInteger}, -- The equipment this participant purchased, and how many times.
+    
+    Credits: Integer,                                                                                  -- Available credits that can be spent in Equipment Shop.
+    EquipmentPurchases: {[EquipmentName]: PositiveInteger},                                            -- The Equipment this Participant purchased, and how many times.
+    RemoveEquipment: (self: Participant, equipment: Equipment) -> (),                                  -- Removes this Equipment from the Participant's inventory.
+    GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?,         -- Adds this Equipment to the Participant's inventory.
+    PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
     SearchCorpse: (self: Participant, target: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if target is not dead.
     
-    AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (),         -- Adds score to this Participant
-    AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (),     -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
+    KillList: {Participant},                                                       -- A list of Participants this player has killed.
+    AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (), -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
+    
+    Score: {[ScoreReason]: Integer},                                           -- Dictionary of score reason = total score for this reason.
+    AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (), -- Adds score to this Participant
+
+    SelfDefenseList: {SelfDefenseEntry},                                               -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
-
-    LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
-    GetRole: (self: Participant) -> Role,                        -- Returns this Participant's Role. Errors if nil.
-    GetAllegiance: (self: Participant) -> Role,                  -- Returns this Participant's Role allegiance.
-    AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    
-    PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives equipment. If GiveEquipment rejects, purchase also rejects.
-    GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?, -- Adds this equipment to the participant's inventory.
-    RemoveEquipment: (self: Participant, equipment: Equipment) -> (), -- Removes this equipment from the Participant's inventory.
 }
 export type ConnectedParticipant = Participant & {Player: Player} -- Represents a connected Participant, i.e Player is not nil
 
