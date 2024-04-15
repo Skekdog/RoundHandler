@@ -423,6 +423,8 @@ local function newRound(gamemode): Types.Round
             self.RoundEndEvent:Destroy()
             self.RoundStartEvent:Destroy()
 
+            self.Map:Destroy()
+
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
