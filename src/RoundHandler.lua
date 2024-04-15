@@ -116,7 +116,7 @@ local function newParticipant(round, plr): Types.Participant
 
         SearchCorpse = function(self, target)
             if not target.Deceased then
-                error(`Target {target.Name} is not dead!`)
+                error(`Target {target.Player.Name} is not dead!`)
             end
 
             if not table.find(target.SearchedBy, self) then
@@ -125,7 +125,7 @@ local function newParticipant(round, plr): Types.Participant
                 else
                     table.insert(target.SearchedBy, self)
                 end
-                Adapters.SendMessage(self.Round:GetConnectedParticipants(), `{self.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
+                Adapters.SendMessage(self.Round.Participants, `{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
             end
 
             if self:GetRole().CanStealCredits then
@@ -148,13 +148,13 @@ local function newParticipant(round, plr): Types.Participant
 
         GetRole = function(self)
             if not self.Role then
-                error(`Participant {self.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} does not have a Role!`)
             end
             return self.Role
         end,
         GetAllegiance = function(self)
             if not self.Role then
-                error(`Participant {self.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} does not have a Role!`)
             end
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
@@ -176,7 +176,7 @@ local function newParticipant(round, plr): Types.Participant
             end
         
             if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round:GetConnectedParticipants(), (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
+                Adapters.SendMessage(self.Round.Participants, (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
             end
         
             if not doNotCreateCorpse then
@@ -246,9 +246,9 @@ local function newParticipant(round, plr): Types.Participant
         GetFormattedName = function(self)
             local role = self.Role
             if role then
-                return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Name}</font>`
+                return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
             end
-            return self.Name
+            return self.Player.Name
         end,
 
         GetFormattedRole = function(self)
@@ -274,18 +274,9 @@ local function newRound(gamemode): Types.Round
         Participants = {},
         EventLog = {},
 
-        GetConnectedParticipants = function(self)
-            local participants = {}
-            for _, v in self.Participants do
-                if v.Player and v.Player:IsDescendantOf(Players) then
-                    table.insert(participants, v :: Types.ConnectedParticipant)
-                end
-            end
-            return participants
-        end,
         GetParticipant = function(self, name)
             for _, participant in self.Participants do
-                if participant.Name == name then
+                if participant.Player.Name == name then
                     return participant
                 end
             end
@@ -293,7 +284,7 @@ local function newRound(gamemode): Types.Round
         end,
         HasParticipant = function(self, name)
             for _, participant in self.Participants do
-                if participant.Name == name then
+                if participant.Player.Name == name then
                     return true
                 end
             end
@@ -409,7 +400,7 @@ local function newRound(gamemode): Types.Round
             for _, v in self.Participants do
                 scores[v] = v.Score
             end
-            Adapters.SendRoundHighlights(self:GetConnectedParticipants(), self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
+            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -540,33 +531,38 @@ local function newRound(gamemode): Types.Round
             local function getDeathEvent(data: {Attacker: Types.Participant?, Weapon: string | Types.Equipment, Victim: Types.Participant})
                 local attacker = data.Attacker
                 local weapon = data.Weapon
-                local text = data.Victim.Name
+                local text = data.Victim:GetFormattedName()
+
+                local attackerName
+                if attacker then
+                    attackerName = attacker:GetFormattedName()
+                end
                 if weapon == "Fall" then
                     text ..= " was doomed to fall"
                     if attacker then
-                        text ..= ` at the hands of {attacker.Name}`
+                        text ..= ` at the hands of {attackerName}`
                     end
                 elseif weapon == "Drown" then
                     text ..= " was doomed to fall"
                     if attacker then
-                        text ..= ` at the hands of {attacker.Name}`
+                        text ..= ` at the hands of {attackerName}`
                     end
                 elseif weapon == "Suicide" then
                     text ..= " couldn't take it anymore and killed themselves"
                 elseif weapon == "Crush" then
                     text ..= " was crushed"
                     if attacker then
-                        text ..= ` by {attacker.Name}`
+                        text ..= ` by {attackerName}`
                     end
                 elseif weapon == "Mutation" then
                     text ..= "'s DNA was mutated"
                     if attacker then
-                        text ..= ` by {attacker.Name}`
+                        text ..= ` by {attackerName}`
                     end
                 elseif type(weapon) == "table" then
                     text ..= ` died to a {weapon.Name}`
                     if attacker then
-                        text ..= ` used by {attacker.Name}`
+                        text ..= ` used by {attackerName}`
                     end
                 end
                 text ..= "."

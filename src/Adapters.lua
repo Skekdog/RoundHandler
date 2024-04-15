@@ -19,8 +19,8 @@ local module: Types.Adapter = {
         end
     
         local plr = participant.Player
-        if not plr then 
-            return "PlayerNotFound"
+        if not plr.Parent then
+            return "PlayerDisconnected"
         end
         
         local backpack = plr:FindFirstChildOfClass("Backpack")
@@ -33,7 +33,7 @@ local module: Types.Adapter = {
 
     RemoveEquipment = function(participant, item)
         -- Removes an item from a player. The standard implementation uses the Backpack.
-        if not participant.Player then
+        if not participant.Player.Parent then
             return
         end
         return ((participant.Player:FindFirstChild("Backpack") :: Backpack):FindFirstChild(item.Name) :: Tool):Destroy()
@@ -105,9 +105,6 @@ local module: Types.Adapter = {
 
     SendSlayVote = function(to, target)
         local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SlayVote") :: any
-        if not to.Player then
-            error("Attempt to send slay vote to disconnected Participant.")
-        end
         remote:FireClient(to.Player, target.Player)
     end,
 }

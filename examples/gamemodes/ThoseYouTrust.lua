@@ -78,25 +78,26 @@ local module: Types.Gamemode = {
             local aRole = firstKill.Attacker:GetAllegiance().Name
             local vRole = firstKill.Victim:GetAllegiance().Name
 
+            local attackerName = firstKill.Attacker:GetFormattedName()
             if (aRole == "Traitor") and (vRole == "Traitor") then
                 table.insert(highlights, {
                     Name = "First Bloody Stupid Kill",
-                    Description = `{firstKill.Attacker.Name} scored the first kill by shooting a fellow traitor. Good job.`
+                    Description = `{attackerName} scored the first kill by shooting a fellow traitor. Good job.`
                 })
             elseif (aRole == "Innocent") and (vRole == "Traitor") then
                 table.insert(highlights, {
                     Name = "First Blow",
-                    Description = `{firstKill.Attacker.Name} struck the first blow for the innocents by making the first death a traitor's.`
+                    Description = `{attackerName} struck the first blow for the innocents by making the first death a traitor's.`
                 })
             elseif ((aRole == "Innocent") and (vRole == "Innocent")) and ((not firstKill.SelfDefense) and (not firstKill.FreeKill)) then
                 table.insert(highlights, {
                     Name = "First Blooper",
-                    Description = `{firstKill.Attacker.Name} was the first to kill. Too bad it was an innocent comrade.`
+                    Description = `{attackerName} was the first to kill. Too bad it was an innocent comrade.`
                 })
             elseif (aRole == "Traitor") and (vRole == "Innocent") then
                 table.insert(highlights, {
                     Name = "First Blood",
-                    Description = `{firstKill.Attacker.Name} delivered the first innocent death at a traitor's hands.`
+                    Description = `{attackerName} delivered the first innocent death at a traitor's hands.`
                 })
             end
         end
@@ -117,10 +118,10 @@ local module: Types.Gamemode = {
             end
 
             if allyKills > mostAllyKills[2] then
-                mostAllyKills = {participant.Name, allyKills}
+                mostAllyKills = {participant.Player.Name, allyKills}
             end
             if enemyKills > mostEnemyKills[2] then
-                mostEnemyKills = {participant.Name, enemyKills}
+                mostEnemyKills = {participant.Player.Name, enemyKills}
             end
         end
 
@@ -186,7 +187,7 @@ local module: Types.Gamemode = {
             MaxStock = 1,
 
             Item = function(participant, item)
-                print(`{participant.Name} got radar`)
+                print(`{participant.Player.Name} got radar`)
             end,
         },
         {

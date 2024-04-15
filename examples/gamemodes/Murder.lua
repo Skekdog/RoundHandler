@@ -42,10 +42,10 @@ local module: Types.Gamemode = {
             local title, description = "", ""
             if murdererDeath.Attacker:GetRole().Name == "Innocent" then
                 title = "Now you're a hero"
-                description = `{murdererDeath.Attacker.Name} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
+                description = `{murdererDeath.Attacker:GetFormattedName()} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
             else
                 title = "New sheriff in town"
-                description = `{murdererDeath.Attacker.Name} asserted their authority by shooting a crazed killer in the face!`
+                description = `{murdererDeath.Attacker:GetFormattedName()} asserted their authority by shooting a crazed killer in the face!`
             end
 
             table.insert(highlights, {
@@ -55,26 +55,27 @@ local module: Types.Gamemode = {
         end
 
         local murderer = round:GetParticipantsWithRole("Murderer")[1]
+        local murdererName = murderer:GetFormattedName()
         local mKills = #murderer.KillList
         local title, description = "", ""
         if mKills > 10 then
             title = "Mass Murderer"
-            description = `Local man {murderer.Name} goes on unhinged murder spree, kills {mKills}.`
+            description = `Local man {murdererName} goes on unhinged murder spree, kills {mKills}.`
         elseif mKills > 6 then
             title = "Serial Killer"
-            description = `{murderer.Name} suspected for the accidental stabbings of {mKills} people.`
+            description = `{murdererName} suspected for the accidental stabbings of {mKills} people.`
         elseif mKills > 3 then
             title = "Killer"
-            description = `{murderer.Name} had a bone to pick with {mKills} people.`
+            description = `{murdererName} had a bone to pick with {mKills} people.`
         elseif mKills > 1 then
             title = "Murderer"
-            description = `{murderer.Name} did a murder on {mKills} people. Claims they "looked at me funny".`
+            description = `{murdererName} did a murder on {mKills} people. Claims they "looked at me funny".`
         elseif mKills == 1 then
             title = "Agree to Disagree"
-            description = `{murderer.Name} settled their differences with someone using a knife.`
+            description = `{murdererName} settled their differences with someone using a knife.`
         else
             title = "Cereal Killer"
-            description = `{murderer.Name} was upset with their breakfast cereal and so blew it up.`
+            description = `{murderer} was upset with their breakfast cereal and so blew it up.`
         end
 
         table.insert(highlights, {
@@ -234,7 +235,7 @@ local module: Types.Gamemode = {
             local assailant
             for _, v in round.Participants do
                 for _, kill in v.KillList do
-                    if kill.Name == victim.Name then
+                    if kill.Player.Name == victim.Player.Name then
                         assailant = v
                         break
                     end

@@ -27,7 +27,7 @@ export type Adapter = {
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
     SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "roleAlert" | "creditsEarned", isGlobal: boolean?) -> (),
     CheckForUpdate: (round: Round) -> boolean,
-    SendRoundHighlights: (recipients: {ConnectedParticipant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> (),
+    SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> (),
 
     OnCharacterLoad: (char: Model) -> (),
 }
@@ -126,14 +126,13 @@ export type Round = {
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
-    GetConnectedParticipants: (self: Round) -> {ConnectedParticipant}, -- Returns a list of Participants whose Player is still connected to the server.
-    HasParticipant: (self: Round, name: Username) -> boolean,          -- Returns true if Participant is in round. Does not error.
-    GetParticipant: (self: Round, name: Username) -> Participant,      -- Returns a Participant from a username. Errors if Participant is not in round.
-    JoinRound: (self: Round, plr: Player) -> Participant,              -- Adds a Participant to this Round.
+    HasParticipant: (self: Round, name: Username) -> boolean,     -- Returns true if Participant is in round. Does not error.
+    GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
+    JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
     
     PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
-    StartRound: (self: Round) -> (),              -- Starts this round. Usually shouldn't be called externally.
-    EndRound: (self: Round, victors: Role) -> (), -- Ends this round.
+    StartRound: (self: Round) -> (),               -- Starts this round. Usually shouldn't be called externally.
+    EndRound: (self: Round, victors: Role) -> (),  -- Ends this round.
 
     IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting.
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission.
@@ -253,8 +252,7 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type Participant = {
     Round: Round, -- A reference to the round.
 
-    Name: string,      -- Separates Participant from Player, in case of disconnection.
-    Player: Player?,   -- A reference to the Player object. Can be nil if the Player has disconnected.
+    Player: Player,   -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property of Player.
     Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
     
     Role: Role?,                                                                                               -- A reference to their role. nil if Round hasn't started.
@@ -298,7 +296,6 @@ export type Participant = {
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 }
-export type ConnectedParticipant = Participant & {Player: Player} -- Represents a connected Participant, i.e Player is not nil
 
 -- Defines all custom types used by RoundHandler.
 return module
