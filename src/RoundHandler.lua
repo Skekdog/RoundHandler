@@ -160,31 +160,27 @@ local function newParticipant(round, plr): Types.Participant
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
 
-        LeaveRound = function(self, removeOnly)
-            local plr = self.Player
-
-            local index = table.find(self.Round.Participants, self)
-            if index then
-                table.remove(self.Round.Participants, index)
-            end
-        
-            if plr and plr.Character then
-                plr.Character:Destroy()
-            end
-        
-            if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
-                local timerThread = self.Round._roundTimerThread
-                if not timerThread then
-                    return
+        LeaveRound = function(self, doNotCreateCorpse)
+            if self.Round:IsRoundPreparing() then
+                local index = table.find(self.Round.Participants, self)
+                if index then
+                    table.remove(self.Round.Participants, index)
                 end
-                task.cancel(timerThread)
+
+                if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
+                    local timerThread = self.Round._roundTimerThread
+                    if not timerThread then
+                        return
+                    end
+                    task.cancel(timerThread)
+                end
             end
         
             if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round:GetConnectedParticipants(), (`{self.Name} has disconnected. They were a {self.Role.Name}.`), "info", "disconnect")
+                Adapters.SendMessage(self.Round:GetConnectedParticipants(), (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
             end
         
-            if not removeOnly then
+            if not doNotCreateCorpse then
                 onDeath(self, "Suicide")
             end
         end,
@@ -194,7 +190,7 @@ local function newParticipant(round, plr): Types.Participant
 
         PurchaseEquipment = function(self, equipment)
             local purchases = self.EquipmentPurchases
-            if purchases[equipment.Name] >= equipment.MaxStock then
+            if (purchases[equipment.Name] or 0) >= equipment.MaxStock then
                 return "NotInStock"
             end
             if self.Credits < equipment.Cost then

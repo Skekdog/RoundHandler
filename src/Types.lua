@@ -286,7 +286,7 @@ export type Participant = {
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 
-    LeaveRound: (self: Participant, removeOnly: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
+    LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (),  -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     GetRole: (self: Participant) -> Role,                        -- Returns this Participant's Role. Errors if nil.
     GetAllegiance: (self: Participant) -> Role,                  -- Returns this Participant's Role allegiance.
