@@ -1,5 +1,4 @@
--- Contains various modifiable functions to fit with a particular implementation of RoundHandler
--- That was a lot of words and it doesn't really mean anything :)
+-- Implementation-dependent functions that *should* be customised.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Types = require("src/Types")
