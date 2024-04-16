@@ -220,6 +220,11 @@ local function newParticipant(round, plr): Types.Participant
             if self.Credits < equipment.Cost then
                 return "NotEnoughCredits"
             end
+            if self.EquipmentPurchases[equipment.Name] then
+                self.EquipmentPurchases[equipment.Name] += 1
+            else
+                self.EquipmentPurchases[equipment.Name] = 0
+            end
             return self:GiveEquipment(equipment)
         end,
 
