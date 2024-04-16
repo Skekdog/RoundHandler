@@ -58,27 +58,30 @@ local module: Types.Adapter = {
 
         local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
         
-        if messageType ~= "roleAlert" then
-            local fontColour = ""
-            -- These colours suck
-            if severity == "error" then
-                fontColour = "#ff0000"
-            elseif severity == "warn" then
-                fontColour = "#ffff00"
-            elseif severity == "info" then
-                fontColour = "#0000ff"
-            end
-            message = `<font color='{fontColour}'>{message}</font>`
+        local fontColour = ""
+        -- These colours suck
+        if severity == "error" then
+            fontColour = "#ff0000"
+        elseif severity == "warn" then
+            fontColour = "#ffff00"
+        elseif severity == "info" then
+            fontColour = "#0000ff"
         end
+        message = `<font color='{fontColour}'>{message}</font>`
 
         if isGlobal then
-            return remote:FireAllClients(message)
+            return remote:FireAllClients(message, messageType)
         end
         for _, v in recipients do
             if v.Player then
-                remote:FireClient(v.Player, message)
+                remote:FireClient(v.Player, message, messageType)
             end
         end
+    end,
+
+    SendRoleAlert = function(recipient, role)
+        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendRoleAlert") :: RemoteEvent
+        remote:FireClient(recipient.Player, role.Name, role.Colour, role.Description)
     end,
 
     SendRoundHighlights = function(recipients, highlights, events, scores)

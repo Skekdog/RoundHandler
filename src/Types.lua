@@ -28,7 +28,8 @@ export type Adapter = {
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
-    SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "roleAlert" | "creditsEarned", isGlobal: boolean?) -> (),
+    SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "creditsEarned", isGlobal: boolean?) -> (),
+    SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
 

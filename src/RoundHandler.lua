@@ -132,7 +132,7 @@ local function newParticipant(round, plr): Types.Participant
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
             end
-            Adapters.SendMessage({self :: any}, `You are now a {self:GetFormattedRole()}`, "info", "roleAlert")
+            Adapters.SendRoleAlert(self, role)
             role:OnRoleAssigned(self)
             if previousRole then
                 previousRole:OnRoleRemoved(self)
@@ -497,7 +497,7 @@ local function newRound(gamemode): Types.Round
                     
                 elseif v.Name == "Lighting" then
                     for _, property: any in v:GetChildren() do
-                        (Lighting :: any)[property] = property.Value
+                        (Lighting :: any)[property.Name] = property.Value
                     end
                 end
         

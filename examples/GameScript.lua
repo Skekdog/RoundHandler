@@ -2,6 +2,7 @@
 -- A simple implementation of the round system.
 -- All players are added to a single round.
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 
@@ -11,7 +12,7 @@ local Murder = require("examples/gamemodes/Murder")
 
 local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() :: {Instance}
 
-(game:GetService("ReplicatedStorage"):FindFirstChild("SlayVote") :: RemoteEvent).OnServerEvent:Connect(function(plr, target: Player)
+(ReplicatedStorage:FindFirstChild("SlayVote") :: RemoteEvent).OnServerEvent:Connect(function(plr, target: Player)
 	local roundId = ServerStorage:GetAttribute("RoundID")
 	if (not roundId) or (typeof(target) ~= "Instance")  then
 		return
