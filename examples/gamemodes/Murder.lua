@@ -137,6 +137,7 @@ local module: Types.Gamemode = {
             Speed = 16,
 
             CorpseResultsPublicised = false,
+            CanSeeMissing = false,
 
             HighlightRules = {},
             KnowsRoles = {},
@@ -158,6 +159,7 @@ local module: Types.Gamemode = {
 
             AnnounceDisconnect = false,
             CanStealCredits = false,
+            CanSeeMissing = false,
             EquipmentShop = {},
             AwardOnDeath = {},
 
@@ -200,6 +202,7 @@ local module: Types.Gamemode = {
             Speed = 16,
 
             CorpseResultsPublicised = false,
+            CanSeeMissing = true,
 
             HighlightRules = {},
             KnowsRoles = {},
@@ -271,7 +274,7 @@ local module: Types.Gamemode = {
                     end
 
                     local participant = round:GetParticipant(plr.Name)
-                    if (participant:GetAllegiance().Name ~= "Bystander") or (participant.Deceased) then
+                    if (participant:GetAllegiance().Name ~= "Bystander") or (participant:IsDead()) then
                         return
                     end
 

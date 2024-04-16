@@ -221,6 +221,7 @@ local module: Types.Gamemode = {
                 Detective = 1,
             },
             CorpseResultsPublicised = false,
+            CanSeeMissing = true,
 
             StartingCredits = 2,
             StartingEquipment = {},
@@ -261,6 +262,7 @@ local module: Types.Gamemode = {
                 Traitor = 1,
             },
             CorpseResultsPublicised = true,
+            CanSeeMissing = false,
 
             StartingCredits = 2,
             StartingEquipment = {},
@@ -298,6 +300,7 @@ local module: Types.Gamemode = {
             CanStealCredits = false,
             AwardOnDeath = {},
             CorpseResultsPublicised = false,
+            CanSeeMissing = false,
 
             StartingCredits = 0,
             StartingEquipment = {},
