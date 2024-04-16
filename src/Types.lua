@@ -294,10 +294,10 @@ export type Participant = {
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (), -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
     
     Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
-    AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (), -- Adds score to this Participant
+    AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (), -- Adds score to this Participant.
 
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
-    AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
+    AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 }
 
