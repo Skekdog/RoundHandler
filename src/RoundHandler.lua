@@ -105,6 +105,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         AssignRole = function(self, role, overrideCredits, overrideInventory)
+            local previousRole = self.Role
             self.Role = role
             self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
             for _, v in role.StartingEquipment do
@@ -112,6 +113,9 @@ local function newParticipant(round, plr): Types.Participant
             end
             Adapters.SendMessage({self :: any}, `You are now a {self:GetFormattedRole()}`, "info", "roleAlert")
             role:OnRoleAssigned(self)
+            if previousRole then
+                previousRole:OnRoleRemoved(self)
+            end
         end,
 
         SearchCorpse = function(self, target)
