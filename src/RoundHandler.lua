@@ -22,7 +22,7 @@ local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types
     -- create ragdoll and set properties
     local round = self.Round
 
-    self.Deceased = true
+    self.Status = "Missing"
     self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
     
     local killer = self.KilledByParticipant
@@ -59,7 +59,7 @@ local function newParticipant(round, plr): Types.Participant
         Credits = 0,
         Score = {},
 
-        Deceased = false,
+        Status = "Alive",
         SearchedBy = {},
         KilledByWeapon = "Suicide",
         KilledAt = 0,
@@ -75,7 +75,7 @@ local function newParticipant(round, plr): Types.Participant
 
         SlayVotes = {},
         TryAddSlayVote = function(self, from)
-            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self.Deceased or (not self.Character) then
+            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() or (not self.Character) then
                 return false
             end
     
@@ -96,6 +96,26 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         EquipmentPurchases = {},
+
+        IsDead = function(self)
+            return (self.Status == "Missing") or (self.Status == "Dead")
+        end,
+
+        ViewPartialParticipant = function(self, target)
+            local canSeeMissing = false
+            if self.Role and self.Role.CanSeeMissing then
+                canSeeMissing = true
+            end
+            local status = target.Status
+            if (status == "Missing") and (not canSeeMissing) then
+                status = "Alive"
+            end
+            return {
+                Player = target.Player,
+                Role = self:TryViewParticipantRole(target),
+                Status = status :: "Alive" | "Dead" | "Missing"
+            }
+        end,
 
         TryViewParticipantRole = function(self, target)
             local ownRole = self.Role
@@ -140,7 +160,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         SearchCorpse = function(self, target)
-            if not target.Deceased then
+            if not target:IsDead() then
                 error(`Target {target.Player.Name} is not dead!`)
             end
 
@@ -150,7 +170,11 @@ local function newParticipant(round, plr): Types.Participant
                 else
                     table.insert(target.SearchedBy, self)
                 end
+            end
+
+            if target.Status == "Missing" then
                 Adapters.SendMessage(self.Round.Participants, `{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
+                target.Status = "Dead"
             end
 
             if self:GetRole().CanStealCredits then

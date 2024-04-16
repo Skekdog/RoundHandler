@@ -57,6 +57,12 @@ export type PartialRole = {
     Colour: Color3, -- Colour of the original Role.
 }
 
+export type PartialParticipant = {
+    Player: Player,
+    Role: PartialRole?,
+    Status: "Alive" | "Missing" | "Dead"
+}
+
 export type SelfDefenseEntry = {
     Against: Participant, -- A reference to the Participant who is able to freely kill this participant until the entry expires.
     Until: Timestamp,  -- The timestamp at which this Self Defense entry expires. Always compare this, as opposed to checking the presence of an entry against the Participant, because the entry may not be removed.
@@ -199,22 +205,23 @@ export type Gamemode = {
     Must be defined in a Gamemode.
 ]]
 export type Role = {
-    Name: string,        -- Name of this role.
-    Description: string, -- Description of this role.
-    Colour: Color3,      -- Colour of this role. Not color.
+    Name: string,          -- Name of this role.
+    Description: string,   -- Description of this role.
+    Colour: Color3,        -- Colour of this role. Not color.
     Extras: {[any]: any}?, -- Any extra info about the role, for use in custom functions.
 
-    Allegiance: RoleName,  -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
+    Allegiance: RoleName,   -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
-    VictoryText: string?,  -- Text shown in event log. Must not be nil for the Allegiance roles, no effect on other roles.
+    VictoryText: string?,   -- Text shown in event log. Must not be nil for the Allegiance roles, no effect on other roles.
     
     StartingCredits: Integer,           -- Added onto gamemode StartingCredits.
     StartingEquipment: {EquipmentName}, -- Added onto gamemode StartingEquipment.
     EquipmentShop: {EquipmentName},     -- List of equipment available to this role.
 
-    AnnounceDisconnect: boolean,                 -- If true, a message is sent to all participants when this player leaves the round.
-    CorpseResultsPublicised: boolean,            -- Whether this role will publicise the results from searching a corpse.
-    CanStealCredits: boolean,                    -- Whether this role can steal credits from corpses.
+    AnnounceDisconnect: boolean,      -- If true, a message is sent to all participants when this player leaves the round.
+    CorpseResultsPublicised: boolean, -- Whether this role will publicise the results from searching a corpse.
+    CanStealCredits: boolean,         -- Whether this role can steal credits from corpses.
+    CanSeeMissing: boolean,           -- Whether this role can see Missing participants, or if they will be shown as alive instead.
     AwardOnDeath: {[RoleRelationship]: Integer}, -- How many credits to award to other roles when this role is killed.
 
     Accessories: {Asset}, -- A list of accessories to add to the character.
@@ -264,6 +271,7 @@ export type Participant = {
     GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
+    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant,                    -- Returns a limited view of the Participant, for clients.
     
     LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (), -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
 
@@ -271,7 +279,7 @@ export type Participant = {
     GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
 
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
-    Deceased: boolean,                     -- Dead or not.
+    Status: "Alive" | "Missing" | "Dead",  -- Missing if dead but body has not been searched by anyone.
     KilledAt: Timestamp,                   -- Timestamp of the Participant's demise. Initially 0.
     KilledByWeapon: Equipment | DeathType, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
     KilledByParticipant: Participant?,     -- Who killed this Participant.
@@ -290,6 +298,7 @@ export type Participant = {
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
     SearchCorpse: (self: Participant, target: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if target is not dead.
+    IsDead: (self: Participant) -> boolean, -- Returns true if Status == "Missing" or "Dead"
     
     KillList: {Participant}, -- A list of Participants this player has killed.
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (), -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
