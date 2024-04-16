@@ -1,11 +1,14 @@
 local module = {}
---test!
+
+-- These types exist for clarity
 export type Integer = number
 export type PositiveNumber = number
 export type PositiveInteger = number
-export type Username = string
-export type EquipmentName = string
 export type Timestamp = number
+
+export type Username = string
+export type FormattedUsername = string | "<font color='#{ROLE COLOUR}'>{USERNAME}</font>"
+export type EquipmentName = string
 export type RoleName = string
 
 export type Asset = "rbxassetid://" | string
@@ -15,7 +18,7 @@ export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
         HIGHLIGHTS_TIME: number,
-        SLAY_VOTES: Integer,
+        SLAY_VOTES: PositiveInteger,
     },
 
     GetKarma: (plr: Player) -> number,
@@ -27,7 +30,7 @@ export type Adapter = {
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
     SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "roleAlert" | "creditsEarned", isGlobal: boolean?) -> (),
     CheckForUpdate: (round: Round) -> boolean,
-    SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[Participant]: {[ScoreReason]: Integer}}) -> (),
+    SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
 
     OnCharacterLoad: (char: Model) -> (),
 }
@@ -252,12 +255,12 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type Participant = {
     Round: Round, -- A reference to the round.
 
-    Player: Player,   -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property of Player.
+    Player: Player,    -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property of Player.
     Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
     
-    Role: Role?,                                                                                               -- A reference to their role. nil if Round hasn't started.
-    GetRole: (self: Participant) -> Role,                                                                      -- Returns this Participant's Role. Errors if nil.
-    GetAllegiance: (self: Participant) -> Role,                                                                -- Returns this Participant's Role allegiance. Errors if nil.
+    Role: Role?,                                -- A reference to their role. nil if Round hasn't started.
+    GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
+    GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     
@@ -277,22 +280,23 @@ export type Participant = {
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
     SlayVotes: {Participant},          -- A list of Participants who have voted to slay this person due to RDM.
+    TryAddSlayVote: (self: Participant, from: Participant) -> boolean, -- Tries to add a vote to slay this Participant, and executes them if required. Will return false if the vote could not be added, such as due to this Participant already voting to remove them, else returning true if successful.
     
-    Credits: Integer,                                                                                  -- Available credits that can be spent in Equipment Shop.
-    EquipmentPurchases: {[EquipmentName]: PositiveInteger},                                            -- The Equipment this Participant purchased, and how many times.
+    Credits: Integer,                                       -- Available credits that can be spent in Equipment Shop.
+    EquipmentPurchases: {[EquipmentName]: PositiveInteger}, -- The Equipment this Participant purchased, and how many times.
     RemoveEquipment: (self: Participant, equipment: Equipment) -> (),                                  -- Removes this Equipment from the Participant's inventory.
     GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?,         -- Adds this Equipment to the Participant's inventory.
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
     SearchCorpse: (self: Participant, target: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if target is not dead.
     
-    KillList: {Participant},                                                       -- A list of Participants this player has killed.
+    KillList: {Participant}, -- A list of Participants this player has killed.
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (), -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
     
-    Score: {[ScoreReason]: Integer},                                           -- Dictionary of score reason = total score for this reason.
+    Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
     AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (), -- Adds score to this Participant
 
-    SelfDefenseList: {SelfDefenseEntry},                                               -- A list of Participants who this participant can freely kill in self-defense.
+    SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 }

@@ -29,16 +29,7 @@ local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() ::
 			return
 		end
 
-		if voterParticipant.KilledInSelfDefense or (#voterParticipant.FreeKillReasons > 0) or table.find(targetParticipant.SlayVotes, voterParticipant) then
-			return
-		end
-
-		for _, v in targetParticipant.KillList do
-			if v == voterParticipant then
-				table.insert(targetParticipant.SlayVotes, voterParticipant)
-				break
-			end
-		end
+		targetParticipant:TryAddSlayVote(voterParticipant)
 	end
 end)
 

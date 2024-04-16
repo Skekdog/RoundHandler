@@ -16,6 +16,7 @@ local module = {
 
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
 local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types.DeathType)?)
     -- create ragdoll and set properties
@@ -73,6 +74,26 @@ local function newParticipant(round, plr): Types.Participant
         KillList = {},
 
         SlayVotes = {},
+        TryAddSlayVote = function(self, from)
+            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self.Deceased or (not self.Character) then
+                return false
+            end
+    
+            for _, v in self.KillList do
+                if v == from then
+                    table.insert(self.SlayVotes, from)
+                    if #self.SlayVotes >= SLAY_VOTES then
+                        local hum = self.Character:FindFirstChildOfClass("Humanoid")
+                        if hum then
+                            hum.Health = 0
+                        end
+                    end
+                    return true
+                end
+            end
+
+            return false
+        end,
 
         EquipmentPurchases = {},
 
@@ -402,7 +423,7 @@ local function newRound(gamemode): Types.Round
 
             local scores = {}
             for _, v in self.Participants do
-                scores[v] = v.Score
+                scores[v:GetFormattedName()] = v.Score
             end
             Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
 
