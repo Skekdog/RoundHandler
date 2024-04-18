@@ -11,15 +11,20 @@ local ThoseYouTrust = require("examples/gamemodes/ThoseYouTrust")
 local Murder = require("examples/gamemodes/Murder")
 
 local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() :: {Instance}
+local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
 
-local slayVote: RemoteEvent = ReplicatedStorage:FindFirstChild("SlayVote") :: RemoteEvent
-local getPartialParticipants: RemoteEvent = ReplicatedStorage:FindFirstChild("GetPartialParticipants") :: RemoteEvent
+if not remotes then
+	error("Missing remotes folder (RoundHandler)!")
+end
+
+local slayVote = remotes:FindFirstChild("SlayVote") :: RemoteEvent
+local getPartialParticipants = remotes:FindFirstChild("GetPartialParticipants") :: RemoteFunction
 
 if not slayVote or not getPartialParticipants then
 	error("Missing required remotes!")
 end
 
-getPartialParticipants.OnServerEvent:Connect(function(plr)
+getPartialParticipants.OnServerInvoke = function(plr)
 	local roundId = ServerStorage:GetAttribute("RoundID")
 	if not roundId then
 		return
@@ -34,7 +39,7 @@ getPartialParticipants.OnServerEvent:Connect(function(plr)
 	end
 
 	return participants
-end)
+end
 
 slayVote.OnServerEvent:Connect(function(plr, target: Player)
 	local roundId = ServerStorage:GetAttribute("RoundID")
