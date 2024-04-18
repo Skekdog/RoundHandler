@@ -2,17 +2,36 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - "changelog-nonsense"
     tags:
       - '*'
 
 jobs:
+  generate-changelog:
+    name: Generate changelog
+    runs-on: ubuntu-latest
+    outputs:
+      release_body: ${{ steps.git-cliff.outputs.content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@main
+        id: git-cliff
+        with:
+          config: detailed
+          args: -vv --latest --no-exec --github-repo ${{ github.repository }}
+        env:
+          OUTPUT: CHANGELOG.md
+          
   build:
     runs-on: ubuntu-latest
+    needs: generate-changelog
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Install aftman
         uses: ok-nick/setup-aftman@v0.4.2
         with:
@@ -34,6 +53,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: true
+          body: "${{ needs.generate-changelog.outputs.release_body }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
