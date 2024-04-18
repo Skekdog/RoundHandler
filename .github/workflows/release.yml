@@ -6,19 +6,7 @@ on:
       - '*'
 
 jobs:
-  changelog:
-    runs-on: ubuntu-latest
-    outputs:
-      changelog: ${{ steps.generate-changelog.outputs.changelog }}
-    steps:
-      - name: Generate Changelog
-        id: generate-changelog
-        uses: heinrichreimer/action-github-changelog-generator@v2.3
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-        
   build:
-    needs: changelog
     runs-on: ubuntu-latest
 
     steps:
@@ -46,7 +34,6 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: true
-          body: ${{ needs.changelog.outputs.changelog }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
