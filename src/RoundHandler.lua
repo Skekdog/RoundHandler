@@ -66,6 +66,7 @@ local function newParticipant(round, plr): Types.Participant
         KilledByParticipant = nil,
         KilledInSelfDefense = false,
         KilledAsFreeKill = false,
+        KilledByHeadshot = false,
 
         FreeKill = false,
         FreeKillReasons = {},
@@ -183,14 +184,21 @@ local function newParticipant(round, plr): Types.Participant
                 target.Credits = 0
             end
 
+            local equipmentList = {}
+            for i, _ in target.EquipmentPurchases do
+                local equipment = self.Round:GetEquipment(i)
+                if type(equipment) == "function" then
+                    table.insert(equipmentList, equipment)
+                end
+            end
             return {
                 Name = target:GetFormattedName(),
                 Role = target:GetRole(),
                 DeathTime = target.KilledAt,
                 SelfDefense = target.KilledInSelfDefense,
                 FreeKill = #target.FreeKillReasons > 0,
-                Headshot = false,
-                EquipmentList = {},
+                Headshot = target.KilledByHeadshot,
+                EquipmentList = equipmentList,
                 MurderWeapon = target.KilledByWeapon,
             }
         end,
@@ -327,6 +335,43 @@ local function newRound(gamemode): Types.Round
 
         Participants = {},
         EventLog = {},
+
+        DoMassDeath = function(self, victims, attacker, weapon, noGuilt)
+            local sorted = {}
+
+            --todo: using 3 loops for this seems REALLY inefficient
+            for _, v in victims do
+                if v:GetRole().Name ~= self.Gamemode.PhyrricVictors then
+                    table.insert(sorted, v)
+                end
+            end
+            for _, v in victims do
+                if v:GetRole().Name == self.Gamemode.PhyrricVictors then
+                    table.insert(sorted, v)
+                end
+            end
+
+            local currentTime = workspace:GetServerTimeNow()
+            for _, v in sorted do
+                local char = v.Character
+                if char then
+                    local hum = char:FindFirstChildOfClass("Humanoid")
+                    if hum then
+                        v.KilledAt = currentTime
+                        v.KilledAsFreeKill = noGuilt
+                        v.KilledByParticipant = attacker
+                        v.KilledByWeapon = weapon
+
+                        if attacker then
+                            v.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(v)
+                            attacker:AddKill(v, noGuilt)
+                        end
+
+                        hum.Health = 0
+                    end
+                end
+            end
+        end,
 
         GetParticipant = function(self, name)
             for _, participant in self.Participants do
@@ -635,18 +680,6 @@ local function newRound(gamemode): Types.Round
                             Category = "Death",
                             Timestamp = event.Timestamp,
                         })
-                    end
-                elseif i == "MassDeath" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_MassDeath = event.Data :: any
-                        for _, participant in data.Victims do
-                            table.insert(userFacingLog, {
-                                Text = getDeathEvent({Attacker = data.Attacker, Victim = participant, Weapon = data.Weapon}),
-                                Icons = {},
-                                Category = "Death",
-                                Timestamp = event.Timestamp
-                            })
-                        end
                     end
                 elseif i == "EquipmentGiven" then
                     for _, event in v do

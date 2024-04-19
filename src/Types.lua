@@ -83,17 +83,11 @@ export type RoundEvent_Death = {
     SelfDefense: boolean,
     FreeKill: boolean,
 }
-export type RoundEvent_MassDeath = {
-    Attacker: Participant?,
-    Victims: {Participant},
-    Weapon: Equipment | DeathType,
-    Justified: boolean,
-}
 export type RoundEvent_Equipment = {
     Target: Participant,
     Equipment: Equipment
 }
-export type RoundEventData = RoundPhaseEventType | RoundEvent_Death | RoundEvent_MassDeath | RoundEvent_Equipment | any
+export type RoundEventData = RoundPhaseEventType | RoundEvent_Death | RoundEvent_Equipment | any
 export type RoundEvent = {
     Timestamp: Timestamp, -- The time that this event occured at.
     Data: RoundEventData,
@@ -133,6 +127,8 @@ export type Round = {
     LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
     EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
 
+    DoMassDeath: (self: Round, victims: {Participant}, attacker: Participant?, weapon: Equipment, noGuilt: boolean) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
+
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
@@ -154,7 +150,7 @@ export type Round = {
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
 
-    LoadMap: (self: Round, map: MapStructure) -> (),   -- Loads a map.
+    LoadMap: (self: Round, map: MapStructure) -> (), -- Loads a map.
 
     -- Private members, should not be used from outside the module
     _roundTimerThread: thread?,
@@ -178,7 +174,7 @@ export type Gamemode = {
     MaximumPlayers: PositiveInteger,     -- The gamemode will not appear in voting if there are more players than this value.
 
     TimeoutVictors: (self: Gamemode, round: Round) -> Role, -- Which role wins if the round timer expires?
-    PhyrricVictors: (self: Gamemode, round: Round) -> Role, -- Which role wins if everyone dies at the same time?
+    PhyrricVictors: RoleName, -- Which role wins if everyone dies at the same time? Cannot be a function because this is checked on every mass death event. --todo: So what if it gets checked every time?
 
     CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight},
     CalculateNonDefaultUserFacingEvents: ((self: Gamemode, round: Round) -> {UserFacingRoundEvent})?, -- Calculates the user facing event log for non-default events. Only needed if this Gamemode uses custom events. If any custom event is not converted, it will not be displayed to players.
@@ -285,6 +281,7 @@ export type Participant = {
     KilledByParticipant: Participant?,     -- Who killed this Participant.
     KilledInSelfDefense: boolean,          -- Whether this Participant was killed in self defense or not.
     KilledAsFreeKill: boolean,             -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
+    KilledByHeadshot: boolean,             -- True if they were killed by a headshot.
     
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
