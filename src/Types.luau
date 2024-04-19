@@ -24,6 +24,8 @@ export type Adapter = {
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),
 
+    CalculateUserFacingEvents: (events: {[RoundEventType]: {RoundEvent}}, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
+
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
@@ -123,7 +125,6 @@ export type Round = {
 
     Participants: {Participant}, -- A list of participants in this round.
 
-    CalculateUserFacingEvents: (self: Round) -> {UserFacingRoundEvent},        -- Returns a list of UserFacingRoundEvents, to display to players.
     LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
     EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
 

@@ -499,7 +499,9 @@ local function newRound(gamemode): Types.Round
             for _, v in self.Participants do
                 scores[v:GetFormattedName()] = v.Score
             end
-            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
+
+            assert(self.Winners)
+            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), Adapters.CalculateUserFacingEvents(self.EventLog, self.Winners), scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
@@ -624,124 +626,6 @@ local function newRound(gamemode): Types.Round
                 return
             end
             table.insert(self.EventLog[type], event)
-        end,
-
-        CalculateUserFacingEvents = function(self)
-            local userFacingLog: {Types.UserFacingRoundEvent} = {}
-
-            local function getDeathEvent(data: {Attacker: Types.Participant?, Weapon: string | Types.Equipment, Victim: Types.Participant})
-                local attacker = data.Attacker
-                local weapon = data.Weapon
-                local text = data.Victim:GetFormattedName()
-
-                local attackerName
-                if attacker then
-                    attackerName = attacker:GetFormattedName()
-                end
-                if weapon == "Fall" then
-                    text ..= " was doomed to fall"
-                    if attacker then
-                        text ..= ` at the hands of {attackerName}`
-                    end
-                elseif weapon == "Drown" then
-                    text ..= " was doomed to fall"
-                    if attacker then
-                        text ..= ` at the hands of {attackerName}`
-                    end
-                elseif weapon == "Suicide" then
-                    text ..= " couldn't take it anymore and killed themselves"
-                elseif weapon == "Crush" then
-                    text ..= " was crushed"
-                    if attacker then
-                        text ..= ` by {attackerName}`
-                    end
-                elseif weapon == "Mutation" then
-                    text ..= "'s DNA was mutated"
-                    if attacker then
-                        text ..= ` by {attackerName}`
-                    end
-                elseif type(weapon) == "table" then
-                    text ..= ` died to a {weapon.Name}`
-                    if attacker then
-                        text ..= ` used by {attackerName}`
-                    end
-                end
-                text ..= "."
-                return text
-            end
-
-            for i: Types.RoundEventType, v in self.EventLog do
-                if i == "Death" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Death = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = getDeathEvent(data),
-                            Icons = {},
-                            Category = "Death",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "EquipmentGiven" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} received a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "EquipmentPurchased" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} purchased a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "EquipmentRemoved" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} lost a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "Round" then
-                    for _, event in v do
-                        local phase: Types.RoundPhaseEventType = event.Data :: any
-                        local text: string = ""
-                        if phase == "Start" then
-                            text = "The round begins."
-                        elseif phase == "Pause" then
-                            text = "The round is paused."
-                        elseif phase == "Resume" then
-                            text = "The round is resumed."
-                        elseif phase == "NewMapLoaded" then
-                            text = "A new map is loaded."
-                        elseif phase == "End" then
-                            assert(self.Winners and self.Winners.VictoryText)
-                            text = self.Winners.VictoryText
-                        end
-                        table.insert(userFacingLog, {
-                            Text = text,
-                            Icons = {},
-                            Category = "Round",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                end
-            end
-
-            table.sort(userFacingLog, function(a, b)
-                return a.Timestamp < b.Timestamp
-            end)
-
-            return userFacingLog
         end,
 
         _roundTimerThread = nil,
