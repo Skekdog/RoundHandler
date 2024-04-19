@@ -154,7 +154,7 @@ export type Round = {
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
 
-    LoadMap: (self: Round, map: Folder) -> (),   -- Loads a map.
+    LoadMap: (self: Round, map: MapStructure) -> (),   -- Loads a map.
 
     -- Private members, should not be used from outside the module
     _roundTimerThread: thread?,
@@ -309,6 +309,12 @@ export type Participant = {
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
+}
+
+export type MapStructure = Folder & {
+    Spawns: Folder & {[string]: BasePart, GetChildren: () -> {BasePart}},
+    Props: Folder & {[string]: BasePart, GetChildren: () -> {BasePart}},
+    Map: Folder & {[string]: BasePart, GetChildren: () -> {PVInstance}},
 }
 
 -- Defines all custom types used by RoundHandler.

@@ -716,7 +716,7 @@ local function newRound(gamemode): Types.Round
     }
 end
 
-function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
+function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
     self:LoadMap(map)
     

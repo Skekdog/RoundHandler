@@ -64,7 +64,7 @@ slayVote.OnServerEvent:Connect(function(plr, target: Player)
 end)
 
 while true do
-	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: Folder, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
+	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: any, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
 	ServerStorage:SetAttribute("RoundID", round.ID)
 
 	local function playerAdded(plr: Player)
