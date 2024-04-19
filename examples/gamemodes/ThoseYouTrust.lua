@@ -20,9 +20,7 @@ local module: Types.Gamemode = {
     TimeoutVictors = function(self)
         return self.Roles[3]
     end,
-    PhyrricVictors = function(self)
-        return self.Roles[1]
-    end,
+    PhyrricVictors = "Traitor",
 
     CalculateRoundHighlights = function(self, round)
         local weaponList = common.GetWeaponHighlights(round.EventLog :: any)

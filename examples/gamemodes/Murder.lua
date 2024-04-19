@@ -19,9 +19,7 @@ local module: Types.Gamemode = {
     RecommendedPlayers = 4,
     MinimumPlayers = 2,
 
-    PhyrricVictors = function(self)
-        return self.Roles[3]
-    end,
+    PhyrricVictors = "Innocent",
     TimeoutVictors = function(self)
         return self.Roles[1]
     end,
