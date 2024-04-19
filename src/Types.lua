@@ -120,7 +120,7 @@ Round Phases:
 export type Round = {
     ID: UUID,           -- Unique identifier of the round.
     Gamemode: Gamemode, -- A reference to the current gamemode.
-    Map: Folder,        -- A reference to the loaded map folder.
+    Map: MapStructure,        -- A reference to the loaded map folder.
 
     Winners: Role?,           -- The Role of whoever won the Round. Will always be nil until EndRound() is called.
     Paused: boolean,          -- Whether the round is paused or not.
@@ -312,9 +312,9 @@ export type Participant = {
 }
 
 export type MapStructure = Folder & {
-    Spawns: Folder & {[string]: BasePart, GetChildren: () -> {BasePart}},
-    Props: Folder & {[string]: BasePart, GetChildren: () -> {BasePart}},
-    Map: Folder & {[string]: BasePart, GetChildren: () -> {PVInstance}},
+    Spawns: Folder & {[string]: BasePart},
+    Props: Folder & {[string]: BasePart},
+    Map: Folder & {[string]: BasePart},
 }
 
 -- Defines all custom types used by RoundHandler.

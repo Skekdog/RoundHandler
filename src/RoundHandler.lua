@@ -528,7 +528,7 @@ local function newRound(gamemode): Types.Round
                 v.Parent = mapFolder
             end
             
-            self.Map = mapFolder
+            self.Map = mapFolder :: Types.MapStructure
             mapFolder.Parent = workspace
         end,
         
