@@ -526,13 +526,6 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            if not map:FindFirstChild("Map") then
-                error(`Map {map.Name} does not have a Map Folder`)
-            end
-            if not map:FindFirstChild("Spawns") then
-                error(`Map {map.Name} does not have a Spawns Folder`)
-            end
-        
             self:LogEvent("Round", "NewMapLoaded")
             map = map:Clone()
         

@@ -13,7 +13,6 @@ local module: Types.Gamemode = {
     Name = "Murder",
     Description = "Survive the murderer.",
     EngineVersion = "0.0.1",
-    GamemodeVersion = "0.0.1",
 
     MaximumPlayers = 700,
     RecommendedPlayers = 4,

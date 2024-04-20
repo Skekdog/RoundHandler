@@ -11,7 +11,6 @@ local module: Types.Gamemode = {
     Description = "Spy HQ has been infiltrated by Traitor spies. Can you separate those you trust, from those you shouldn't?",
 
     EngineVersion = "0.0.1",
-    GamemodeVersion = "0.0.1",
 
     MinimumPlayers = 1,
     RecommendedPlayers = 4,

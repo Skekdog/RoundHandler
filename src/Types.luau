@@ -168,7 +168,6 @@ export type Gamemode = {
     Extras: {[any]: any}?, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
-    GamemodeVersion: string, -- Indicates the version of this gamemode.
 
     MinimumPlayers: PositiveInteger,     -- The gamemode will not start without at least this many players.
     RecommendedPlayers: PositiveInteger, -- The gamemode will not appear in voting without at least this many players.
@@ -310,6 +309,7 @@ export type Participant = {
 }
 
 export type MapStructure = Folder & {
+    EngineVersion: StringValue,
     Spawns: Folder & {[string]: BasePart},
     Props: Folder & {[string]: BasePart},
     Map: Folder & {[string]: BasePart},
