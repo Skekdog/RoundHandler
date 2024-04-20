@@ -14,14 +14,14 @@ local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() ::
 local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
 
 if not remotes then
-	error("Missing remotes folder (RoundHandler)!")
+	error("Missing remotes folder (RoundHandler)")
 end
 
 local slayVote = remotes:FindFirstChild("SlayVote") :: RemoteEvent
 local getPartialParticipants = remotes:FindFirstChild("GetPartialParticipants") :: RemoteFunction
 
 if not slayVote or not getPartialParticipants then
-	error("Missing required remotes!")
+	error("Missing required remotes")
 end
 
 getPartialParticipants.OnServerInvoke = function(plr)

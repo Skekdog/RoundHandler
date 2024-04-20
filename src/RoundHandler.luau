@@ -162,7 +162,7 @@ local function newParticipant(round, plr): Types.Participant
 
         SearchCorpse = function(self, target)
             if not target:IsDead() then
-                error(`Target {target.Player.Name} is not dead!`)
+                error(`Target {target.Player.Name} is not dead`)
             end
 
             if not table.find(target.SearchedBy, self) then
@@ -205,13 +205,13 @@ local function newParticipant(round, plr): Types.Participant
 
         GetRole = function(self)
             if not self.Role then
-                error(`Participant {self.Player.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} Role is nil`)
             end
             return self.Role
         end,
         GetAllegiance = function(self)
             if not self.Role then
-                error(`Participant {self.Player.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} Role is nil`)
             end
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
@@ -455,7 +455,7 @@ local function newRound(gamemode): Types.Round
         end,
         StartRound = function(self)
             if self:IsRoundInProgress() then
-                error("Attempt to start round whilst it is already in progress!")
+                error("Attempt to start round whilst it is already in progress")
             end
             self.RoundPhase = "Playing"
             self:LogEvent("Round", "Start")
@@ -527,10 +527,10 @@ local function newRound(gamemode): Types.Round
         end,
         LoadMap = function(self, map)
             if not map:FindFirstChild("Map") then
-                error(`Map {map.Name} does not have a Map folder!`)
+                error(`Map {map.Name} does not have a Map Folder`)
             end
             if not map:FindFirstChild("Spawns") then
-                error(`Map {map.Name} does not have a Spawns folder!`)
+                error(`Map {map.Name} does not have a Spawns Folder`)
             end
         
             self:LogEvent("Round", "NewMapLoaded")
@@ -592,7 +592,7 @@ local function newRound(gamemode): Types.Round
                     return v
                 end
             end
-            error(`Equipment {name} not found!`)
+            error(`Equipment {name} not found`)
         end,
         GetRoleInfo = function(self, roleName)
             for _, v in self.Gamemode.Roles do

@@ -14,7 +14,7 @@ function module.TestForOneSurvivingRole(self: Types.Gamemode, round: Types.Round
     end
 
     if #allegiances ~= 2 then
-        error("TestForOneSurvivingRole Victory Checker only works if there are 2 teams!")
+        error("TestForOneSurvivingRole Victory Checker only works if there are 2 teams")
     end
 
     local function checkAlive(participant: Types.Participant)
