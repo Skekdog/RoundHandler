@@ -216,7 +216,11 @@ local function newParticipant(round, plr): Types.Participant
             return self.Round:GetRoleInfo(self.Role.Allegiance)
         end,
 
-        LeaveRound = function(self, doNotCreateCorpse)
+        LeaveRound = function(self)
+            if self.Role and self.Role.AnnounceDisconnect then
+                Adapters.SendMessage(self.Round.Participants, (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
+            end
+
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
@@ -230,13 +234,7 @@ local function newParticipant(round, plr): Types.Participant
                     end
                     task.cancel(timerThread)
                 end
-            end
-        
-            if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round.Participants, (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
-            end
-        
-            if not doNotCreateCorpse then
+            else
                 onDeath(self, "Suicide")
             end
         end,
@@ -411,7 +409,7 @@ local function newRound(gamemode): Types.Round
             table.insert(self.Participants, participant)
         
             plr.Destroying:Connect(function()
-                participant:LeaveRound(false)
+                participant:LeaveRound()
             end)
         
             local spawns = (self.Map:FindFirstChild("Spawns") :: Folder):GetChildren()
@@ -425,7 +423,7 @@ local function newRound(gamemode): Types.Round
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
-                        participant:LeaveRound(true)
+                        participant:LeaveRound()
                         self:JoinRound(plr)
                         return
                     end

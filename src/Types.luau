@@ -269,7 +269,7 @@ export type Participant = {
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant,                    -- Returns a limited view of the Participant, for clients.
     
-    LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (), -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
+    LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
     GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
