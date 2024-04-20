@@ -18,12 +18,11 @@ local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the 
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
-local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types.DeathType)?)
+local function onDeath(self: Types.Participant)
     -- create ragdoll and set properties
     local round = self.Round
 
     self.Status = "Missing"
-    self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
     
     local killer = self.KilledByParticipant
 
@@ -235,7 +234,7 @@ local function newParticipant(round, plr): Types.Participant
                     task.cancel(timerThread)
                 end
             else
-                onDeath(self, "Suicide")
+                
             end
         end,
 
@@ -314,7 +313,27 @@ local function newParticipant(round, plr): Types.Participant
         GetFormattedRole = function(self)
             local role = self:GetRole()
             return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
-        end
+        end,
+
+        Kill = function(self, attacker, weapon, headshot, ignoreKarma)
+            self.Status = "Missing"
+            self.KilledAsFreeKill = #self.FreeKillReasons > 0
+            self.KilledAt = workspace:GetServerTimeNow()
+            self.KilledByHeadshot = headshot
+            self.KilledByParticipant = attacker
+            self.KilledByWeapon = weapon
+
+            if attacker then
+                self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
+                self.KilledByParticipant = attacker
+                attacker:AddKill(self, ignoreKarma)
+            end
+
+            local hum = self.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.Health = 0
+            end
+        end,
     }
 end
 
@@ -349,22 +368,8 @@ local function newRound(gamemode): Types.Round
                 end
             end
 
-            local currentTime = workspace:GetServerTimeNow()
             for _, v in sorted do
-                local hum = v.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    v.KilledAt = currentTime
-                    v.KilledAsFreeKill = noGuilt
-                    v.KilledByParticipant = attacker
-                    v.KilledByWeapon = weapon
-
-                    if attacker then
-                        v.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(v)
-                        attacker:AddKill(v, noGuilt)
-                    end
-
-                    hum.Health = 0
-                end
+                v:Kill(attacker, weapon, false, noGuilt)
             end
         end,
 
@@ -427,8 +432,7 @@ local function newRound(gamemode): Types.Round
                         self:JoinRound(plr)
                         return
                     end
-        
-                    -- participant.KilledBy can be set by a script before they die
+
                     onDeath(participant)
                 end)
             end)
