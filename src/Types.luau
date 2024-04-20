@@ -260,8 +260,8 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type Participant = {
     Round: Round, -- A reference to the round.
 
-    Player: Player,    -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property of Player.
-    Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
+    Player: Player,    -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
+    Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.
     
     Role: Role?,                                -- A reference to their role. nil if Round hasn't started.
     GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
