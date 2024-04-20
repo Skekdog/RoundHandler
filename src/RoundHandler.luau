@@ -412,7 +412,7 @@ local function newRound(gamemode): Types.Round
                 participant:LeaveRound()
             end)
         
-            local spawns = (self.Map:FindFirstChild("Spawns") :: Folder):GetChildren()
+            local spawns = (self.Map.Spawns):GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
                 local chosen = math.random(1, #spawns)
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
@@ -591,7 +591,7 @@ local function newRound(gamemode): Types.Round
                     return v
                 end
             end
-            error(`Role '{roleName}' not found in gamemode '{self.Gamemode.Name}'`)
+            error(`Role {roleName} not found`)
         end,
         CompareRoles = function(self, role1, role2, comparison)
             if comparison == "__All" then

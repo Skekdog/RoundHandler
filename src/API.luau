@@ -2,13 +2,6 @@
 
 local module = {}
 
-function module.NamedInstance(className: string, name: string, parent: Instance): Instance -- Used if the return value is needed
-    local i = Instance.new(className)
-    i.Name = name
-    i.Parent = parent
-    return i
-end
-
 function module.ShuffleInPlace(t)
     math.randomseed(os.clock())
     for i = #t, 2, -1 do
