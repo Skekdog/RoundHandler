@@ -50,7 +50,7 @@ end
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
-        Character = nil, -- We can't actually set Character here, because plr hasn't loaded in yet
+        Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
         Name = plr.Name,
         Round = round,
 
