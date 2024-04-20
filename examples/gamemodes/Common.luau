@@ -18,12 +18,7 @@ function module.TestForOneSurvivingRole(self: Types.Gamemode, round: Types.Round
     end
 
     local function checkAlive(participant: Types.Participant)
-        -- Remember what they took from you: https://github.com/luau-lang/luau/pull/501
-        local plr = participant.Player
-        if not plr then return false end
-        local char = plr.Character
-        if not char then return false end
-        local hum = char:FindFirstChildOfClass("Humanoid")
+        local hum = participant.Character:FindFirstChildOfClass("Humanoid")
         if not hum then return false end
         return hum.Health > 0
     end

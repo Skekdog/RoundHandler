@@ -246,7 +246,7 @@ local module: Types.Gamemode = {
                 end
             end
 
-            if assailant and (assailant:GetRole().Name == "Sheriff") and assailant.Character then
+            if assailant and (assailant:GetRole().Name == "Sheriff") then
                 local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
                 if hum then
                     hum.Health = 0
@@ -254,7 +254,7 @@ local module: Types.Gamemode = {
             end
         elseif role.Name == "Sheriff" then
             local char = victim.Character
-            if char and char:IsDescendantOf(workspace) then
+            if char.Parent then
                 local gun: Part = ((round:GetEquipment("Gun").Item :: any):FindFirstChild("Handle") :: Part):Clone()
 				
 				local particles = Instance.new("Sparkles")

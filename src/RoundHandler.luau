@@ -76,7 +76,7 @@ local function newParticipant(round, plr): Types.Participant
 
         SlayVotes = {},
         TryAddSlayVote = function(self, from)
-            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() or (not self.Character) then
+            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
                 return false
             end
     
@@ -353,22 +353,19 @@ local function newRound(gamemode): Types.Round
 
             local currentTime = workspace:GetServerTimeNow()
             for _, v in sorted do
-                local char = v.Character
-                if char then
-                    local hum = char:FindFirstChildOfClass("Humanoid")
-                    if hum then
-                        v.KilledAt = currentTime
-                        v.KilledAsFreeKill = noGuilt
-                        v.KilledByParticipant = attacker
-                        v.KilledByWeapon = weapon
+                local hum = v.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    v.KilledAt = currentTime
+                    v.KilledAsFreeKill = noGuilt
+                    v.KilledByParticipant = attacker
+                    v.KilledByWeapon = weapon
 
-                        if attacker then
-                            v.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(v)
-                            attacker:AddKill(v, noGuilt)
-                        end
-
-                        hum.Health = 0
+                    if attacker then
+                        v.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(v)
+                        attacker:AddKill(v, noGuilt)
                     end
+
+                    hum.Health = 0
                 end
             end
         end,
