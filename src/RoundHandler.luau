@@ -172,12 +172,12 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(self.Round.Participants, `{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
+                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
             if self:GetRole().CanStealCredits then
-                Adapters.SendMessage({self}, `You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned")
+                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
             end
@@ -216,7 +216,7 @@ local function newParticipant(round, plr): Types.Participant
 
         LeaveRound = function(self)
             if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round.Participants, (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
+                Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`, "info", "disconnect", self.Round.Participants)
             end
 
             if self.Round:IsRoundPreparing() then
@@ -352,8 +352,8 @@ local function newRound(gamemode): Types.Round
         Participants = {},
         EventLog = {},
 
-        DoMassDeath = function(self, victims, attacker, weapon, noGuilt)
-            local sorted = {}
+        DoMassDeath = function(self, victims, weapon, attacker: any, noGuilt: any)
+            local sorted: {Types.Participant} = {}
 
             --todo: using 3 loops for this seems REALLY inefficient
             for _, v in victims do
@@ -498,19 +498,18 @@ local function newRound(gamemode): Types.Round
                 scores[v:GetFormattedName()] = v.Score
             end
 
-            assert(self.Winners)
-            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), Adapters.CalculateUserFacingEvents(self.EventLog, self.Winners), scores)
+            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), Adapters.CalculateUserFacingEvents(self.EventLog, victors), scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
-                Adapters.SendMessage({}, "This server is outdated and will restart soon.", "error", "update", true)
+                Adapters.SendMessage("This server is outdated and will restart soon.", "error", "update", true)
             end
 
             -- Destroy the round
             task.wait(HIGHLIGHTS_TIME)
 
             if updateNeeded then
-                Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
+                Adapters.SendMessage("Server restarting...", "error", "update", true)
                 TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
                 Players.PlayerAdded:Connect(function(plr)
                     plr:Kick("This server is shutting down for an update.")
@@ -627,6 +626,7 @@ end
 function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
     self:LoadMap(map)
+    self:DoMassDeath({}, "Crush")
     
     module.Rounds[self.ID] = self
     return self

@@ -51,8 +51,7 @@ local module: Types.Adapter = {
         return false
     end,
 
-    SendMessage = function(recipients, message, severity, messageType, isGlobal)
-        -- If isGlobal = true, then recipients is empty. The adapter is expected to send this message to all connected players (Players:GetPlayers()).
+    SendMessage = function(message, severity, messageType, recipients)
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
 
@@ -69,7 +68,7 @@ local module: Types.Adapter = {
         end
         message = `<font color='{fontColour}'>{message}</font>`
 
-        if isGlobal then
+        if recipients == true then
             return remote:FireAllClients(message, messageType)
         end
         for _, v in recipients do

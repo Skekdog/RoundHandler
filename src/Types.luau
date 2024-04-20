@@ -14,6 +14,8 @@ export type RoleName = string
 export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
+type MessageSeverity = "info" | "warn" | "error"
+type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned"
 export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
@@ -30,7 +32,7 @@ export type Adapter = {
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
-    SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "creditsEarned", isGlobal: boolean?) -> (),
+    SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
@@ -128,7 +130,7 @@ export type Round = {
     LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
     EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
 
-    DoMassDeath: (self: Round, victims: {Participant}, attacker: Participant?, weapon: Equipment, noGuilt: boolean) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
+    DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
