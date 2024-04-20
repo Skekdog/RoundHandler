@@ -169,6 +169,8 @@ function module.ValidateMap(map: Types.MapStructure)
             i(`This map was designed for a newer version of RoundHandler ({mapVersion} > {version}) and may not work.`)
         end
     end
+
+    return #issues<1, issues
 end
 
 return module
