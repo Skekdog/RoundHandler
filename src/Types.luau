@@ -282,7 +282,7 @@ export type Participant = {
     KilledInSelfDefense: boolean,          -- Whether this Participant was killed in self defense or not.
     KilledAsFreeKill: boolean,             -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
     KilledByHeadshot: boolean,             -- True if they were killed by a headshot.
-    Kill: (self: Participant, attacker: Participant?, weapon: Equipment | DeathType, headshot: boolean, ignoreKarma: boolean) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
+    Kill: (self: Participant, attacker: Participant?, weapon: (Equipment | DeathType)?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.

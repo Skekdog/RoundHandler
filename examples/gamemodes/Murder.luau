@@ -246,10 +246,7 @@ local module: Types.Gamemode = {
             end
 
             if assailant and (assailant:GetRole().Name == "Sheriff") then
-                local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.Health = 0
-                end
+                assailant:Kill()
             end
         elseif role.Name == "Sheriff" then
             local char = victim.Character

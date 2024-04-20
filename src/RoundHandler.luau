@@ -83,10 +83,7 @@ local function newParticipant(round, plr): Types.Participant
                 if v == from then
                     table.insert(self.SlayVotes, from)
                     if #self.SlayVotes >= SLAY_VOTES then
-                        local hum = self.Character:FindFirstChildOfClass("Humanoid")
-                        if hum then
-                            hum.Health = 0
-                        end
+                        self:Kill()
                     end
                     return true
                 end
@@ -319,14 +316,14 @@ local function newParticipant(round, plr): Types.Participant
             self.Status = "Missing"
             self.KilledAsFreeKill = #self.FreeKillReasons > 0
             self.KilledAt = workspace:GetServerTimeNow()
-            self.KilledByHeadshot = headshot
-            self.KilledByParticipant = attacker
-            self.KilledByWeapon = weapon
+            self.KilledByHeadshot = headshot or false
+            self.KilledByParticipant = attacker or nil
+            self.KilledByWeapon = weapon or "Suicide"
 
             if attacker then
                 self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
                 self.KilledByParticipant = attacker
-                attacker:AddKill(self, ignoreKarma)
+                attacker:AddKill(self, ignoreKarma or true)
             end
 
             local hum = self.Character:FindFirstChildOfClass("Humanoid")
