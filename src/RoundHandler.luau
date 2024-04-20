@@ -22,10 +22,12 @@ local function onDeath(self: Types.Participant)
     -- create ragdoll and set properties
     local round = self.Round
 
-    self.Status = "Missing"
+    if not self:IsDead() then
+        -- Ideally Participant:Kill() would always be used, but sometimes things like reset character happen
+        self:Kill()
+    end
     
     local killer = self.KilledByParticipant
-
     local isCorrectKill, isSelfDefense = false, false
     if killer then
         isCorrectKill = round:GetRoleRelationship(self:GetRole(), killer:GetRole()) == "__Ally"
