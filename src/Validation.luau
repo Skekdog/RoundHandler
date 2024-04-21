@@ -148,6 +148,10 @@ function module.ValidateMap(map: Types.MapStructure)
         end
     end
 
+    if #map.Spawns:GetChildren() < 1 then
+        i("Map must have at least 1 spawn.")
+    end
+
     local version = EngineVersion
     local major = tonumber(version:split(".")[1])
     local minor = tonumber(version:split(".")[2])
