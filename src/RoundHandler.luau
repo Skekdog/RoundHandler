@@ -353,13 +353,11 @@ local function newRound(gamemode): Types.Round
         EventLog = {},
 
         DoMassDeath = function(self, victims, weapon, attacker: any, noGuilt: any)
-            local sorted: {Types.Participant} = {}
-
             table.sort(victims, function(a, b)
                 return a:GetRole() == self.Gamemode.PhyrricVictors
             end)
 
-            for _, v in sorted do
+            for _, v in victims do
                 v:Kill(attacker, weapon, false, noGuilt)
             end
         end,
