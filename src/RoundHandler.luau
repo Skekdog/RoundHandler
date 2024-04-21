@@ -211,7 +211,7 @@ local function newParticipant(round, plr): Types.Participant
             if not self.Role then
                 error(`Participant {self.Player.Name} Role is nil`)
             end
-            return self.Round:GetRoleInfo(self.Role.Allegiance)
+            return self.Round:GetRoleFromName(self.Role.Allegiance)
         end,
 
         LeaveRound = function(self)
@@ -355,17 +355,9 @@ local function newRound(gamemode): Types.Round
         DoMassDeath = function(self, victims, weapon, attacker: any, noGuilt: any)
             local sorted: {Types.Participant} = {}
 
-            --todo: using 3 loops for this seems REALLY inefficient
-            for _, v in victims do
-                if v:GetRole().Name ~= self.Gamemode.PhyrricVictors then
-                    table.insert(sorted, v)
-                end
-            end
-            for _, v in victims do
-                if v:GetRole().Name == self.Gamemode.PhyrricVictors then
-                    table.insert(sorted, v)
-                end
-            end
+            table.sort(victims, function(a, b)
+                return a:GetRole() == self.Gamemode.PhyrricVictors
+            end)
 
             for _, v in sorted do
                 v:Kill(attacker, weapon, false, noGuilt)
@@ -389,7 +381,7 @@ local function newRound(gamemode): Types.Round
             return
         end,
         GetParticipantsWithRole  = function(self, roleName)
-            local role = self:GetRoleInfo(roleName)
+            local role = self:GetRoleFromName(roleName)
             local participants = {}
             for _, v in self.Participants do
                 if v.Role == role then
@@ -608,7 +600,7 @@ local function newRound(gamemode): Types.Round
             end
             error(`Equipment {name} not found`)
         end,
-        GetRoleInfo = function(self, roleName)
+        GetRoleFromName = function(self, roleName)
             for _, v in self.Gamemode.Roles do
                 if v.Name == roleName then
                     return v

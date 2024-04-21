@@ -353,7 +353,7 @@ local module: Types.Gamemode = {
 
         local winner = common.TestForOneSurvivingRole(self, round)
         if winner then
-            round:EndRound(round:GetRoleInfo(winner))
+            round:EndRound(round:GetRoleFromName(winner))
         end
     end,
     
