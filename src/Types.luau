@@ -8,6 +8,7 @@ export type Timestamp = number
 
 export type Username = string
 export type FormattedUsername = string | "<font color='#{ROLE COLOUR}'>{USERNAME}</font>"
+export type FormattedRole = string | "<font color='#{ROLE COLOUR}'>{ROLE NAME}</font>"
 export type EquipmentName = string
 export type RoleName = string
 
@@ -149,6 +150,8 @@ export type Round = {
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission.
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing.
 
+    GetFormattedRole: (self: Round, role: Role) -> FormattedRole,
+
     GetEquipment: (self: Round, name: EquipmentName) -> Equipment,                                  -- Returns the Equipment from Gamemode.
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant},                        -- Returns a list of Participants with the specified role.
     GetRoleFromName: (self: Round, name: RoleName) -> Role,                                             -- Returns a Role.
@@ -276,7 +279,6 @@ export type Participant = {
     LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
-    GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
 
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
     Status: "Alive" | "Missing" | "Dead",  -- Missing if dead but body has not been searched by anyone.

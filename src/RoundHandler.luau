@@ -172,7 +172,7 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound", self.Round.Participants)
+                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target:GetRole())}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
@@ -216,7 +216,7 @@ local function newParticipant(round, plr): Types.Participant
 
         LeaveRound = function(self)
             if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`, "info", "disconnect", self.Round.Participants)
+                Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self.Role)}.`, "info", "disconnect", self.Round.Participants)
             end
 
             if self.Round:IsRoundPreparing() then
@@ -309,11 +309,6 @@ local function newParticipant(round, plr): Types.Participant
             return self.Player.Name
         end,
 
-        GetFormattedRole = function(self)
-            local role = self:GetRole()
-            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
-        end,
-
         Kill = function(self, attacker, weapon, headshot, ignoreKarma)
             self.Status = "Missing"
             self.KilledAsFreeKill = #self.FreeKillReasons > 0
@@ -360,6 +355,10 @@ local function newRound(gamemode): Types.Round
             for _, v in victims do
                 v:Kill(attacker, weapon, false, noGuilt)
             end
+        end,
+
+        GetFormattedRole = function(self, role)
+            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
         end,
 
         GetParticipant = function(self, name)
