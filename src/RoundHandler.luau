@@ -82,7 +82,7 @@ local function newParticipant(round, plr): Types.Participant
             end
     
             for _, v in self.KillList do
-                if v == from then
+                if v :: any == from then
                     table.insert(self.SlayVotes, from)
                     if #self.SlayVotes >= SLAY_VOTES then
                         self:Kill()
@@ -286,7 +286,7 @@ local function newParticipant(round, plr): Types.Participant
                 return false
             end
             for _, v in self.SelfDefenseList do
-                if (v.Against == against) and (v.Until < workspace:GetServerTimeNow()) then
+                if (v.Against :: any == against) and (v.Until < workspace:GetServerTimeNow()) then
                     return true
                 end
             end
@@ -441,7 +441,13 @@ local function newRound(gamemode): Types.Round
             if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
             end
-        
+
+            Adapters.SendMessage(`The round will begin in {math.round(self.TimeMilestone-workspace:GetServerTimeNow())}s. Prepare yourself.`, "info", "timeToRoundStart", {participant})
+            
+            if self.Gamemode.UseKarma then
+                Adapters.SendMessage(`Your karma is {participant.Karma}. You will deal {Adapters.CalculateDamageModifier(participant.Karma)*100}% damage this round.`, "info", "karma", {participant})
+            end
+
             return participant
         end,
         StartRound = function(self)

@@ -101,6 +101,10 @@ local module: Types.Adapter = {
         plr:SetAttribute("Karma", karma)
     end,
 
+    CalculateDamageModifier = function(karma)
+        return 1-((1000 - karma) / 1000)
+    end,
+
     OnCharacterLoad = function(char)
         -- You could, for example, implement ragdolls here
     end,

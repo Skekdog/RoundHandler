@@ -15,7 +15,7 @@ export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
 type MessageSeverity = "info" | "warn" | "error"
-type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned"
+type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
@@ -25,6 +25,7 @@ export type Adapter = {
 
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),
+    CalculateDamageModifier: (karma: number) -> number,
 
     CalculateUserFacingEvents: (events: {[RoundEventType]: {RoundEvent}}, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
 
@@ -261,15 +262,15 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type Participant = {
     Round: Round, -- A reference to the round.
 
-    Player: Player,    -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
+    Player: Player,   -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
     Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.
     
     Role: Role?,                                -- A reference to their role. nil if Round hasn't started.
     GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
     GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
     AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
-    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant,                    -- Returns a limited view of the Participant, for clients.
+    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,       -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
+    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
     LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
 
