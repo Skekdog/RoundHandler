@@ -109,6 +109,10 @@ local module: Types.Adapter = {
         -- You could, for example, implement ragdolls here
     end,
 
+    OnDeath = function(char)
+        -- As above
+    end,
+
     SendSlayVote = function(to, target)
         local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SlayVote") :: any
         remote:FireClient(to.Player, target.Player)

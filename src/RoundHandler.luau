@@ -19,7 +19,6 @@ local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of th
 local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
 local function onDeath(self: Types.Participant)
-    -- create ragdoll and set properties
     local round = self.Round
 
     if not self:IsDead() then
@@ -45,6 +44,7 @@ local function onDeath(self: Types.Participant)
     }
 
     self.Round:LogEvent("Death", data)
+    Adapters.OnDeath(self.Character)
     self.Round.Gamemode:OnDeath(self)
 end
 

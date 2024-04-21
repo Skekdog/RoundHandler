@@ -39,6 +39,7 @@ export type Adapter = {
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
 
     OnCharacterLoad: (char: Model) -> (),
+    OnDeath: (char: Model) -> (),
 }
 
 export type Equipment = {
