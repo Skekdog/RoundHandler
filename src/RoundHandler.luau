@@ -464,7 +464,7 @@ local function newRound(gamemode): Types.Round
         end,
         PauseRound = function(self)
             if not self:IsRoundInProgress() then
-                return "RoundNotInProgress"
+                error("Round must be in progress to pause")
             end
         
             self.Paused = not self.Paused
