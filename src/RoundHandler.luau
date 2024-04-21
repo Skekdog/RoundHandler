@@ -478,7 +478,9 @@ local function newRound(gamemode): Types.Round
             else
                 assert(self._roundTimerContinueFor)
                 self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
-                self._roundTimerThread = task.delay(self._roundTimerContinueFor, self.EndRound, self, self.Gamemode:TimeoutVictors(self))
+                self._roundTimerThread = task.delay(self._roundTimerContinueFor, function()
+                    self:EndRound(self.Gamemode:TimeoutVictors(self))
+                end)
             end
             return
         end,
