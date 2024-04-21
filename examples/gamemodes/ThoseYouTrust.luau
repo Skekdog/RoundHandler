@@ -195,7 +195,7 @@ local module: Types.Gamemode = {
             AttackType = "None",
             NoGuilt = true,
 
-            Item = function(participant, item)
+            Item = function(item, participant)
                 print(`{participant.Player.Name} got radar`)
             end,
         },
