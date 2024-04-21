@@ -144,10 +144,10 @@ local function newParticipant(round, plr): Types.Participant
             }
         end,
 
-        AssignRole = function(self, role, overrideCredits, overrideInventory)
+        AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
-            self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
+            self.Credits += role.StartingCredits
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
             end
@@ -215,10 +215,6 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         LeaveRound = function(self)
-            if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self.Role)}.`, "info", "disconnect", self.Round.Participants)
-            end
-
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
@@ -233,7 +229,10 @@ local function newParticipant(round, plr): Types.Participant
                     task.cancel(timerThread)
                 end
             else
-                
+                if self:GetRole().AnnounceDisconnect then
+                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self:GetRole())}.`, "info", "disconnect", self.Round.Participants)
+                end
+                self:Kill()
             end
         end,
 

@@ -272,7 +272,7 @@ export type Participant = {
     Role: Role?,                                -- A reference to their role. nil if Round hasn't started.
     GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
     GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
-    AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
+    AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
     TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,       -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
