@@ -643,7 +643,6 @@ end
 function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
     self:LoadMap(map)
-    self:DoMassDeath({}, "Crush")
     
     module.Rounds[self.ID] = self
     return self
