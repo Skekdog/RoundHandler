@@ -43,19 +43,22 @@ export type Adapter = {
     OnDeath: (char: Model) -> (),
 }
 
-export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm"
-export type Equipment = {
-    Name: EquipmentName, -- Name of the equipment.
-    Description: string, -- Description of this equipment.
-    Icon: Asset,         -- Icon of this equipment.
-    Cost: Integer,       -- The number of credits that this equipment costs to buy.
-    MaxStock: Integer,   -- The maximum times a single Participant can purchase this equipment, per round
-    Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
+export type Extras = {[any]: any}?
 
-    AttackType: WeaponAttackType | "None",
+export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm" | "None"
+export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
+export type Equipment = {
+    Name: EquipmentName,       -- Name of the equipment.
+    Description: string,       -- Description of this equipment.
+    Icon: Asset,               -- Icon of this equipment.
+    Cost: Integer,             -- The number of credits that this equipment costs to buy.
+    MaxStock: PositiveInteger, -- The maximum times a single Participant can purchase this equipment, per round
+    Extras: Extras,            -- Any extra info about the equipment, for use in custom functions.
+
+    AttackType: WeaponAttackType,
     NoGuilt: boolean,
 
-    Item: Instance | (participant: Participant, equipmentName: EquipmentName) -> (), -- Either a tool added to inventory, or a function that does something.
+    Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
 }
 
 module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
@@ -68,10 +71,13 @@ export type PartialRole = {
     Colour: Color3, -- Colour of the original Role.
 }
 
+export type MurderWeapon = Equipment | DeathType
+
+export type ParticipantStatus = "Alive" | "Missing" | "Dead"
 export type PartialParticipant = {
     Player: Player,
     Role: PartialRole?,
-    Status: "Alive" | "Missing" | "Dead"
+    Status: ParticipantStatus
 }
 
 export type SelfDefenseEntry = {
@@ -85,11 +91,11 @@ export type RoundHighlight = {
 }
 
 export type RoundPhaseEventType = "Start" | "End" | "Pause" | "Resume" | "NewMapLoaded"
-export type RoundEventType = "Round" | "Death" | "MassDeath" --[[ i.e, C4 explosion. Used to determine phyrric victory ]] | "EquipmentPurchased" | "EquipmentGiven" | "EquipmentRemoved" | string -- string used for custom events. Custom events should only be used in a Gamemode, not external framework
+export type RoundEventType = "Round" | "Death" | "EquipmentPurchased" | "EquipmentGiven" | "EquipmentRemoved" | string -- string used for custom events. Custom events should only be used in a Gamemode, not external framework
 export type RoundEvent_Death = {
     Attacker: Participant?,
     Victim: Participant,
-    Weapon: Equipment | DeathType,
+    Weapon: MurderWeapon,
     CorrectKill: boolean,
     SelfDefense: boolean,
     FreeKill: boolean,
@@ -146,8 +152,8 @@ export type Round = {
     GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
     JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
     
-    PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
-    StartRound: (self: Round) -> (),               -- Starts this round. Usually shouldn't be called externally.
+    PauseRound: (self: Round) -> (), -- Pauses the round. Errors if the round is not in progress.
+    StartRound: (self: Round) -> (), -- Starts this round. Usually shouldn't be called externally.
     EndRound: (self: Round, victors: Role) -> (),  -- Ends this round.
 
     IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting.
@@ -177,7 +183,7 @@ export type Round = {
 export type Gamemode = {
     Name: string,          -- Name of the gamemode.
     Description: string,   -- Description of the gamemode.
-    Extras: {[any]: any}?, -- Any extra info about the gamemode, for use in custom functions.
+    Extras: Extras, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
 
@@ -216,7 +222,7 @@ export type Role = {
     Name: string,          -- Name of this role.
     Description: string,   -- Description of this role.
     Colour: Color3,        -- Colour of this role. Not color.
-    Extras: {[any]: any}?, -- Any extra info about the role, for use in custom functions.
+    Extras: Extras, -- Any extra info about the role, for use in custom functions.
 
     Allegiance: RoleName,   -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
@@ -286,14 +292,14 @@ export type Participant = {
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
 
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
-    Status: "Alive" | "Missing" | "Dead",  -- Missing if dead but body has not been searched by anyone.
+    Status: ParticipantStatus,  -- Missing if dead but body has not been searched by anyone.
     KilledAt: Timestamp,                   -- Timestamp of the Participant's demise. Initially 0.
-    KilledByWeapon: Equipment | DeathType, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
+    KilledByWeapon: MurderWeapon, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
     KilledByParticipant: Participant?,     -- Who killed this Participant.
     KilledInSelfDefense: boolean,          -- Whether this Participant was killed in self defense or not.
     KilledAsFreeKill: boolean,             -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
     KilledByHeadshot: boolean,             -- True if they were killed by a headshot.
-    Kill: (self: Participant, attacker: Participant?, weapon: (Equipment | DeathType)?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
+    Kill: (self: Participant, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.

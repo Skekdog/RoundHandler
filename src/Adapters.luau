@@ -16,7 +16,7 @@ local module: Types.Adapter = {
         -- Gives an item to a player. If the item is a function, calls it. The standard implementation uses the Backpack.
         -- Returns a string if there was an issue giving the item.
         if type(item.Item) == "function" then
-            item.Item(participant, item.Name)
+            item.Item(item, participant)
             return
         end
     
