@@ -315,10 +315,7 @@ export type MapStructure = Folder & {
     EngineVersion: StringValue,
     WeaponSpawns: Folder,
     Spawns: Folder,
-    Props: Folder & {
-        [string]: Prop,
-        GetChildren: (self: Folder, _ : nil) -> {Prop}
-    },
+    Props: Folder,
     Map: Folder
 }
 

@@ -532,7 +532,7 @@ local function newRound(gamemode): Types.Round
             local mapFolder = Instance.new("Folder")
             mapFolder.Name = `__Map_{self.ID}`
         
-            for _, v in map:GetChildren(nil) do
+            for _, v in map:GetChildren() do
                 task.wait()
                 if v.Name == "Spawns" then
                     for _, spawn in v:GetChildren() do
