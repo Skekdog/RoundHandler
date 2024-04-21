@@ -176,7 +176,7 @@ local function newParticipant(round, plr): Types.Participant
                 target.Status = "Dead"
             end
 
-            if self:GetRole().CanStealCredits then
+            if self:GetRole().CanStealCredits and (target.Credits > 0) then
                 Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
