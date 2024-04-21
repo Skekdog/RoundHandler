@@ -553,7 +553,11 @@ local function newRound(gamemode): Types.Round
                             if plr then
                                 local participant = self:TryGetParticipant(plr.Name)
                                 if participant then
-                                    participant:GiveEquipment(self:GetEquipment(weapon.Name))
+                                    local equipment = self:TryGetEquipment(weapon.Name)
+                                    if not equipment then
+                                        return warn(`{weapon.Name} not found as Equipment`)
+                                    end
+                                    participant:GiveEquipment(equipment)
                                     weapon:Destroy()
                                 end
                             end
@@ -594,6 +598,14 @@ local function newRound(gamemode): Types.Round
             return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
         end,
 
+        TryGetEquipment = function(self, name)
+            for _, v in self.Gamemode.AvailableEquipment do
+                if v.Name == name then
+                    return v
+                end
+            end
+            return
+        end,
         GetEquipment = function(self, name)
             for _, v in self.Gamemode.AvailableEquipment do
                 if v.Name == name then
