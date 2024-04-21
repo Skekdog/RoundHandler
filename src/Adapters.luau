@@ -1,6 +1,8 @@
 -- Implementation-dependent functions that *should* be customised.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local API = require("src/API")
 local Types = require("src/Types")
 
 local module: Types.Adapter = {
@@ -153,7 +155,19 @@ local module: Types.Adapter = {
                     text ..= ` by {attackerName}`
                 end
             elseif type(weapon) == "table" then
-                text ..= ` died to a {weapon.Name}`
+                local attack: Types.WeaponAttackType | "None" = weapon.AttackType
+                local name = API.StringWithDeterminer(weapon.Name)
+                if attack == "Blade" then
+                    text ..= `was stabbed by {name}`
+                elseif attack == "Blunt" then
+                    text ..= `was bludgeoned by {name}`
+                elseif attack == "Explosion" then
+                    text ..= `was blown up by {name}`
+                elseif attack == "Firearm" then
+                    text ..= `was shot by {name}`
+                elseif attack == "None" then
+                    text ..= `was murdered by magic`
+                end
                 if attacker then
                     text ..= ` used by {attackerName}`
                 end
@@ -174,15 +188,7 @@ local module: Types.Adapter = {
                     })
                 end
             elseif i == "EquipmentGiven" then
-                for _, event in v do
-                    local data: Types.RoundEvent_Equipment = event.Data :: any
-                    table.insert(userFacingLog, {
-                        Text = `{data.Target} received a {data.Equipment.Name}`,
-                        Icons = {},
-                        Category = "Equipment",
-                        Timestamp = event.Timestamp,
-                    })
-                end
+                continue
             elseif i == "EquipmentPurchased" then
                 for _, event in v do
                     local data: Types.RoundEvent_Equipment = event.Data :: any
@@ -194,15 +200,7 @@ local module: Types.Adapter = {
                     })
                 end
             elseif i == "EquipmentRemoved" then
-                for _, event in v do
-                    local data: Types.RoundEvent_Equipment = event.Data :: any
-                    table.insert(userFacingLog, {
-                        Text = `{data.Target} lost a {data.Equipment.Name}`,
-                        Icons = {},
-                        Category = "Equipment",
-                        Timestamp = event.Timestamp,
-                    })
-                end
+                continue
             elseif i == "Round" then
                 for _, event in v do
                     local phase: Types.RoundPhaseEventType = event.Data :: any

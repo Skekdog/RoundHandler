@@ -14,4 +14,16 @@ function module.Color3ToHex(color: Color3): string
 	return string.format("#%02X%02X%02X", color.R*0xFF, color.G*0xFF, color.B*0xFF)
 end
 
+local vowels = {"a", "e", "i", "o", "u"}
+function module.StringWithDeterminer(str: string): string
+    local lowered = str:lower()
+
+    local determiner = "a "
+    if table.find(vowels, lowered:sub(1)) then
+        determiner = "an "
+    end
+
+    return determiner..str
+end
+
 return module

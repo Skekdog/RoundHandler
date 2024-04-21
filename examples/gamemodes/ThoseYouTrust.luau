@@ -156,6 +156,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             MaxStock = 1,
 
+            AttackType = "Blunt",
+            NoGuilt = false,
+
             Item = items:FindFirstChild("Crowbar") :: Tool
         },
         {
@@ -164,6 +167,9 @@ local module: Types.Gamemode = {
             Cost = 0,
             Icon = "rbxassetid://",
             MaxStock = 1,
+
+            AttackType = "Firearm",
+            NoGuilt = false,
 
             Item = items:FindFirstChild("Pistol") :: Tool
         },
@@ -174,6 +180,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             MaxStock = 1,
 
+            AttackType = "Explosion",
+            NoGuilt = false,
+
             Item = items:FindFirstChild("Grenade") :: Tool
         },
         {
@@ -182,6 +191,9 @@ local module: Types.Gamemode = {
             Cost = 1,
             Icon = "rbxassetid://",
             MaxStock = 1,
+
+            AttackType = "None",
+            NoGuilt = true,
 
             Item = function(participant, item)
                 print(`{participant.Player.Name} got radar`)
@@ -193,7 +205,10 @@ local module: Types.Gamemode = {
             Cost = 1,
             Icon = "rbxassetid://",
             MaxStock = 2,
-            Item = items:FindFirstChild("C4") :: Tool
+            Item = items:FindFirstChild("C4") :: Tool,
+
+            AttackType = "Explosion",
+            NoGuilt = true,
         }
     },
 

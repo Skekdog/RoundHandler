@@ -97,6 +97,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             Item = items:FindFirstChild("Knife") :: Tool,
             MaxStock = 1,
+
+            AttackType = "Blade",
+            NoGuilt = false,
         },
         {
             Name = "Gun",
@@ -105,6 +108,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             Item = items:FindFirstChild("Gun") :: Tool,
             MaxStock = 1,
+
+            AttackType = "Firearm",
+            NoGuilt = false,
         },
     },
 

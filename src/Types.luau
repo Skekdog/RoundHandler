@@ -43,6 +43,7 @@ export type Adapter = {
     OnDeath: (char: Model) -> (),
 }
 
+export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm"
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
     Description: string, -- Description of this equipment.
@@ -51,7 +52,10 @@ export type Equipment = {
     MaxStock: Integer,   -- The maximum times a single Participant can purchase this equipment, per round
     Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
 
-    Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> (), -- Either a tool added to inventory, or a function that does something.
+    AttackType: WeaponAttackType | "None",
+    NoGuilt: boolean,
+
+    Item: Instance | (participant: Participant, equipmentName: EquipmentName) -> (), -- Either a tool added to inventory, or a function that does something.
 }
 
 module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
