@@ -51,14 +51,9 @@ slayVote.OnServerEvent:Connect(function(plr, target: Player)
 	end
 
 	local round = RoundHandler.GetRound(roundId)
-	if round:HasParticipant(plr.Name) and round:HasParticipant(target.Name) then
-		local voterParticipant = round:GetParticipant(plr.Name)
-		local targetParticipant = round:GetParticipant(target.Name)
-
-		if not voterParticipant or not targetParticipant then
-			return
-		end
-
+	local voterParticipant = round:TryGetParticipant(plr.Name)
+	local targetParticipant = round:TryGetParticipant(target.Name)
+	if voterParticipant and targetParticipant then
 		targetParticipant:TryAddSlayVote(voterParticipant)
 	end
 end)

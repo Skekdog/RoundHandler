@@ -380,13 +380,13 @@ local function newRound(gamemode): Types.Round
             end
             error(`Could not find Participant {name} in Round {self.ID}`)
         end,
-        HasParticipant = function(self, name)
+        TryGetParticipant = function(self, name)
             for _, participant in self.Participants do
                 if participant.Player.Name == name then
-                    return true
+                    return participant
                 end
             end
-            return false
+            return
         end,
         GetParticipantsWithRole  = function(self, roleName)
             local role = self:GetRoleInfo(roleName)
@@ -400,7 +400,7 @@ local function newRound(gamemode): Types.Round
         end,
         
         JoinRound = function(self, plr)
-            if self:HasParticipant(plr.Name) then
+            if self:TryGetParticipant(plr.Name) then
                 error(`{plr.Name} is already a Participant in Round {self.ID}`)
             end
             if not self:IsRoundPreparing() then
@@ -532,7 +532,7 @@ local function newRound(gamemode): Types.Round
             local mapFolder = Instance.new("Folder")
             mapFolder.Name = `__Map_{self.ID}`
         
-            for _, v in map:GetChildren() do
+            for _, v in map:GetChildren(nil) do
                 task.wait()
                 if v.Name == "Spawns" then
                     for _, spawn in v:GetChildren() do
@@ -553,9 +553,30 @@ local function newRound(gamemode): Types.Round
                         weapon.CanCollide = true
                         weapon.CanTouch = true
                         weapon.Anchored = false
+                        
+                        weapon.Touched:Connect(function(part)
+                            local plr = Players:GetPlayerFromCharacter(part.Parent :: any)
+                            if plr then
+                                local participant = self:TryGetParticipant(plr.Name)
+                                if participant then
+                                    participant:GiveEquipment(self:GetEquipment(weapon.Name))
+                                    weapon:Destroy()
+                                end
+                            end
+                        end)
                     end
                 elseif v.Name == "Props" then
-                    
+                    for _, prop: Types.Prop in (v:GetChildren() :: any) do
+                        if not prop:IsA("BasePart") then
+                            continue
+                        end
+
+                        prop.Humanoid.Died:Connect(function()
+                            if prop:FindFirstChild("OnBreak") then
+                                (require)(prop.OnBreak)()
+                            end
+                        end)
+                    end
                 elseif v.Name == "Lighting" then
                     for _, property: any in v:GetChildren() do
                         (Lighting :: any)[property.Name] = property.Value

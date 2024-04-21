@@ -135,7 +135,7 @@ export type Round = {
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
-    HasParticipant: (self: Round, name: Username) -> boolean,     -- Returns true if Participant is in round. Does not error.
+    TryGetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant or nil, without erroring.
     GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
     JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
     
@@ -313,9 +313,18 @@ export type Participant = {
 
 export type MapStructure = Folder & {
     EngineVersion: StringValue,
-    Spawns: Folder & {[string]: BasePart},
-    Props: Folder & {[string]: BasePart},
-    Map: Folder & {[string]: BasePart},
+    WeaponSpawns: Folder,
+    Spawns: Folder,
+    Props: Folder & {
+        [string]: Prop,
+        GetChildren: (self: Folder, _ : nil) -> {Prop}
+    },
+    Map: Folder
+}
+
+export type Prop = BasePart & {
+    Humanoid: Humanoid,
+    OnBreak: ModuleScript?,
 }
 
 -- Defines all custom types used by RoundHandler.
