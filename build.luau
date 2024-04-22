@@ -1,42 +1,49 @@
 -- Builds the src folder into an rbxm file.
 -- Requires Lune to be installed (https://github.com/lune-org/lune)
 
-local process = require("@lune/process")
 local roblox = require("@lune/roblox")
 local fs = require("@lune/fs")
 
 local Instance = roblox.Instance
 
-local buildExample = table.find(process.args, "example")
+local function makeFolder(path: string, parent: Folder?, rootFolder: Folder?)
+    local rootString = "script.Parent"
+    local foundRoot: any = parent
 
-local function makeFolder(path: string, parent: Folder?)
+    if parent then
+        rootString ..= ".Parent"
+        while (foundRoot ~= rootFolder) and (foundRoot) do
+            foundRoot = foundRoot.Parent
+            rootString ..= ".Parent"
+        end 
+    end
+
     local subFolder = Instance.new("Folder")
-    subFolder.Name = path:split("/")[#path:split("/")]
+
+    -- Make the folder name Capitalised
+    local subFolderName = path:split("/")[#path:split("/")]
+    subFolderName = subFolderName:sub(1, 1):upper()..subFolderName:sub(2)
+    subFolder.Name = subFolderName
     
     for _, name in fs.readDir(path) do
         name = path.."/"..name
         if fs.isDir(name) then
-            makeFolder(name, subFolder)
+            makeFolder(name, subFolder, rootFolder)
             continue
         end
 
         local source = fs.readFile(name)
         local script
-        if source:split("\n")[1]:sub(1, -2) == "--serverscript" then -- sub(1, -2) because invisible character at the end of line
+        if source:split("\n")[1] == "--serverscript" then
             script = Instance.new("Script")
         else
             script = Instance.new("ModuleScript")
         end
 
-        if not buildExample then
-            -- There's no way to know where RoundHandler will be stored so we shouldn't replace anything in examples
-            script.Source = source:gsub('require%("src/(.-)"%)', 'require(script.Parent.%1)')
-        else
-            script.Source = source
-        end
+        script.Source = source:gsub('require%("src/(.-)"%)', `require({rootString}.%1)`):gsub('require%("examples/(.-)"%)', `require({rootString}.Examples.%1)`):gsub("%.gamemodes/", ".Gamemodes.")
 
         local splitName = name:split("/")
-        local extensionSplit = splitName[#splitName]:split(".lua")
+        local extensionSplit = splitName[#splitName]:split(".luau")
         script.Name = extensionSplit[1]
 
         script.Parent = subFolder
@@ -47,9 +54,11 @@ local function makeFolder(path: string, parent: Folder?)
     return subFolder
 end
 
-local folder = makeFolder(if buildExample then "examples" else "src")
+local mainFolder = makeFolder("src")
+local examples = makeFolder("examples", mainFolder, mainFolder)
 
-assert(folder)
-folder.Name = if buildExample then "RoundHandlerExamples" else "RoundHandler"
+assert(mainFolder)
+mainFolder.Name = "RoundHandler"
+examples.Name = "Examples"
 
-fs.writeFile(if buildExample then "RoundHandlerExamples.rbxm" else "RoundHandler.rbxm", roblox.serializeModel({folder}))
+fs.writeFile("RoundHandler.rbxm", roblox.serializeModel({mainFolder}))
