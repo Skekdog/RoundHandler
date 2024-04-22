@@ -24,7 +24,7 @@ local function makeFolder(path: string, parent: Folder?, rootFolder: Folder?)
     local subFolderName = path:split("/")[#path:split("/")]
     subFolderName = subFolderName:sub(1, 1):upper()..subFolderName:sub(2)
     subFolder.Name = subFolderName
-    
+
     for _, name in fs.readDir(path) do
         name = path.."/"..name
         if fs.isDir(name) then
@@ -40,7 +40,7 @@ local function makeFolder(path: string, parent: Folder?, rootFolder: Folder?)
             script = Instance.new("ModuleScript")
         end
 
-        script.Source = source:gsub('require%("src/(.-)"%)', `require({rootString}.%1)`):gsub('require%("examples/(.-)"%)', `require({rootString}.Examples.%1)`):gsub("%.gamemodes/", ".Gamemodes.")
+        script.Source = source:gsub(`require%("{path}/(.-)"%)`, "require(script.Parent.%1)"):gsub('require%("src/(.-)"%)', `require({rootString}.%1)`):gsub("%.gamemodes/", ".Gamemodes.")
 
         local splitName = name:split("/")
         local extensionSplit = splitName[#splitName]:split(".luau")
