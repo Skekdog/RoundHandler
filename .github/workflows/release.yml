@@ -12,11 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Changelog CI
-        uses: saadmk11/changelog-ci@v1.1.2
-        with:
-          release_version: ${{ github.event.inputs.release_version }}
-
       - name: Install aftman
         uses: ok-nick/setup-aftman@v0.4.2
         with:
@@ -38,7 +33,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           draft: false
           prerelease: true
-          body: "${{ needs.generate-changelog.outputs.release_body }}"
+          body: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
