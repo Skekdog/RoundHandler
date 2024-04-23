@@ -1,6 +1,11 @@
 -- Implementation-dependent functions that *should* be customised.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
+
+if not remotes then
+	error("Missing remotes folder (RoundHandler)")
+end
 
 local API = require("src/API")
 local Types = require("src/Types")
@@ -57,7 +62,7 @@ local module: Types.Adapter = {
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
 
-        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendMessage") :: RemoteEvent
+        local remote: RemoteEvent = remotes:FindFirstChild("SendMessage") :: RemoteEvent
         
         local fontColour = ""
         -- These colours suck
@@ -81,12 +86,12 @@ local module: Types.Adapter = {
     end,
 
     SendRoleAlert = function(recipient, role)
-        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendRoleAlert") :: RemoteEvent
+        local remote: RemoteEvent = remotes:FindFirstChild("SendRoleAlert") :: RemoteEvent
         remote:FireClient(recipient.Player, role.Name, role.Colour, role.Description)
     end,
 
     SendRoundHighlights = function(recipients, highlights, events, scores)
-        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SendHighlights") :: RemoteEvent
+        local remote: RemoteEvent = remotes:FindFirstChild("SendHighlights") :: RemoteEvent
         for _, v in recipients do
             remote:FireClient(v.Player, highlights, events, scores)
         end
@@ -116,7 +121,7 @@ local module: Types.Adapter = {
     end,
 
     SendSlayVote = function(to, target)
-        local remote: RemoteEvent = ReplicatedStorage:FindFirstChild("SlayVote") :: any
+        local remote: RemoteEvent = remotes:FindFirstChild("SlayVote") :: any
         remote:FireClient(to.Player, target.Player)
     end,
 
