@@ -3,9 +3,7 @@ name: Build and Release
 on:
   push:
     branches:
-      - "changelog-nonsense"
-    tags:
-      - '*'
+      - "*"
 
 jobs:    
   build:
@@ -34,7 +32,6 @@ jobs:
           release_name: Release vPre-${{ github.run_number }}
           draft: false
           prerelease: true
-          body: CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
