@@ -14,16 +14,12 @@ jobs:
     steps:
       - name: Install aftman
         uses: ok-nick/setup-aftman@v0.4.2
-        with:
-          cache: true
 
       - name: Install Lune
         run: aftman install
 
       - name: Build project
-        run: |
-              lune run build
-              lune run build example
+        run: lune run build
 
       - name: Create release
         id: create_release
