@@ -14,23 +14,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-        
+
       - name: Install aftman
         uses: ok-nick/setup-aftman@v0.4.2
+        with:
+          cache: true
 
       - name: Install Lune
         run: aftman install
 
       - name: Build project
-        run: |
-              lune run build
+        run: lune run build
 
       - name: Create release
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: vPre-${{ github.run_number }}
+          release_name: Release vPre-${{ github.run_number }}
           draft: false
           prerelease: true
           body: CHANGELOG.md
