@@ -13,15 +13,12 @@ local module: Types.Gamemode = {
     Name = "Murder",
     Description = "Survive the murderer.",
     EngineVersion = "0.0.1",
-    GamemodeVersion = "0.0.1",
 
     MaximumPlayers = 700,
     RecommendedPlayers = 4,
     MinimumPlayers = 2,
 
-    PhyrricVictors = function(self)
-        return self.Roles[3]
-    end,
+    PhyrricVictors = "Innocent",
     TimeoutVictors = function(self)
         return self.Roles[1]
     end,
@@ -100,6 +97,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             Item = items:FindFirstChild("Knife") :: Tool,
             MaxStock = 1,
+
+            AttackType = "Blade",
+            NoGuilt = false,
         },
         {
             Name = "Gun",
@@ -108,6 +108,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             Item = items:FindFirstChild("Gun") :: Tool,
             MaxStock = 1,
+
+            AttackType = "Firearm",
+            NoGuilt = false,
         },
     },
 
@@ -248,15 +251,12 @@ local module: Types.Gamemode = {
                 end
             end
 
-            if assailant and (assailant:GetRole().Name == "Sheriff") and assailant.Character then
-                local hum = assailant.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.Health = 0
-                end
+            if assailant and (assailant:GetRole().Name == "Sheriff") then
+                assailant:Kill()
             end
         elseif role.Name == "Sheriff" then
             local char = victim.Character
-            if char and char:IsDescendantOf(workspace) then
+            if char.Parent then
                 local gun: Part = ((round:GetEquipment("Gun").Item :: any):FindFirstChild("Handle") :: Part):Clone()
 				
 				local particles = Instance.new("Sparkles")
@@ -286,7 +286,7 @@ local module: Types.Gamemode = {
 
         local winner = common.TestForOneSurvivingRole(self, round)
         if winner then
-            round:EndRound(round:GetRoleInfo(winner))
+            round:EndRound(round:GetRoleFromName(winner))
         end
     end,
 

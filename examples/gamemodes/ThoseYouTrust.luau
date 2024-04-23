@@ -11,7 +11,6 @@ local module: Types.Gamemode = {
     Description = "Spy HQ has been infiltrated by Traitor spies. Can you separate those you trust, from those you shouldn't?",
 
     EngineVersion = "0.0.1",
-    GamemodeVersion = "0.0.1",
 
     MinimumPlayers = 1,
     RecommendedPlayers = 4,
@@ -20,9 +19,7 @@ local module: Types.Gamemode = {
     TimeoutVictors = function(self)
         return self.Roles[3]
     end,
-    PhyrricVictors = function(self)
-        return self.Roles[1]
-    end,
+    PhyrricVictors = "Traitor",
 
     CalculateRoundHighlights = function(self, round)
         local weaponList = common.GetWeaponHighlights(round.EventLog :: any)
@@ -159,6 +156,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             MaxStock = 1,
 
+            AttackType = "Blunt",
+            NoGuilt = false,
+
             Item = items:FindFirstChild("Crowbar") :: Tool
         },
         {
@@ -167,6 +167,9 @@ local module: Types.Gamemode = {
             Cost = 0,
             Icon = "rbxassetid://",
             MaxStock = 1,
+
+            AttackType = "Firearm",
+            NoGuilt = false,
 
             Item = items:FindFirstChild("Pistol") :: Tool
         },
@@ -177,6 +180,9 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             MaxStock = 1,
 
+            AttackType = "Explosion",
+            NoGuilt = false,
+
             Item = items:FindFirstChild("Grenade") :: Tool
         },
         {
@@ -186,7 +192,10 @@ local module: Types.Gamemode = {
             Icon = "rbxassetid://",
             MaxStock = 1,
 
-            Item = function(participant, item)
+            AttackType = "None",
+            NoGuilt = true,
+
+            Item = function(item, participant)
                 print(`{participant.Player.Name} got radar`)
             end,
         },
@@ -196,7 +205,10 @@ local module: Types.Gamemode = {
             Cost = 1,
             Icon = "rbxassetid://",
             MaxStock = 2,
-            Item = items:FindFirstChild("C4") :: Tool
+            Item = items:FindFirstChild("C4") :: Tool,
+
+            AttackType = "Explosion",
+            NoGuilt = true,
         }
     },
 
@@ -356,7 +368,7 @@ local module: Types.Gamemode = {
 
         local winner = common.TestForOneSurvivingRole(self, round)
         if winner then
-            round:EndRound(round:GetRoleInfo(winner))
+            round:EndRound(round:GetRoleFromName(winner))
         end
     end,
     

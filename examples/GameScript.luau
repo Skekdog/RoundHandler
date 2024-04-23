@@ -14,14 +14,14 @@ local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() ::
 local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
 
 if not remotes then
-	error("Missing remotes folder (RoundHandler)!")
+	error("Missing remotes folder (RoundHandler)")
 end
 
 local slayVote = remotes:FindFirstChild("SlayVote") :: RemoteEvent
 local getPartialParticipants = remotes:FindFirstChild("GetPartialParticipants") :: RemoteFunction
 
 if not slayVote or not getPartialParticipants then
-	error("Missing required remotes!")
+	error("Missing required remotes")
 end
 
 getPartialParticipants.OnServerInvoke = function(plr)
@@ -51,20 +51,15 @@ slayVote.OnServerEvent:Connect(function(plr, target: Player)
 	end
 
 	local round = RoundHandler.GetRound(roundId)
-	if round:HasParticipant(plr.Name) and round:HasParticipant(target.Name) then
-		local voterParticipant = round:GetParticipant(plr.Name)
-		local targetParticipant = round:GetParticipant(target.Name)
-
-		if not voterParticipant or not targetParticipant then
-			return
-		end
-
+	local voterParticipant = round:TryGetParticipant(plr.Name)
+	local targetParticipant = round:TryGetParticipant(target.Name)
+	if voterParticipant and targetParticipant then
 		targetParticipant:TryAddSlayVote(voterParticipant)
 	end
 end)
 
 while true do
-	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: Folder, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
+	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: any, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
 	ServerStorage:SetAttribute("RoundID", round.ID)
 
 	local function playerAdded(plr: Player)

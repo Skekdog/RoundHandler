@@ -18,15 +18,15 @@ local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the 
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
-local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types.DeathType)?)
-    -- create ragdoll and set properties
+local function onDeath(self: Types.Participant)
     local round = self.Round
 
-    self.Status = "Missing"
-    self.KilledByWeapon = if weapon then weapon else self.KilledByWeapon
+    if not self:IsDead() then
+        -- Ideally Participant:Kill() would always be used, but sometimes things like reset character happen
+        self:Kill()
+    end
     
     local killer = self.KilledByParticipant
-
     local isCorrectKill, isSelfDefense = false, false
     if killer then
         isCorrectKill = round:GetRoleRelationship(self:GetRole(), killer:GetRole()) == "__Ally"
@@ -44,13 +44,14 @@ local function onDeath(self: Types.Participant, weapon: (Types.Equipment | Types
     }
 
     self.Round:LogEvent("Death", data)
+    Adapters.OnDeath(self.Character)
     self.Round.Gamemode:OnDeath(self)
 end
 
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
-        Character = nil, -- We can't actually set Character here, because plr hasn't loaded in yet
+        Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
         Name = plr.Name,
         Round = round,
 
@@ -66,6 +67,7 @@ local function newParticipant(round, plr): Types.Participant
         KilledByParticipant = nil,
         KilledInSelfDefense = false,
         KilledAsFreeKill = false,
+        KilledByHeadshot = false,
 
         FreeKill = false,
         FreeKillReasons = {},
@@ -75,18 +77,15 @@ local function newParticipant(round, plr): Types.Participant
 
         SlayVotes = {},
         TryAddSlayVote = function(self, from)
-            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() or (not self.Character) then
+            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
                 return false
             end
     
             for _, v in self.KillList do
-                if v == from then
+                if v :: any == from then
                     table.insert(self.SlayVotes, from)
                     if #self.SlayVotes >= SLAY_VOTES then
-                        local hum = self.Character:FindFirstChildOfClass("Humanoid")
-                        if hum then
-                            hum.Health = 0
-                        end
+                        self:Kill()
                     end
                     return true
                 end
@@ -145,10 +144,10 @@ local function newParticipant(round, plr): Types.Participant
             }
         end,
 
-        AssignRole = function(self, role, overrideCredits, overrideInventory)
+        AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
-            self.Credits = if overrideCredits then role.StartingCredits else (self.Credits + role.StartingCredits)
+            self.Credits += role.StartingCredits
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
             end
@@ -161,7 +160,7 @@ local function newParticipant(round, plr): Types.Participant
 
         SearchCorpse = function(self, target)
             if not target:IsDead() then
-                error(`Target {target.Player.Name} is not dead!`)
+                error(`Target {target.Player.Name} is not dead`)
             end
 
             if not table.find(target.SearchedBy, self) then
@@ -173,42 +172,49 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(self.Round.Participants, `{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target:GetFormattedRole()}!`, "info", "bodyFound")
+                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target:GetRole())}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
-            if self:GetRole().CanStealCredits then
-                Adapters.SendMessage({self}, `You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned")
+            if self:GetRole().CanStealCredits and (target.Credits > 0) then
+                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
             end
 
+            local equipmentList = {}
+            for i, _ in target.EquipmentPurchases do
+                local equipment = self.Round:GetEquipment(i)
+                if type(equipment) == "function" then
+                    table.insert(equipmentList, equipment)
+                end
+            end
             return {
                 Name = target:GetFormattedName(),
                 Role = target:GetRole(),
                 DeathTime = target.KilledAt,
                 SelfDefense = target.KilledInSelfDefense,
                 FreeKill = #target.FreeKillReasons > 0,
-                Headshot = false,
-                EquipmentList = {},
+                Headshot = target.KilledByHeadshot,
+                EquipmentList = equipmentList,
                 MurderWeapon = target.KilledByWeapon,
             }
         end,
 
         GetRole = function(self)
             if not self.Role then
-                error(`Participant {self.Player.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} Role is nil`)
             end
             return self.Role
         end,
         GetAllegiance = function(self)
             if not self.Role then
-                error(`Participant {self.Player.Name} does not have a Role!`)
+                error(`Participant {self.Player.Name} Role is nil`)
             end
-            return self.Round:GetRoleInfo(self.Role.Allegiance)
+            return self.Round:GetRoleFromName(self.Role.Allegiance)
         end,
 
-        LeaveRound = function(self, doNotCreateCorpse)
+        LeaveRound = function(self)
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
@@ -222,14 +228,11 @@ local function newParticipant(round, plr): Types.Participant
                     end
                     task.cancel(timerThread)
                 end
-            end
-        
-            if self.Role and self.Role.AnnounceDisconnect then
-                Adapters.SendMessage(self.Round.Participants, (`{self:GetFormattedName()} has disconnected. They were a {self:GetFormattedRole()}.`), "info", "disconnect")
-            end
-        
-            if not doNotCreateCorpse then
-                onDeath(self, "Suicide")
+            else
+                if self:GetRole().AnnounceDisconnect then
+                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self:GetRole())}.`, "info", "disconnect", self.Round.Participants)
+                end
+                self:Kill()
             end
         end,
 
@@ -282,7 +285,7 @@ local function newParticipant(round, plr): Types.Participant
                 return false
             end
             for _, v in self.SelfDefenseList do
-                if (v.Against == against) and (v.Until < workspace:GetServerTimeNow()) then
+                if (v.Against :: any == against) and (v.Until < workspace:GetServerTimeNow()) then
                     return true
                 end
             end
@@ -305,10 +308,25 @@ local function newParticipant(round, plr): Types.Participant
             return self.Player.Name
         end,
 
-        GetFormattedRole = function(self)
-            local role = self:GetRole()
-            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
-        end
+        Kill = function(self, attacker, weapon, headshot, ignoreKarma)
+            self.Status = "Missing"
+            self.KilledAsFreeKill = #self.FreeKillReasons > 0
+            self.KilledAt = workspace:GetServerTimeNow()
+            self.KilledByHeadshot = headshot or false
+            self.KilledByParticipant = attacker or nil
+            self.KilledByWeapon = weapon or "Suicide"
+
+            if attacker then
+                self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
+                self.KilledByParticipant = attacker
+                attacker:AddKill(self, ignoreKarma or true)
+            end
+
+            local hum = self.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                hum.Health = 0
+            end
+        end,
     }
 end
 
@@ -328,6 +346,20 @@ local function newRound(gamemode): Types.Round
         Participants = {},
         EventLog = {},
 
+        DoMassDeath = function(self, victims, weapon, attacker: Types.Participant?, noGuilt: boolean?)
+            table.sort(victims, function(a, b)
+                return a:GetRole() == self.Gamemode.PhyrricVictors
+            end)
+
+            for _, v in victims do
+                v:Kill(attacker, weapon, false, noGuilt)
+            end
+        end,
+
+        GetFormattedRole = function(self, role)
+            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
+        end,
+
         GetParticipant = function(self, name)
             for _, participant in self.Participants do
                 if participant.Player.Name == name then
@@ -336,16 +368,16 @@ local function newRound(gamemode): Types.Round
             end
             error(`Could not find Participant {name} in Round {self.ID}`)
         end,
-        HasParticipant = function(self, name)
+        TryGetParticipant = function(self, name)
             for _, participant in self.Participants do
                 if participant.Player.Name == name then
-                    return true
+                    return participant
                 end
             end
-            return false
+            return
         end,
         GetParticipantsWithRole  = function(self, roleName)
-            local role = self:GetRoleInfo(roleName)
+            local role = self:GetRoleFromName(roleName)
             local participants = {}
             for _, v in self.Participants do
                 if v.Role == role then
@@ -356,7 +388,7 @@ local function newRound(gamemode): Types.Round
         end,
         
         JoinRound = function(self, plr)
-            if self:HasParticipant(plr.Name) then
+            if self:TryGetParticipant(plr.Name) then
                 error(`{plr.Name} is already a Participant in Round {self.ID}`)
             end
             if not self:IsRoundPreparing() then
@@ -369,10 +401,10 @@ local function newRound(gamemode): Types.Round
             table.insert(self.Participants, participant)
         
             plr.Destroying:Connect(function()
-                participant:LeaveRound(false)
+                participant:LeaveRound()
             end)
         
-            local spawns = (self.Map:FindFirstChild("Spawns") :: Folder):GetChildren()
+            local spawns = (self.Map.Spawns):GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
                 local chosen = math.random(1, #spawns)
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
@@ -383,12 +415,11 @@ local function newRound(gamemode): Types.Round
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
-                        participant:LeaveRound(true)
+                        participant:LeaveRound()
                         self:JoinRound(plr)
                         return
                     end
-        
-                    -- participant.KilledBy can be set by a script before they die
+
                     onDeath(participant)
                 end)
             end)
@@ -408,12 +439,18 @@ local function newRound(gamemode): Types.Round
             if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
             end
-        
+
+            Adapters.SendMessage(`The round will begin in {math.round(self.TimeMilestone-workspace:GetServerTimeNow())}s. Prepare yourself.`, "info", "timeToRoundStart", {participant})
+            
+            if self.Gamemode.UseKarma then
+                Adapters.SendMessage(`Your karma is {participant.Karma}. You will deal {Adapters.CalculateDamageModifier(participant.Karma)*100}% damage this round.`, "info", "karma", {participant})
+            end
+
             return participant
         end,
         StartRound = function(self)
             if self:IsRoundInProgress() then
-                error("Attempt to start round whilst it is already in progress!")
+                error("Attempt to start round whilst it is already in progress")
             end
             self.RoundPhase = "Playing"
             self:LogEvent("Round", "Start")
@@ -427,7 +464,7 @@ local function newRound(gamemode): Types.Round
         end,
         PauseRound = function(self)
             if not self:IsRoundInProgress() then
-                return "RoundNotInProgress"
+                error("Round must be in progress to pause")
             end
         
             self.Paused = not self.Paused
@@ -441,7 +478,9 @@ local function newRound(gamemode): Types.Round
             else
                 assert(self._roundTimerContinueFor)
                 self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
-                self._roundTimerThread = task.delay(self._roundTimerContinueFor, self.EndRound, self, self.Gamemode:TimeoutVictors(self))
+                self._roundTimerThread = task.delay(self._roundTimerContinueFor, function()
+                    self:EndRound(self.Gamemode:TimeoutVictors(self))
+                end)
             end
             return
         end,
@@ -454,18 +493,19 @@ local function newRound(gamemode): Types.Round
             for _, v in self.Participants do
                 scores[v:GetFormattedName()] = v.Score
             end
-            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), self:CalculateUserFacingEvents(), scores)
+
+            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), Adapters.CalculateUserFacingEvents(self.EventLog, victors), scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then
-                Adapters.SendMessage({}, "This server is outdated and will restart soon.", "error", "update", true)
+                Adapters.SendMessage("This server is outdated and will restart soon.", "error", "update", true)
             end
 
             -- Destroy the round
             task.wait(HIGHLIGHTS_TIME)
 
             if updateNeeded then
-                Adapters.SendMessage({}, "Server restarting...", "error", "update", true)
+                Adapters.SendMessage("Server restarting...", "error", "update", true)
                 TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
                 Players.PlayerAdded:Connect(function(plr)
                     plr:Kick("This server is shutting down for an update.")
@@ -482,13 +522,6 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            if not map:FindFirstChild("Map") then
-                error(`Map {map.Name} does not have a Map folder!`)
-            end
-            if not map:FindFirstChild("Spawns") then
-                error(`Map {map.Name} does not have a Spawns folder!`)
-            end
-        
             self:LogEvent("Round", "NewMapLoaded")
             map = map:Clone()
         
@@ -516,9 +549,34 @@ local function newRound(gamemode): Types.Round
                         weapon.CanCollide = true
                         weapon.CanTouch = true
                         weapon.Anchored = false
+                        
+                        weapon.Touched:Connect(function(part)
+                            local plr = Players:GetPlayerFromCharacter(part.Parent :: any)
+                            if plr then
+                                local participant = self:TryGetParticipant(plr.Name)
+                                if participant then
+                                    local equipment = self:TryGetEquipment(weapon.Name)
+                                    if not equipment then
+                                        return warn(`{weapon.Name} not found as Equipment`)
+                                    end
+                                    participant:GiveEquipment(equipment)
+                                    weapon:Destroy()
+                                end
+                            end
+                        end)
                     end
                 elseif v.Name == "Props" then
-                    
+                    for _, prop: Types.Prop in (v:GetChildren() :: any) do
+                        if not prop:IsA("BasePart") then
+                            continue
+                        end
+
+                        prop.Humanoid.Died:Connect(function()
+                            if prop:FindFirstChild("OnBreak") then
+                                (require)(prop.OnBreak)()
+                            end
+                        end)
+                    end
                 elseif v.Name == "Lighting" then
                     for _, property: any in v:GetChildren() do
                         (Lighting :: any)[property.Name] = property.Value
@@ -528,7 +586,7 @@ local function newRound(gamemode): Types.Round
                 v.Parent = mapFolder
             end
             
-            self.Map = mapFolder
+            self.Map = mapFolder :: Types.MapStructure
             mapFolder.Parent = workspace
         end,
         
@@ -542,21 +600,29 @@ local function newRound(gamemode): Types.Round
             return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
         end,
 
+        TryGetEquipment = function(self, name)
+            for _, v in self.Gamemode.AvailableEquipment do
+                if v.Name == name then
+                    return v
+                end
+            end
+            return
+        end,
         GetEquipment = function(self, name)
             for _, v in self.Gamemode.AvailableEquipment do
                 if v.Name == name then
                     return v
                 end
             end
-            error(`Equipment {name} not found!`)
+            error(`Equipment {name} not found`)
         end,
-        GetRoleInfo = function(self, roleName)
+        GetRoleFromName = function(self, roleName)
             for _, v in self.Gamemode.Roles do
                 if v.Name == roleName then
                     return v
                 end
             end
-            error(`Role '{roleName}' not found in gamemode '{self.Gamemode.Name}'`)
+            error(`Role {roleName} not found`)
         end,
         CompareRoles = function(self, role1, role2, comparison)
             if comparison == "__All" then
@@ -581,142 +647,12 @@ local function newRound(gamemode): Types.Round
             table.insert(self.EventLog[type], event)
         end,
 
-        CalculateUserFacingEvents = function(self)
-            local userFacingLog: {Types.UserFacingRoundEvent} = {}
-
-            local function getDeathEvent(data: {Attacker: Types.Participant?, Weapon: string | Types.Equipment, Victim: Types.Participant})
-                local attacker = data.Attacker
-                local weapon = data.Weapon
-                local text = data.Victim:GetFormattedName()
-
-                local attackerName
-                if attacker then
-                    attackerName = attacker:GetFormattedName()
-                end
-                if weapon == "Fall" then
-                    text ..= " was doomed to fall"
-                    if attacker then
-                        text ..= ` at the hands of {attackerName}`
-                    end
-                elseif weapon == "Drown" then
-                    text ..= " was doomed to fall"
-                    if attacker then
-                        text ..= ` at the hands of {attackerName}`
-                    end
-                elseif weapon == "Suicide" then
-                    text ..= " couldn't take it anymore and killed themselves"
-                elseif weapon == "Crush" then
-                    text ..= " was crushed"
-                    if attacker then
-                        text ..= ` by {attackerName}`
-                    end
-                elseif weapon == "Mutation" then
-                    text ..= "'s DNA was mutated"
-                    if attacker then
-                        text ..= ` by {attackerName}`
-                    end
-                elseif type(weapon) == "table" then
-                    text ..= ` died to a {weapon.Name}`
-                    if attacker then
-                        text ..= ` used by {attackerName}`
-                    end
-                end
-                text ..= "."
-                return text
-            end
-
-            for i: Types.RoundEventType, v in self.EventLog do
-                if i == "Death" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Death = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = getDeathEvent(data),
-                            Icons = {},
-                            Category = "Death",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "MassDeath" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_MassDeath = event.Data :: any
-                        for _, participant in data.Victims do
-                            table.insert(userFacingLog, {
-                                Text = getDeathEvent({Attacker = data.Attacker, Victim = participant, Weapon = data.Weapon}),
-                                Icons = {},
-                                Category = "Death",
-                                Timestamp = event.Timestamp
-                            })
-                        end
-                    end
-                elseif i == "EquipmentGiven" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} received a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "EquipmentPurchased" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} purchased a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "EquipmentRemoved" then
-                    for _, event in v do
-                        local data: Types.RoundEvent_Equipment = event.Data :: any
-                        table.insert(userFacingLog, {
-                            Text = `{data.Target} lost a {data.Equipment.Name}`,
-                            Icons = {},
-                            Category = "Equipment",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                elseif i == "Round" then
-                    for _, event in v do
-                        local phase: Types.RoundPhaseEventType = event.Data :: any
-                        local text: string = ""
-                        if phase == "Start" then
-                            text = "The round begins."
-                        elseif phase == "Pause" then
-                            text = "The round is paused."
-                        elseif phase == "Resume" then
-                            text = "The round is resumed."
-                        elseif phase == "NewMapLoaded" then
-                            text = "A new map is loaded."
-                        elseif phase == "End" then
-                            assert(self.Winners and self.Winners.VictoryText)
-                            text = self.Winners.VictoryText
-                        end
-                        table.insert(userFacingLog, {
-                            Text = text,
-                            Icons = {},
-                            Category = "Round",
-                            Timestamp = event.Timestamp,
-                        })
-                    end
-                end
-            end
-
-            table.sort(userFacingLog, function(a, b)
-                return a.Timestamp < b.Timestamp
-            end)
-
-            return userFacingLog
-        end,
-
         _roundTimerThread = nil,
         _roundTimerContinueFor = nil,
     }
 end
 
-function module.CreateRound(map: Folder, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
+function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
     self:LoadMap(map)
     

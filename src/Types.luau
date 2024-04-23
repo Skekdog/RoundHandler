@@ -8,12 +8,15 @@ export type Timestamp = number
 
 export type Username = string
 export type FormattedUsername = string | "<font color='#{ROLE COLOUR}'>{USERNAME}</font>"
+export type FormattedRole = string | "<font color='#{ROLE COLOUR}'>{ROLE NAME}</font>"
 export type EquipmentName = string
 export type RoleName = string
 
 export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
+type MessageSeverity = "info" | "warn" | "error"
+type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
@@ -23,28 +26,39 @@ export type Adapter = {
 
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),
+    CalculateDamageModifier: (karma: number) -> number,
+
+    CalculateUserFacingEvents: (events: {[RoundEventType]: {RoundEvent}}, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
 
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
-    SendMessage: (recipients : {Participant}, message: string, severity: "info" | "warn" | "error", messageType: "update" | "bodyFound" | "disconnect" | "creditsEarned", isGlobal: boolean?) -> (),
+    SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
 
     OnCharacterLoad: (char: Model) -> (),
+    OnDeath: (char: Model) -> (),
 }
 
-export type Equipment = {
-    Name: EquipmentName, -- Name of the equipment.
-    Description: string, -- Description of this equipment.
-    Icon: Asset,         -- Icon of this equipment.
-    Cost: Integer,       -- The number of credits that this equipment costs to buy.
-    MaxStock: Integer,   -- The maximum times a single Participant can purchase this equipment, per round
-    Extras: {[any]: any}?, -- Any extra info about the equipment, for use in custom functions.
+export type Extras = {[any]: any}?
 
-    Item: Tool | (participant: Participant, equipmentName: EquipmentName) -> (), -- Either a tool added to inventory, or a function that does something.
+export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm" | "None"
+export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
+export type Equipment = {
+    Name: EquipmentName,       -- Name of the equipment.
+    Description: string,       -- Description of this equipment.
+    Icon: Asset,               -- Icon of this equipment.
+    Cost: Integer,             -- The number of credits that this equipment costs to buy.
+    MaxStock: PositiveInteger, -- The maximum times a single Participant can purchase this equipment, per round
+    Extras: Extras,            -- Any extra info about the equipment, for use in custom functions.
+
+    AttackType: WeaponAttackType,
+    NoGuilt: boolean,
+
+    Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
 }
 
 module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
@@ -57,10 +71,13 @@ export type PartialRole = {
     Colour: Color3, -- Colour of the original Role.
 }
 
+export type MurderWeapon = Equipment | DeathType
+
+export type ParticipantStatus = "Alive" | "Missing" | "Dead"
 export type PartialParticipant = {
     Player: Player,
     Role: PartialRole?,
-    Status: "Alive" | "Missing" | "Dead"
+    Status: ParticipantStatus
 }
 
 export type SelfDefenseEntry = {
@@ -74,26 +91,20 @@ export type RoundHighlight = {
 }
 
 export type RoundPhaseEventType = "Start" | "End" | "Pause" | "Resume" | "NewMapLoaded"
-export type RoundEventType = "Round" | "Death" | "MassDeath" --[[ i.e, C4 explosion. Used to determine phyrric victory ]] | "EquipmentPurchased" | "EquipmentGiven" | "EquipmentRemoved" | string -- string used for custom events. Custom events should only be used in a Gamemode, not external framework
+export type RoundEventType = "Round" | "Death" | "EquipmentPurchased" | "EquipmentGiven" | "EquipmentRemoved" | string -- string used for custom events. Custom events should only be used in a Gamemode, not external framework
 export type RoundEvent_Death = {
     Attacker: Participant?,
     Victim: Participant,
-    Weapon: Equipment | DeathType,
+    Weapon: MurderWeapon,
     CorrectKill: boolean,
     SelfDefense: boolean,
     FreeKill: boolean,
-}
-export type RoundEvent_MassDeath = {
-    Attacker: Participant?,
-    Victims: {Participant},
-    Weapon: Equipment | DeathType,
-    Justified: boolean,
 }
 export type RoundEvent_Equipment = {
     Target: Participant,
     Equipment: Equipment
 }
-export type RoundEventData = RoundPhaseEventType | RoundEvent_Death | RoundEvent_MassDeath | RoundEvent_Equipment | any
+export type RoundEventData = RoundPhaseEventType | RoundEvent_Death | RoundEvent_Equipment | any
 export type RoundEvent = {
     Timestamp: Timestamp, -- The time that this event occured at.
     Data: RoundEventData,
@@ -120,7 +131,7 @@ Round Phases:
 export type Round = {
     ID: UUID,           -- Unique identifier of the round.
     Gamemode: Gamemode, -- A reference to the current gamemode.
-    Map: Folder,        -- A reference to the loaded map folder.
+    Map: MapStructure,        -- A reference to the loaded map folder.
 
     Winners: Role?,           -- The Role of whoever won the Round. Will always be nil until EndRound() is called.
     Paused: boolean,          -- Whether the round is paused or not.
@@ -129,32 +140,36 @@ export type Round = {
 
     Participants: {Participant}, -- A list of participants in this round.
 
-    CalculateUserFacingEvents: (self: Round) -> {UserFacingRoundEvent},        -- Returns a list of UserFacingRoundEvents, to display to players.
     LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
     EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
+
+    DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
     RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
     RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
 
-    HasParticipant: (self: Round, name: Username) -> boolean,     -- Returns true if Participant is in round. Does not error.
+    TryGetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant or nil, without erroring.
     GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
     JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
     
-    PauseRound: (self: Round) -> PauseFailReason?, -- Pauses the round. Returns a string reason if the round could not be paused.
-    StartRound: (self: Round) -> (),               -- Starts this round. Usually shouldn't be called externally.
+    PauseRound: (self: Round) -> (), -- Pauses the round. Errors if the round is not in progress.
+    StartRound: (self: Round) -> (), -- Starts this round. Usually shouldn't be called externally.
     EndRound: (self: Round, victors: Role) -> (),  -- Ends this round.
 
     IsRoundPreparing: (self: Round) -> boolean,  -- Returns true if the current round phase is Preparing or Waiting.
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission.
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing.
 
-    GetEquipment: (self: Round, name: EquipmentName) -> Equipment,                                  -- Returns the Equipment from Gamemode.
-    GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant},                        -- Returns a list of Participants with the specified role.
-    GetRoleInfo: (self: Round, name: RoleName) -> Role,                                             -- Returns a Role.
+    GetFormattedRole: (self: Round, role: Role) -> FormattedRole,
+
+    TryGetEquipment: (self: Round, name: EquipmentName) -> Equipment?,       -- Returns Equipment from a name, or nil if it does not exist. Does not error.
+    GetEquipment: (self: Round, name: EquipmentName) -> Equipment,           -- Returns the Equipment from Gamemode.
+    GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant}, -- Returns a list of Participants with the specified role.
+    GetRoleFromName: (self: Round, name: RoleName) -> Role,                  -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
     GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy",           -- Returns the relationship between two roles. Either Ally or Enemy.
 
-    LoadMap: (self: Round, map: Folder) -> (),   -- Loads a map.
+    LoadMap: (self: Round, map: MapStructure) -> (), -- Loads a map.
 
     -- Private members, should not be used from outside the module
     _roundTimerThread: thread?,
@@ -168,17 +183,16 @@ export type Round = {
 export type Gamemode = {
     Name: string,          -- Name of the gamemode.
     Description: string,   -- Description of the gamemode.
-    Extras: {[any]: any}?, -- Any extra info about the gamemode, for use in custom functions.
+    Extras: Extras, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
-    GamemodeVersion: string, -- Indicates the version of this gamemode.
 
     MinimumPlayers: PositiveInteger,     -- The gamemode will not start without at least this many players.
     RecommendedPlayers: PositiveInteger, -- The gamemode will not appear in voting without at least this many players.
     MaximumPlayers: PositiveInteger,     -- The gamemode will not appear in voting if there are more players than this value.
 
     TimeoutVictors: (self: Gamemode, round: Round) -> Role, -- Which role wins if the round timer expires?
-    PhyrricVictors: (self: Gamemode, round: Round) -> Role, -- Which role wins if everyone dies at the same time?
+    PhyrricVictors: RoleName, -- Which role wins if everyone dies at the same time? Cannot be a function because this is checked on every mass death event. --todo: So what if it gets checked every time?
 
     CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight},
     CalculateNonDefaultUserFacingEvents: ((self: Gamemode, round: Round) -> {UserFacingRoundEvent})?, -- Calculates the user facing event log for non-default events. Only needed if this Gamemode uses custom events. If any custom event is not converted, it will not be displayed to players.
@@ -208,7 +222,7 @@ export type Role = {
     Name: string,          -- Name of this role.
     Description: string,   -- Description of this role.
     Colour: Color3,        -- Colour of this role. Not color.
-    Extras: {[any]: any}?, -- Any extra info about the role, for use in custom functions.
+    Extras: Extras, -- Any extra info about the role, for use in custom functions.
 
     Allegiance: RoleName,   -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
@@ -263,28 +277,29 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type Participant = {
     Round: Round, -- A reference to the round.
 
-    Player: Player,    -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property of Player.
-    Character: Model?, -- A reference to the Player's character. Generally should not be nil even if the player disconnects, but could be nil if they fall into the void.
+    Player: Player,   -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
+    Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.
     
     Role: Role?,                                -- A reference to their role. nil if Round hasn't started.
     GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
     GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
-    AssignRole: (self: Participant, role: Role, overrideCredits: boolean?, overrideInventory: boolean?) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,                          -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
-    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant,                    -- Returns a limited view of the Participant, for clients.
+    AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
+    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,       -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
+    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
-    LeaveRound: (self: Participant, doNotCreateCorpse: boolean) -> (), -- Removes this Participant from the Round. removeOnly: true if internal onDeath() should not be called.
+    LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
-    GetFormattedRole: (self: Participant) -> string, -- Returns the role, formatted to a role colour. Errors if role is not set.
 
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
-    Status: "Alive" | "Missing" | "Dead",  -- Missing if dead but body has not been searched by anyone.
+    Status: ParticipantStatus,  -- Missing if dead but body has not been searched by anyone.
     KilledAt: Timestamp,                   -- Timestamp of the Participant's demise. Initially 0.
-    KilledByWeapon: Equipment | DeathType, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
+    KilledByWeapon: MurderWeapon, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
     KilledByParticipant: Participant?,     -- Who killed this Participant.
     KilledInSelfDefense: boolean,          -- Whether this Participant was killed in self defense or not.
     KilledAsFreeKill: boolean,             -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
+    KilledByHeadshot: boolean,             -- True if they were killed by a headshot.
+    Kill: (self: Participant, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
@@ -309,6 +324,19 @@ export type Participant = {
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
+}
+
+export type MapStructure = Folder & {
+    EngineVersion: StringValue,
+    WeaponSpawns: Folder,
+    Spawns: Folder,
+    Props: Folder,
+    Map: Folder
+}
+
+export type Prop = BasePart & {
+    Humanoid: Humanoid,
+    OnBreak: ModuleScript?,
 }
 
 -- Defines all custom types used by RoundHandler.
