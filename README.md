@@ -13,7 +13,6 @@ To build, enter the directory and run
 ```bash
 lune run build
 ```
-This will build the src folder into RoundHandler.rbxm.
-You can also add "example" to the end of the command to build the examples folder into RoundHandlerExamples.rbxm. Examples will not automatically convert require() calls.
+This will build the src and examples folders into RoundHandler.rbxm.
 
 [License](https://github.com/Skekdog/Round-Handler/blob/master/LICENSE)
