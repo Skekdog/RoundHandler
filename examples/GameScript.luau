@@ -19,9 +19,20 @@ end
 
 local slayVote = remotes:FindFirstChild("SlayVote") :: RemoteEvent
 local getPartialParticipants = remotes:FindFirstChild("GetPartialParticipants") :: RemoteFunction
+local getPartialRound = remotes:FindFirstChild("GetPartialRound") :: RemoteFunction
 
-if not slayVote or not getPartialParticipants then
+if not slayVote or not getPartialParticipants or not getPartialRound then
 	error("Missing required remotes")
+end
+
+getPartialRound.OnServerInvoke = function(plr)
+	local roundId = ServerStorage:GetAttribute("RoundID")
+	if not roundId then
+		return
+	end
+
+	local round = RoundHandler.GetRound(roundId)
+	return round:GetPartialRound()
 end
 
 getPartialParticipants.OnServerInvoke = function(plr)

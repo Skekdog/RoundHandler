@@ -484,6 +484,17 @@ local function newRound(gamemode): Types.Round
             end
             return
         end,
+
+        GetPartialRound = function(self)
+            return {
+                Gamemode = self.Gamemode,
+                RoundPhase = self.RoundPhase,
+                Map = self.Map,
+                Paused = self.Paused,
+                TimeMilestone = self.TimeMilestone,
+            }
+        end,
+
         EndRound = function(self, victors)
             self:LogEvent("Round", "End")
             self.RoundPhase = "Highlights"
