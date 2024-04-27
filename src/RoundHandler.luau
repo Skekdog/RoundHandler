@@ -492,20 +492,30 @@ local function newRound(gamemode): Types.Round
                 Map = self.Map,
                 Paused = self.Paused,
                 TimeMilestone = self.TimeMilestone,
+                RoundEndInfo = self.RoundEndInfo,
             }
         end,
 
         EndRound = function(self, victors)
             self:LogEvent("Round", "End")
             self.RoundPhase = "Highlights"
-            self.Winners = victors
 
             local scores = {}
             for _, v in self.Participants do
                 scores[v:GetFormattedName()] = v.Score
             end
 
-            Adapters.SendRoundHighlights(self.Participants, self.Gamemode:CalculateRoundHighlights(self), Adapters.CalculateUserFacingEvents(self.EventLog, victors), scores)
+            local events = Adapters.CalculateUserFacingEvents(self.EventLog, victors)
+            local highlights = self.Gamemode:CalculateRoundHighlights(self)
+
+            self.RoundEndInfo = {
+                Winners = victors,
+                Events = events,
+                Scores = scores,
+                Highlights = highlights
+            }
+
+            Adapters.SendRoundHighlights(self.Participants, highlights, events, scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
             if updateNeeded then

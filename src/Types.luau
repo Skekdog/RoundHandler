@@ -135,6 +135,7 @@ export type PartialRound = {
     RoundPhase: RoundPhase,
     TimeMilestone: Timestamp,
     Paused: boolean,
+    RoundEndInfo: RoundEndInfo?,
 }
 
 export type Round = {
@@ -142,7 +143,7 @@ export type Round = {
     Gamemode: Gamemode, -- A reference to the current gamemode.
     Map: MapStructure,        -- A reference to the loaded map folder.
 
-    Winners: Role?,           -- The Role of whoever won the Round. Will always be nil until EndRound() is called.
+    RoundEndInfo: RoundEndInfo?,
     Paused: boolean,          -- Whether the round is paused or not.
     TimeMilestone: Timestamp, -- The timestamp of the next round phase. Used by the client for a round timer.
     RoundPhase: RoundPhase,   -- The current round phase.
@@ -190,6 +191,12 @@ export type Round = {
     Represents a Gamemode with a specific set of rules.
     Must be defined manually. Roles form a significant part of Gamemodes.
 ]]
+export type RoundEndInfo = {
+    Winners: Role,
+    Highlights: {RoundHighlight},
+    Events: {UserFacingRoundEvent},
+    Scores: {[FormattedUsername]: ParticipantScoring}
+}
 export type Gamemode = {
     Name: string,          -- Name of the gamemode.
     Description: string,   -- Description of the gamemode.
@@ -283,6 +290,7 @@ export type FreeKillReason = "Teamkill" | string
 export type DeathType = "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
 export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEquipment
 export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
+export type ParticipantScoring = {[ScoreReason]: Integer}
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
     Round: Round, -- A reference to the round.
@@ -328,7 +336,7 @@ export type Participant = {
     KillList: {Participant}, -- A list of Participants this player has killed.
     AddKill: (self: Participant, victim: Participant, ignoreKarma: boolean) -> (), -- Adds a kill to this Participant's kill list. By default, also checks if the kill was correct and sets FreeKill as needed, but this can be disable with ignoreKarma = true.
     
-    Score: {[ScoreReason]: Integer}, -- Dictionary of score reason = total score for this reason.
+    Score: ParticipantScoring, -- Dictionary of score reason = total score for this reason.
     AddScore: (self: Participant, reason: ScoreReason, amount: Integer) -> (), -- Adds score to this Participant.
 
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
