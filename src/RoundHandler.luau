@@ -47,7 +47,467 @@ local function onDeath(self: Types.Participant)
     self.Round.Gamemode:OnDeath(self)
 end
 
-local function newParticipant(round, plr): Types.Participant
+--[=[
+    @class Participant
+]=]
+local function newParticipant(round: Types.Round, plr: Player): Types.Participant
+    local Participant = {}
+
+    --[=[
+        @prop Round Round
+        @within Participant
+
+        A reference to the [Round].
+    ]=]
+    Participant.Round = round
+
+    --[=[
+        @prop Player Player
+        @within Participant
+
+        The Participant's [Player]. Will never be nil, but may be :Destroyed. Be aware of the implications that has.
+    ]=]
+    Participant.Player = plr
+
+    --[=[
+        @prop Karma number
+        @within Participant
+
+        A live track of the Participant's karma. May be different to [Adapters.GetKarma], which is only updated at the end of the [Round].
+    ]=]
+    Participant.Karma = if round.Gamemode.UseKarma then Adapters.GetKarma(plr) else 1000
+
+    --[=[
+        @prop Credits Integer
+        @within Participant
+
+        The Participant's credits. Credits are used for purchasing equipment, and can be awarded by being a certain role, killing enemies, or looting corpses.
+    ]=]
+    Participant.Credits = 0
+
+    --[=[
+        @prop Score ParticipantScoring
+        @within Participant
+
+        Keep track of this Participant's score, separated by reason.
+    ]=]
+    Participant.Score = {}
+
+    --[=[
+        @prop Status ParticipantStatus
+        @within Participant
+
+        Whether the Participant is Alive, Missing, or Dead.
+        A Participant is Missing when they are killed until someone searches their body.
+    ]=]
+    Participant.Status = "Alive" :: any
+
+    --[=[
+        @prop SearchedBy {Participant}
+        @within Participant
+
+        A list of Participants who have searched this corpse and who can now view the information whenever.
+    ]=]
+    Participant.SearchedBy = {}
+
+    --[=[
+        @prop KilledByWeapon Equipment | DeathType
+        @within Participant
+
+        How this Participant died. Either [Equipment] or [DeathType].
+    ]=]
+    Participant.KilledByWeapon = "Suicide" :: any
+
+    --[=[
+        @prop KilledAt Timestamp
+        @within Participant
+
+        The UNIX Timestamp of when this Participant died, as returned by [Workspace:GetServerTimeNow].
+    ]=]
+    Participant.KilledAt = 0
+
+    --[=[
+        @prop KilledInSelfDefense boolean
+        @within Participant
+
+        True if killed by a Participant who was using self-defense.
+    ]=]
+    Participant.KilledInSelfDefense = false
+
+    --[=[
+        @prop KilledAsFreeKill boolean
+        @within Participant
+
+        True if the Participant was killed when [Participant.FreeKillReasons] was not empty.
+    ]=]
+    Participant.KilledAsFreeKill = false
+
+    --[=[
+        @prop KilledByHeadshot boolean
+        @within Participant
+
+        True if the Participant was killed by a headshot. No surprises there.
+    ]=]
+    Participant.KilledByHeadshot = false
+
+    --[=[
+        @prop FreeKillReasons {string}
+        @within Participant
+
+        A list of reasons for the Participant being a free kill. If not empty, the Participant is a free kill and can be killed by allies without penalty.
+    ]=]
+    Participant.FreeKillReasons = {}
+
+    --[=[
+        @prop SelfDefenseList {SelfDefenseEntry}
+        @within Participant
+
+        A list of Participants who can be freely killed by this Participant in self defense.
+        Also stores for how long the self defense applies.
+    ]=]
+    Participant.SelfDefenseList = {}
+
+    --[=[
+        @prop KillList {Participant}
+        @within Participant
+
+        A list of Participants who have been killed by this Participant.
+    ]=]
+    Participant.KillList = {}
+
+    --[=[
+        @prop SlayVotes {Participant}
+        @within Participant
+
+        A list of Participants who have voted to slay this Participant after being RDM'ed by them.
+    ]=]
+    Participant.SlayVotes = {}
+
+    --[=[
+        @prop EquipmentPurchases {[Equipment]: Integer}
+        @within Participant
+
+        A dictionary of Equipment to the number of times that this Participant has purchased it.
+    ]=]
+    Participant.EquipmentPurchases = {}
+
+    --[=[
+        @within Participant
+        @param from Participant -- The Participant attempting to slay this Participant
+        @return boolean -- Whether the vote succeeded
+    ]=]
+    function Participant.TryAddSlayVote(self: Types.Participant, from: Types.Participant): boolean
+        if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
+            return false
+        end
+
+        for _, v in self.KillList do
+            if v :: any == from then
+                table.insert(self.SlayVotes, from)
+                if #self.SlayVotes >= SLAY_VOTES then
+                    self:Kill()
+                end
+                return true
+            end
+        end
+
+        return false
+    end
+
+    --[=[
+        @within Participant
+        @return boolean -- True if Status is "Missing" or "Dead"
+    ]=]
+    function Participant.IsDead(self: Types.Participant)
+        return (self.Status == "Missing") or (self.Status == "Dead")
+    end
+
+    --[=[
+        @within Participant
+        @param target Participant -- The Participant to view
+        @return PartialParticipant -- Status is adjusted for this [Role.CanSeeMissing]
+    ]=]
+    function Participant.ViewPartialParticipant(self: Types.Participant, target: Types.Participant): Types.PartialParticipant
+        local canSeeMissing = false
+        if self.Role and self.Role.CanSeeMissing then
+            canSeeMissing = true
+        end
+        local status = target.Status
+        if (status == "Missing") and (not canSeeMissing) then
+            status = "Alive"
+        end
+        return {
+            Player = target.Player,
+            Role = self:TryViewParticipantRole(target),
+            Status = status :: "Alive" | "Dead" | "Missing"
+        }
+    end
+
+    --[=[
+        @within Participant
+        @param target Participant -- The Participant to view
+        @return PartialRole --
+    ]=]
+    function Participant.TryViewParticipantRole(self: Types.Participant, target: Types.Participant): Types.PartialRole?
+        local ownRole = self.Role
+        local targetRole = target.Role
+        if not ownRole or not targetRole then
+            return
+        end
+
+        local verdict = nil
+        for relation, knows in ownRole.KnowsRoles do
+            -- Explicit references to the role name take priority over things like ally or enemy
+            if relation == ownRole.Name then
+                verdict = knows
+                break
+            elseif verdict == nil then
+                verdict = self.Round:CompareRoles(ownRole, targetRole, relation)
+            end
+        end
+
+        if not verdict then
+            return
+        end
+
+        return {
+            Name = targetRole.Name,
+            Colour = targetRole.Colour
+        }
+    end
+
+    --[=[
+        @within Participant
+        @param role Role -- The [Role] to assign
+    ]=]
+    function Participant.AssignRole(self: Types.Participant, role: Types.Role): ()
+        local previousRole = self.Role
+        self.Role = role
+        self.Credits += role.StartingCredits
+        for _, v in role.StartingEquipment do
+            Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
+        end
+        Adapters.SendRoleAlert(self, role)
+        role:OnRoleAssigned(self)
+        if previousRole then
+            previousRole:OnRoleRemoved(self)
+        end
+    end
+
+    --[=[
+        @within Participant
+        @param target Participant -- The Participant to search
+        @return CorpseInfo -- Info about this Participant's corpse
+    ]=]
+    function Participant.SearchCorpse(self: Types.Participant, target: Types.Participant): Types.CorpseInfo
+        if not target:IsDead() then
+            error(`Target {target.Player.Name} is not dead`)
+        end
+
+        if not table.find(target.SearchedBy, self) then
+            if self:GetRole().CorpseResultsPublicised then
+                target.SearchedBy = self.Round.Participants
+            else
+                table.insert(target.SearchedBy, self)
+            end
+        end
+
+        if target.Status == "Missing" then
+            Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target:GetRole())}!`, "info", "bodyFound", self.Round.Participants)
+            target.Status = "Dead"
+        end
+
+        if self:GetRole().CanStealCredits and (target.Credits > 0) then
+            Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
+            self.Credits += target.Credits
+            target.Credits = 0
+        end
+
+        local equipmentList = {}
+        for i, _ in target.EquipmentPurchases do
+            local equipment = self.Round:GetEquipment(i)
+            if type(equipment) == "function" then
+                table.insert(equipmentList, equipment)
+            end
+        end
+        return {
+            Name = target:GetFormattedName(),
+            Role = target:GetRole(),
+            DeathTime = target.KilledAt,
+            SelfDefense = target.KilledInSelfDefense,
+            FreeKill = #target.FreeKillReasons > 0,
+            Headshot = target.KilledByHeadshot,
+            EquipmentList = equipmentList,
+            MurderWeapon = target.KilledByWeapon,
+        }
+    end
+
+    --[=[
+        @within Participant
+        @return Role -- Returns this Participant's Role
+        @error ParticipantRoleIsNil -- Raised if Role is not set, i.e, [Round] has not started yet.
+    ]=]
+    function Participant.GetRole(self: Types.Participant): Types.Role
+        if not self.Role then
+            error(`Participant {self.Player.Name} Role is nil`)
+        end
+        return self.Role
+    end
+
+    --[=[
+        @within Participant
+        @return Role -- This Participant's Role's Allegiance.
+        @error ParticipantRoleIsNil -- Raised if Role is not set, i.e, [Round] has not started yet.
+    ]=]
+    function Participant.GetAllegiance(self: Types.Participant): Types.Role
+        if not self.Role then
+            error(`Participant {self.Player.Name} Role is nil`)
+        end
+        return self.Round:GetRoleFromName(self.Role.Allegiance)
+    end
+
+    --[=[
+        @within Participant
+    ]=]
+    function Participant.LeaveRound(self: Types.Participant): ()
+        if self.Round:IsRoundPreparing() then
+            local index = table.find(self.Round.Participants, self)
+            if index then
+                table.remove(self.Round.Participants, index)
+            end
+
+            if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
+                local timerThread = self.Round._roundTimerThread
+                if not timerThread then
+                    return
+                end
+                task.cancel(timerThread)
+            end
+        else
+            if self:GetRole().AnnounceDisconnect then
+                Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self:GetRole())}.`, "info", "disconnect", self.Round.Participants)
+            end
+            self:Kill()
+        end
+    end
+
+    --[=[
+        @within Participant
+        @param Equipment -- The Equipment to give
+        @return EquipmentGiveRejectionReason? -- A string describing why giving the item failed, if it failed.
+    ]=]
+    Participant.GiveEquipment = Adapters.GiveEquipment
+
+    --[=[
+        @within Participant
+        @param Equipment -- The Equipment to remove
+        @return EquipmentRemoveRejectionReason? -- A string describing why removing the item failed, if it failed.
+    ]=]
+    Participant.RemoveEquipment = Adapters.RemoveEquipment
+
+    --[=[
+        @within Participant
+        @param Equipment -- The Equipment to purchase
+        @return EquipmentGiveRejectionReason? -- A string describing why purchasing the item failed, if it failed.
+    ]=]
+    function Participant.PurchaseEquipment(self: Types.Participant, equipment: Types.Equipment): Types.EquipmentPurchaseRejectionReason?
+        local purchases = self.EquipmentPurchases
+        if (purchases[equipment.Name] or 0) >= equipment.MaxStock then
+            return "NotInStock"
+        end
+        if self.Credits < equipment.Cost then
+            return "NotEnoughCredits"
+        end
+        if self.EquipmentPurchases[equipment.Name] then
+            self.EquipmentPurchases[equipment.Name] += 1
+        else
+            self.EquipmentPurchases[equipment.Name] = 0
+        end
+        return self:GiveEquipment(equipment)
+    end
+
+    --[=[
+        @within Participant
+        @param Equipment -- The Equipment to give
+        @return EquipmentGiveRejectionReason? -- A string describing why giving the item failed, if it failed.
+    ]=]
+    function Participant.AddKill(self: Types.Participant, victim: Types.Participant, ignoreKarma: boolean): ()
+        local round = self.Round
+        if not round:IsRoundInProgress() then
+            return
+        end
+        if not ignoreKarma then
+            local isAlly = round:GetRoleRelationship(victim:GetRole(), self:GetRole()) == "__Ally"
+            if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
+                table.insert(self.FreeKillReasons, "Teamkill")
+                Adapters.SendSlayVote(victim, self)
+            end
+        end
+        table.insert(self.KillList, victim)
+    end
+
+    function Participant.AddSelfDefense(self: Types.Participant, against: Types.Participant, duration: number): ()
+        if not self.Round.Gamemode.SelfDefense then -- no point if it's not enabled
+            return
+        end
+        table.insert(self.SelfDefenseList, {
+            Against = against,
+            Until = workspace:GetServerTimeNow() + duration
+        })
+    end
+
+    function Participant.HasSelfDefenseAgainst(self: Types.Participant, against: Types.Participant): boolean
+        if not self.Round.Gamemode.SelfDefense then -- if self defense is not enabled we don't care
+            return false
+        end
+        for _, v in self.SelfDefenseList do
+            if (v.Against :: any == against) and (v.Until < workspace:GetServerTimeNow()) then
+                return true
+            end
+        end
+        return false
+    end
+
+    function Participant.AddScore(self: Types.Participant, reason: Types.ScoreReason, amount: number)
+        if not self.Score[reason] then
+            self.Score[reason] = amount
+        else
+            self.Score[reason] += amount
+        end
+    end
+
+    function Participant.GetFormattedName(self: Types.Participant): any
+        local role = self.Role
+        if role then
+            return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
+        end
+        return self.Player.Name
+    end
+
+    function Participant.Kill(self: Types.Participant, attacker: Types.Participant?, weapon: Types.Equipment?, headshot: boolean?, ignoreKarma: boolean?): ()
+        self.Status = "Missing"
+        self.KilledAsFreeKill = #self.FreeKillReasons > 0
+        self.KilledAt = workspace:GetServerTimeNow()
+        self.KilledByHeadshot = headshot or false
+        self.KilledByParticipant = attacker or nil
+        self.KilledByWeapon = weapon or "Suicide"
+
+        if attacker then
+            self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
+            self.KilledByParticipant = attacker
+            attacker:AddKill(self, ignoreKarma or true)
+        end
+
+        local hum = self.Character:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Health = 0
+        end
+    end
+
+    Participant.Character = nil :: any
+
+    return Participant
+    --[[
     return {
         Player = plr,
         Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
@@ -75,258 +535,25 @@ local function newParticipant(round, plr): Types.Participant
         KillList = {},
 
         SlayVotes = {},
-        TryAddSlayVote = function(self, from)
-            if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
-                return false
-            end
-    
-            for _, v in self.KillList do
-                if v :: any == from then
-                    table.insert(self.SlayVotes, from)
-                    if #self.SlayVotes >= SLAY_VOTES then
-                        self:Kill()
-                    end
-                    return true
-                end
-            end
-
-            return false
-        end,
 
         EquipmentPurchases = {},
 
         IsDead = function(self)
-            return (self.Status == "Missing") or (self.Status == "Dead")
+            
         end,
 
-        ViewPartialParticipant = function(self, target)
-            local canSeeMissing = false
-            if self.Role and self.Role.CanSeeMissing then
-                canSeeMissing = true
-            end
-            local status = target.Status
-            if (status == "Missing") and (not canSeeMissing) then
-                status = "Alive"
-            end
-            return {
-                Player = target.Player,
-                Role = self:TryViewParticipantRole(target),
-                Status = status :: "Alive" | "Dead" | "Missing"
-            }
-        end,
-
-        TryViewParticipantRole = function(self, target)
-            local ownRole = self.Role
-            local targetRole = target.Role
-            if not ownRole or not targetRole then
-                return
-            end
-
-            local verdict = nil
-            for relation, knows in ownRole.KnowsRoles do
-                -- Explicit references to the role name take priority over things like ally or enemy
-                if relation == ownRole.Name then
-                    verdict = knows
-                    break
-                elseif verdict == nil then
-                    verdict = self.Round:CompareRoles(ownRole, targetRole, relation)
-                end
-            end
-
-            if not verdict then
-                return
-            end
-
-            return {
-                Name = targetRole.Name,
-                Colour = targetRole.Colour
-            }
-        end,
-
-        AssignRole = function(self, role)
-            local previousRole = self.Role
-            self.Role = role
-            self.Credits += role.StartingCredits
-            for _, v in role.StartingEquipment do
-                Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
-            end
-            Adapters.SendRoleAlert(self, role)
-            role:OnRoleAssigned(self)
-            if previousRole then
-                previousRole:OnRoleRemoved(self)
-            end
-        end,
-
-        SearchCorpse = function(self, target)
-            if not target:IsDead() then
-                error(`Target {target.Player.Name} is not dead`)
-            end
-
-            if not table.find(target.SearchedBy, self) then
-                if self:GetRole().CorpseResultsPublicised then
-                    target.SearchedBy = self.Round.Participants
-                else
-                    table.insert(target.SearchedBy, self)
-                end
-            end
-
-            if target.Status == "Missing" then
-                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target:GetRole())}!`, "info", "bodyFound", self.Round.Participants)
-                target.Status = "Dead"
-            end
-
-            if self:GetRole().CanStealCredits and (target.Credits > 0) then
-                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
-                self.Credits += target.Credits
-                target.Credits = 0
-            end
-
-            local equipmentList = {}
-            for i, _ in target.EquipmentPurchases do
-                local equipment = self.Round:GetEquipment(i)
-                if type(equipment) == "function" then
-                    table.insert(equipmentList, equipment)
-                end
-            end
-            return {
-                Name = target:GetFormattedName(),
-                Role = target:GetRole(),
-                DeathTime = target.KilledAt,
-                SelfDefense = target.KilledInSelfDefense,
-                FreeKill = #target.FreeKillReasons > 0,
-                Headshot = target.KilledByHeadshot,
-                EquipmentList = equipmentList,
-                MurderWeapon = target.KilledByWeapon,
-            }
-        end,
-
-        GetRole = function(self)
-            if not self.Role then
-                error(`Participant {self.Player.Name} Role is nil`)
-            end
-            return self.Role
-        end,
-        GetAllegiance = function(self)
-            if not self.Role then
-                error(`Participant {self.Player.Name} Role is nil`)
-            end
-            return self.Round:GetRoleFromName(self.Role.Allegiance)
-        end,
         
-        LeaveRound = function(self)
-            if self.Round:IsRoundPreparing() then
-                local index = table.find(self.Round.Participants, self)
-                if index then
-                    table.remove(self.Round.Participants, index)
-                end
 
-                if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
-                    local timerThread = self.Round._roundTimerThread
-                    if not timerThread then
-                        return
-                    end
-                    task.cancel(timerThread)
-                end
-            else
-                if self:GetRole().AnnounceDisconnect then
-                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self:GetRole())}.`, "info", "disconnect", self.Round.Participants)
-                end
-                self:Kill()
-            end
-        end,
+        
 
-        GiveEquipment = Adapters.GiveEquipment,
-        RemoveEquipment = Adapters.RemoveEquipment,
+        
+        
 
-        PurchaseEquipment = function(self, equipment)
-            local purchases = self.EquipmentPurchases
-            if (purchases[equipment.Name] or 0) >= equipment.MaxStock then
-                return "NotInStock"
-            end
-            if self.Credits < equipment.Cost then
-                return "NotEnoughCredits"
-            end
-            if self.EquipmentPurchases[equipment.Name] then
-                self.EquipmentPurchases[equipment.Name] += 1
-            else
-                self.EquipmentPurchases[equipment.Name] = 0
-            end
-            return self:GiveEquipment(equipment)
-        end,
+        
 
-        AddKill = function(self, victim, ignoreKarma)
-            local round = self.Round
-            if not round:IsRoundInProgress() then
-                return
-            end
-            if not ignoreKarma then
-                local isAlly = round:GetRoleRelationship(victim:GetRole(), self:GetRole()) == "__Ally"
-                if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
-                    table.insert(self.FreeKillReasons, "Teamkill")
-                    Adapters.SendSlayVote(victim, self)
-                end
-            end
-            table.insert(self.KillList, victim)
-        end,
-
-        AddSelfDefense = function(self, against, duration)
-            if not self.Round.Gamemode.SelfDefense then -- no point if it's not enabled
-                return
-            end
-            table.insert(self.SelfDefenseList, {
-                Against = against,
-                Until = workspace:GetServerTimeNow() + duration
-            })
-        end,
-
-        HasSelfDefenseAgainst = function(self, against)
-            if not self.Round.Gamemode.SelfDefense then -- if self defense is not enabled we don't care
-                return false
-            end
-            for _, v in self.SelfDefenseList do
-                if (v.Against :: any == against) and (v.Until < workspace:GetServerTimeNow()) then
-                    return true
-                end
-            end
-            return false
-        end,
-
-        AddScore = function(self, reason, amount)
-            if not self.Score[reason] then
-                self.Score[reason] = amount
-            else
-                self.Score[reason] += amount
-            end
-        end,
-
-        GetFormattedName = function(self)
-            local role = self.Role
-            if role then
-                return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
-            end
-            return self.Player.Name
-        end,
-
-        Kill = function(self, attacker, weapon, headshot, ignoreKarma)
-            self.Status = "Missing"
-            self.KilledAsFreeKill = #self.FreeKillReasons > 0
-            self.KilledAt = workspace:GetServerTimeNow()
-            self.KilledByHeadshot = headshot or false
-            self.KilledByParticipant = attacker or nil
-            self.KilledByWeapon = weapon or "Suicide"
-
-            if attacker then
-                self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
-                self.KilledByParticipant = attacker
-                attacker:AddKill(self, ignoreKarma or true)
-            end
-
-            local hum = self.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.Health = 0
-            end
-        end,
+        
     }
+    ]]
 end
 
 local function newRound(gamemode): Types.Round
