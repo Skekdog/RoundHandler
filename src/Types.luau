@@ -139,7 +139,7 @@ export type PartialRound = {
 }
 
 export type Round = {
-    ID: UUID,           -- Unique identifier of the round.
+    ID: UUID,
     Gamemode: Gamemode, -- A reference to the current gamemode.
     Map: MapStructure,        -- A reference to the loaded map folder.
 
@@ -197,6 +197,7 @@ export type RoundEndInfo = {
     Events: {UserFacingRoundEvent},
     Scores: {[FormattedUsername]: ParticipantScoring}
 }
+
 export type Gamemode = {
     Name: string,          -- Name of the gamemode.
     Description: string,   -- Description of the gamemode.
@@ -230,11 +231,6 @@ export type Gamemode = {
     AssignRoles: (self: Gamemode, participants: {Participant}) -> (),      -- Function that assigns all Participants roles.
 }
 
---[[
-    Represents a Participant Role.
-    Contains info such as Allies, Credits, etc.
-    Must be defined in a Gamemode.
-]]
 export type Role = {
     Name: string,          -- Name of this role.
     Description: string,   -- Description of this role.
