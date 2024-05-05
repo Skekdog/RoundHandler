@@ -1,5 +1,5 @@
 -- Functions to check if gamemodes / maps are correctly defined, when the type-checker is unable to do so.
-local Types = require("src/Types")
+local Types = require(script.Parent.Types)
 local EngineVersion = "0.0.1"
 
 local Lighting = game:GetService("Lighting")

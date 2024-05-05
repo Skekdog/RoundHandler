@@ -5,9 +5,9 @@ local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 
-local Adapters = require("src/Adapters")
-local Types = require("src/Types")
-local API = require("src/API")
+local Adapters = require(script.Parent.Adapters)
+local Types = require(script.Parent.Types)
+local API = require(script.Parent.API)
 
 --- The main module. New rounds are created from here via module.CreateRound().
 local module = {

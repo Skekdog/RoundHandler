@@ -7,8 +7,8 @@ if not remotes then
 	error("Missing remotes folder (RoundHandler)")
 end
 
-local API = require("src/API")
-local Types = require("src/Types")
+local API = require(script.Parent.API)
+local Types = require(script.Parent.Types)
 
 local module: Types.Adapter = {
     Configuration = {
