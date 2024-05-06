@@ -517,11 +517,13 @@ local function newRound(gamemode): Types.Round
             local events = Adapters.CalculateUserFacingEvents(self.EventLog, victors)
             local highlights = self.Gamemode:CalculateRoundHighlights(self)
 
+            assert(victors.VictoryMusic)
             self.RoundEndInfo = {
                 Winners = victors,
                 Events = events,
                 Scores = scores,
-                Highlights = highlights
+                Highlights = highlights,
+                Music = victors.VictoryMusic[math.random(1, math.max(#victors.VictoryMusic, 1))]
             }
 
             self.RoundPhaseChangeEvent:Fire("Highlights")

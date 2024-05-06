@@ -185,6 +185,7 @@ export type Round = {
 ]]
 export type RoundEndInfo = {
     Winners: Role,
+    Music: Sound?,
     Highlights: {RoundHighlight},
     Events: {UserFacingRoundEvent},
     Scores: {[FormattedUsername]: ParticipantScoring}
