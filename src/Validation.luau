@@ -6,9 +6,32 @@ local Lighting = game:GetService("Lighting")
 
 local module = {}
 
-function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string})
-    local issues = {}
-    local i = function(issue: string)
+local function validateVersion(targetVersion: string, objectName: string): string?
+    local major = tonumber(EngineVersion:split(".")[1])
+    local minor = tonumber(EngineVersion:split(".")[2])
+
+    local targetMajor = tonumber(targetVersion:split(".")[1])
+    local targetMinor = tonumber(targetVersion:split(".")[2])
+
+    if targetMajor ~= major then
+        if targetMajor < major then
+            return `This {objectName} was designed for an older version of RoundHandler ({targetVersion} < {version}) and is very likely to not work.`
+        else
+            return `This {objectName} was designed for a newer version of RoundHandler ({targetVersion} > {version}) and is very likely to not work.`
+        end
+    elseif targetMinor ~= minor then
+        if targetMinor < minor then
+            return `This {objectName} was designed for an older version of RoundHandler ({targetVersion} < {version}) and may not work.`
+        else
+            return `This {objectName} was designed for a newer version of RoundHandler ({targetVersion} > {version}) and may not work.`
+        end
+    end
+    return
+end
+
+function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
+    local issues: {string?} = {}
+    local i = function(issue: string?)
         table.insert(issues, issue)
     end
 
@@ -105,32 +128,12 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string})
         validateRoleRelationship(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
     end
 
-    local version = EngineVersion
-    local major = tonumber(version:split(".")[1])
-    local minor = tonumber(version:split(".")[2])
-
-    local gmVersion = gamemode.EngineVersion
-    local gmMajor = tonumber(gmVersion:split(".")[1])
-    local gmMinor = tonumber(gmVersion:split(".")[2])
-
-    if gmMajor ~= major then
-        if gmMajor < major then
-            i(`This gamemode was designed for an older version of RoundHandler ({gmVersion} < {version}) and is very likely to not work.`)
-        else
-            i(`This gamemode was designed for a newer version of RoundHandler ({gmVersion} > {version}) and is very likely to not work.`)
-        end
-    elseif gmMinor ~= minor then
-        if gmMinor < minor then
-            i(`This gamemode was designed for an older version of RoundHandler ({gmVersion} < {version}) and may not work.`)
-        else
-            i(`This gamemode was designed for a newer version of RoundHandler ({gmVersion} > {version}) and may not work.`)
-        end
-    end
+    i(validateVersion(gamemode.EngineVersion, "gamemode"))
 
     return #issues<1, issues
 end
 
-function module.ValidateMap(map: Types.MapStructure)
+function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     local issues = {}
     local i = function(issue: string)
         table.insert(issues, issue)
@@ -152,27 +155,7 @@ function module.ValidateMap(map: Types.MapStructure)
         i("Map must have at least 1 spawn.")
     end
 
-    local version = EngineVersion
-    local major = tonumber(version:split(".")[1])
-    local minor = tonumber(version:split(".")[2])
-
-    local mapVersion = map.EngineVersion.Value
-    local mapMajor = tonumber(mapVersion:split(".")[1])
-    local mapMinor = tonumber(mapVersion:split(".")[2])
-
-    if mapMajor ~= major then
-        if mapMajor < major then
-            i(`This map was designed for an older version of RoundHandler ({mapVersion} < {version}) and is very likely to not work.`)
-        else
-            i(`This map was designed for a newer version of RoundHandler ({mapVersion} > {version}) and is very likely to not work.`)
-        end
-    elseif mapMinor ~= minor then
-        if mapMinor < minor then
-            i(`This map was designed for an older version of RoundHandler ({mapVersion} < {version}) and may not work.`)
-        else
-            i(`This map was designed for a newer version of RoundHandler ({mapVersion} > {version}) and may not work.`)
-        end
-    end
+    validateVersion(map.EngineVersion.Value, map)
 
     return #issues<1, issues
 end
