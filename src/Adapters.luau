@@ -1,11 +1,7 @@
 -- Implementation-dependent functions that *should* be customised.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
-
-if not remotes then
-	error("Missing remotes folder (RoundHandler)")
-end
+local remotes = ReplicatedStorage.RoundHandler
 
 local API = require(script.Parent.API)
 local Types = require(script.Parent.Types)
@@ -30,8 +26,8 @@ local module: Types.Adapter = {
             return "PlayerDisconnected"
         end
         
-        local backpack = plr:FindFirstChildOfClass("Backpack")
-        if backpack and backpack:FindFirstChild(item.Item.Name) then
+        local backpack = plr.Backpack
+        if backpack:FindFirstChild(item.Item.Name) then
             return "EquipmentAlreadyInInventory"
         end
         item.Item:Clone().Parent = backpack
@@ -40,10 +36,16 @@ local module: Types.Adapter = {
 
     RemoveEquipment = function(participant, item)
         -- Removes an item from a player. The standard implementation uses the Backpack.
-        if not participant.Player.Parent then
+        local plr = participant.Player
+        if not plr.Parent then
             return
         end
-        return ((participant.Player:FindFirstChild("Backpack") :: Backpack):FindFirstChild(item.Name) :: Tool):Destroy()
+
+        local tool = plr.Backpack:FindFirstChild(item.Name)
+        if not tool then
+            return
+        end
+        tool:Destroy()
     end,
 
     CheckForUpdate = function(round)
@@ -62,7 +64,7 @@ local module: Types.Adapter = {
         -- Sends a private server message to each recipient.
         -- The message can be further processed here, such as using rich text to change text colour depending on severity.
 
-        local remote: RemoteEvent = remotes:FindFirstChild("SendMessage") :: RemoteEvent
+        local remote = remotes.SendMessage
         
         local fontColour = ""
         -- These colours suck
@@ -86,12 +88,12 @@ local module: Types.Adapter = {
     end,
 
     SendRoleAlert = function(recipient, role)
-        local remote: RemoteEvent = remotes:FindFirstChild("SendRoleAlert") :: RemoteEvent
+        local remote = remotes.SendRoleAlert
         remote:FireClient(recipient.Player, recipient.Round:GetFormattedRole(role), role.Description)
     end,
 
     SendRoundHighlights = function(recipients, highlights, events, scores)
-        local remote: RemoteEvent = remotes:FindFirstChild("SendHighlights") :: RemoteEvent
+        local remote = remotes.SendRoundHighlights
         for _, v in recipients do
             remote:FireClient(v.Player, highlights, events, scores)
         end
@@ -121,7 +123,7 @@ local module: Types.Adapter = {
     end,
 
     SendSlayVote = function(to, target)
-        local remote: RemoteEvent = remotes:FindFirstChild("SlayVote") :: any
+        local remote = remotes.SlayVote
         remote:FireClient(to.Player, target.Player)
     end,
 

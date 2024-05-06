@@ -7,7 +7,7 @@ local common = require("examples/gamemodes/Common")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
-local items = ReplicatedStorage:FindFirstChild("Items") :: Folder
+local items = ReplicatedStorage.Items
 
 local module: Types.Gamemode = {
     Name = "Murder",
@@ -95,7 +95,7 @@ local module: Types.Gamemode = {
             Description = "Stabby stab stab.",
             Cost = 0,
             Icon = "rbxassetid://",
-            Item = items:FindFirstChild("Knife") :: Tool,
+            Item = items.Knife,
             MaxStock = 1,
 
             AttackType = "Blade",
@@ -106,7 +106,7 @@ local module: Types.Gamemode = {
             Description = "Shooty shoot shoot.",
             Cost = 0,
             Icon = "rbxassetid://",
-            Item = items:FindFirstChild("Gun") :: Tool,
+            Item = items.Gun,
             MaxStock = 1,
 
             AttackType = "Firearm",
@@ -257,17 +257,19 @@ local module: Types.Gamemode = {
         elseif role.Name == "Sheriff" then
             local char = victim.Character
             if char.Parent then
-                local gun: Part = (((round:GetEquipment("Gun") :: Types.Equipment).Item :: any):FindFirstChild("Handle") :: Part):Clone()
+                local gun = round:GetEquipment("Gun")
+                assert(gun and type(gun.Item) == "table")
+                local handle: Part = gun.Item.Handle:Clone()
 				
 				local particles = Instance.new("Sparkles")
-				particles.Parent = gun
+				particles.Parent = handle
 				
-				gun:PivotTo(char:GetPivot())
-				gun.Anchored = false
-				gun.Name = "Gun"
-				gun.Parent = round.Map
+				handle:PivotTo(char:GetPivot())
+				handle.Anchored = false
+				handle.Name = "Gun"
+				handle.Parent = round.Map
 
-                gun.Touched:Connect(function(part)
+                handle.Touched:Connect(function(part)
                     local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
                     if not plr then
                         return
@@ -282,7 +284,7 @@ local module: Types.Gamemode = {
                     end
 
                     participant:GiveEquipment(self.AvailableEquipment[2])
-                    gun:Destroy()
+                    handle:Destroy()
                 end)
             end
         end

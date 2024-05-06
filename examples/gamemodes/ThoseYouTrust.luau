@@ -4,7 +4,7 @@ local Types = require("src/Types")
 local common = require("examples/gamemodes/Common")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local items = ReplicatedStorage:FindFirstChild("Items") :: Folder
+local items = ReplicatedStorage.Items
 
 local module: Types.Gamemode = {
     Name = "Those You Trust",
@@ -159,7 +159,7 @@ local module: Types.Gamemode = {
             AttackType = "Blunt",
             NoGuilt = false,
 
-            Item = items:FindFirstChild("Crowbar") :: Tool
+            Item = items.Crowbar
         },
         {
             Name = "Pistol",
@@ -171,7 +171,7 @@ local module: Types.Gamemode = {
             AttackType = "Firearm",
             NoGuilt = false,
 
-            Item = items:FindFirstChild("Pistol") :: Tool
+            Item = items.Pistol
         },
         {
             Name = "Grenade",
@@ -183,7 +183,7 @@ local module: Types.Gamemode = {
             AttackType = "Explosion",
             NoGuilt = false,
 
-            Item = items:FindFirstChild("Grenade") :: Tool
+            Item = items.Grenade
         },
         {
             Name = "Radar",
@@ -205,7 +205,7 @@ local module: Types.Gamemode = {
             Cost = 1,
             Icon = "rbxassetid://",
             MaxStock = 2,
-            Item = items:FindFirstChild("C4") :: Tool,
+            Item = items.C4,
 
             AttackType = "Explosion",
             NoGuilt = true,

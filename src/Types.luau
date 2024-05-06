@@ -342,6 +342,7 @@ export type MapStructure = Folder & {
     EngineVersion: StringValue,
     WeaponSpawns: Folder,
     ActionItems: Folder,
+    Lighting: Folder?,
     Spawns: Folder,
     Doors: Folder,
     Props: Folder,

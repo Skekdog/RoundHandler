@@ -8,25 +8,13 @@ local Players = game:GetService("Players")
 
 local RoundHandler = require("src/RoundHandler")
 local Types = require("src/Types")
-local ThoseYouTrust = require("examples/gamemodes/ThoseYouTrust")
-local Murder = require("examples/gamemodes/Murder")
+local ThoseYouTrust: any = require("examples/gamemodes/ThoseYouTrust")
+local Murder: any = require("examples/gamemodes/Murder")
 
-local maps = (ServerStorage:FindFirstChild("Maps") :: Instance):GetChildren() :: {Instance}
-local remotes = ReplicatedStorage:FindFirstChild("RoundHandler")
+local maps = ServerStorage.Maps:GetChildren() :: {Types.MapStructure}
+local remotes = ReplicatedStorage.RoundHandler
 
-if not remotes then
-	error("Missing remotes folder (RoundHandler)")
-end
-
-local slayVote = remotes:FindFirstChild("SlayVote") :: RemoteEvent
-local getPartialParticipants = remotes:FindFirstChild("GetPartialParticipants") :: RemoteFunction
-local getPartialRound = remotes:FindFirstChild("GetPartialRound") :: RemoteFunction
-
-if not slayVote or not getPartialParticipants or not getPartialRound then
-	error("Missing required remotes")
-end
-
-getPartialRound.OnServerInvoke = function(plr)
+remotes.GetPartialRound.OnServerInvoke = function(plr)
 	local roundId = ServerStorage:GetAttribute("RoundID")
 	if not roundId then
 		return
@@ -36,7 +24,7 @@ getPartialRound.OnServerInvoke = function(plr)
 	return round:GetPartialRound()
 end
 
-getPartialParticipants.OnServerInvoke = function(plr)
+remotes.GetPartialParticipants.OnServerInvoke = function(plr)
 	local roundId = ServerStorage:GetAttribute("RoundID")
 	if not roundId then
 		return
@@ -57,7 +45,7 @@ getPartialParticipants.OnServerInvoke = function(plr)
 	return participants
 end
 
-slayVote.OnServerEvent:Connect(function(plr, target: Player)
+remotes.SlayVote.OnServerEvent:Connect(function(plr, target: Player)
 	local roundId = ServerStorage:GetAttribute("RoundID")
 	if (not roundId) or (typeof(target) ~= "Instance")  then
 		return
@@ -75,7 +63,7 @@ slayVote.OnServerEvent:Connect(function(plr, target: Player)
 end)
 
 while true do
-	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)] :: any, if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
+	local round = RoundHandler.CreateRound(maps[math.random(1, #maps)], if math.random(1, 5) >= 2 then ThoseYouTrust else Murder)
 	ServerStorage:SetAttribute("RoundID", round.ID)
 
 	local function playerAdded(plr: Player)

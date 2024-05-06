@@ -1,6 +1,63 @@
 {
   "name": "Round-Handler",
   "tree": {
-    "$path": "src"
+    "$path": "src",
+    "$className": "DataModel",
+
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "Maps": {
+        "$className": "Folder"
+      }
+    },
+
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "RoundHandler": {
+        "$className": "Folder",
+        "SlayVote": {
+          "$className": "RemoteEvent"
+        },
+        "SendMessage": {
+          "$className": "RemoteEvent"
+        },
+        "SendRoleAlert": {
+          "$className": "RemoteEvent"
+        },
+        "SendRoundHighlights": {
+          "$className": "RemoteEvent"
+        },
+        "GetPartialParticipants": {
+          "$className": "RemoteFunction"
+        },
+        "GetPartialRound": {
+          "$className": "RemoteFunction"
+        }
+      },
+      "Items": {
+        "$className": "Folder",
+        "Crowbar": {
+          "$className": "Tool"
+        },
+        "Pistol": {
+          "$className": "Tool"
+        },
+        "Grenade": {
+          "$className": "Tool"
+        },
+        "C4": {
+          "$className": "Tool"
+        },
+        "Gun": {
+          "$className": "Tool",
+          "Handle": {
+            "$className": "Part"
+          }
+        },
+        "Knife": {
+          "$className": "Tool"
+        }
+      }
+    }
   }
 }

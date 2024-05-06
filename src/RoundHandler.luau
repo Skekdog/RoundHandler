@@ -580,7 +580,7 @@ local function newRound(gamemode): Types.Round
                         weapon.Anchored = false
                         
                         weapon.Touched:Connect(function(part)
-                            local plr = Players:GetPlayerFromCharacter(part.Parent :: any)
+                            local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
                             if plr then
                                 local participant = self:GetParticipant(plr.Name)
                                 if participant then
@@ -595,11 +595,7 @@ local function newRound(gamemode): Types.Round
                         end)
                     end
                 elseif v.Name == "Props" then
-                    for _, prop: Types.Prop in (v:GetChildren() :: any) do
-                        if not prop:IsA("BasePart") then
-                            continue
-                        end
-
+                    for _, prop in (v:GetChildren() :: {Types.Prop}) do
                         prop.Humanoid.Died:Connect(function()
                             if prop:FindFirstChild("OnBreak") then
                                 (require)(prop.OnBreak)()
@@ -607,7 +603,7 @@ local function newRound(gamemode): Types.Round
                         end)
                     end
                 elseif v.Name == "Lighting" then
-                    for _, property: any in v:GetChildren() do
+                    for _, property: any in(v:GetChildren()) do
                         (Lighting :: any)[property.Name] = property.Value
                     end
                 end
