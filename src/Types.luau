@@ -152,8 +152,7 @@ export type Round = {
 
     RoundPhaseChangeEvent: {Event: RBXScriptSignal<RoundPhase>, Fire: (self: any, phase: RoundPhase) -> ()},
 
-    TryGetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant or nil, without erroring.
-    GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
+    GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant from a username.
     JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
     
     GetPartialRound: (self: Round) -> PartialRound, -- Returns a limited view of the round, safe for clients to peak at. Does not include any Participants, see Participant:ViewPartialParticipant for that.
@@ -167,8 +166,7 @@ export type Round = {
 
     GetFormattedRole: (self: Round, role: Role) -> FormattedRole,
 
-    TryGetEquipment: (self: Round, name: EquipmentName) -> Equipment?,       -- Returns Equipment from a name, or nil if it does not exist. Does not error.
-    GetEquipment: (self: Round, name: EquipmentName) -> Equipment,           -- Returns the Equipment from Gamemode.
+    GetEquipment: (self: Round, name: EquipmentName) -> Equipment?,           -- Returns the Equipment from Gamemode.
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant}, -- Returns a list of Participants with the specified role.
     GetRoleFromName: (self: Round, name: RoleName) -> Role,                  -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.

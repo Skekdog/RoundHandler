@@ -45,6 +45,10 @@ getPartialParticipants.OnServerInvoke = function(plr)
 	local round = RoundHandler.GetRound(roundId)
 	local self = round:GetParticipant(plr.Name)
 
+	if not self then
+		return
+	end
+
 	local participants = {}
 	for _, v in round.Participants do
 		table.insert(participants, self:ViewPartialParticipant(v))
@@ -63,8 +67,8 @@ slayVote.OnServerEvent:Connect(function(plr, target: Player)
 	end
 
 	local round = RoundHandler.GetRound(roundId)
-	local voterParticipant = round:TryGetParticipant(plr.Name)
-	local targetParticipant = round:TryGetParticipant(target.Name)
+	local voterParticipant = round:GetParticipant(plr.Name)
+	local targetParticipant = round:GetParticipant(target.Name)
 	if voterParticipant and targetParticipant then
 		targetParticipant:TryAddSlayVote(voterParticipant)
 	end

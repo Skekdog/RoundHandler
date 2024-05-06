@@ -257,7 +257,7 @@ local module: Types.Gamemode = {
         elseif role.Name == "Sheriff" then
             local char = victim.Character
             if char.Parent then
-                local gun: Part = ((round:GetEquipment("Gun").Item :: any):FindFirstChild("Handle") :: Part):Clone()
+                local gun: Part = (((round:GetEquipment("Gun") :: Types.Equipment).Item :: any):FindFirstChild("Handle") :: Part):Clone()
 				
 				local particles = Instance.new("Sparkles")
 				particles.Parent = gun
@@ -274,6 +274,9 @@ local module: Types.Gamemode = {
                     end
 
                     local participant = round:GetParticipant(plr.Name)
+                    if not participant then
+                        return
+                    end
                     if (participant:GetAllegiance().Name ~= "Bystander") or (participant:IsDead()) then
                         return
                     end

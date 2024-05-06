@@ -146,7 +146,7 @@ local function newParticipant(round, plr): Types.Participant
             self.Role = role
             self.Credits += role.StartingCredits
             for _, v in role.StartingEquipment do
-                Adapters.GiveEquipment(self, self.Round:GetEquipment(v))
+                Adapters.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
             end
             Adapters.SendRoleAlert(self, role)
             role:OnRoleAssigned(self)
@@ -376,14 +376,6 @@ local function newRound(gamemode): Types.Round
                     return participant
                 end
             end
-            error(`Could not find Participant {name} in Round {self.ID}`)
-        end,
-        TryGetParticipant = function(self, name)
-            for _, participant in self.Participants do
-                if participant.Player.Name == name then
-                    return participant
-                end
-            end
             return
         end,
         GetParticipantsWithRole  = function(self, roleName)
@@ -398,7 +390,7 @@ local function newRound(gamemode): Types.Round
         end,
         
         JoinRound = function(self, plr)
-            if self:TryGetParticipant(plr.Name) then
+            if self:GetParticipant(plr.Name) then
                 error(`{plr.Name} is already a Participant in Round {self.ID}`)
             end
             if not self:IsRoundPreparing() then
@@ -588,9 +580,9 @@ local function newRound(gamemode): Types.Round
                         weapon.Touched:Connect(function(part)
                             local plr = Players:GetPlayerFromCharacter(part.Parent :: any)
                             if plr then
-                                local participant = self:TryGetParticipant(plr.Name)
+                                local participant = self:GetParticipant(plr.Name)
                                 if participant then
-                                    local equipment = self:TryGetEquipment(weapon.Name)
+                                    local equipment = self:GetEquipment(weapon.Name)
                                     if not equipment then
                                         return warn(`{weapon.Name} not found as Equipment`)
                                     end
@@ -635,21 +627,13 @@ local function newRound(gamemode): Types.Round
             return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
         end,
 
-        TryGetEquipment = function(self, name)
-            for _, v in self.Gamemode.AvailableEquipment do
-                if v.Name == name then
-                    return v
-                end
-            end
-            return
-        end,
         GetEquipment = function(self, name)
             for _, v in self.Gamemode.AvailableEquipment do
                 if v.Name == name then
                     return v
                 end
             end
-            error(`Equipment {name} not found`)
+            return
         end,
         GetRoleFromName = function(self, roleName)
             for _, v in self.Gamemode.Roles do
