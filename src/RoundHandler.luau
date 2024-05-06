@@ -9,7 +9,7 @@ local Adapters = require(script.Parent.Adapters)
 local Types = require(script.Parent.Types)
 local API = require(script.Parent.API)
 
---- The main module. New rounds are created from here via module.CreateRound().
+-- The main module. New rounds are created from here via module.CreateRound().
 local module = {
     Rounds = {}
 }
@@ -673,7 +673,7 @@ local function newRound(gamemode): Types.Round
     }
 end
 
-function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round --- Creates a new Round and returns it.
+function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): Types.Round -- Creates a new Round and returns it.
     local self: Types.Round = newRound(gamemode)
     self:LoadMap(map)
     
