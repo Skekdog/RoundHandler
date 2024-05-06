@@ -7,6 +7,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local Players = game:GetService("Players")
 
 local RoundHandler = require("src/RoundHandler")
+local Types = require("src/Types")
 local ThoseYouTrust = require("examples/gamemodes/ThoseYouTrust")
 local Murder = require("examples/gamemodes/Murder")
 
@@ -84,7 +85,12 @@ while true do
 		playerAdded(v)
 	end
 
-	round.RoundStartEvent.Event:Wait()
-	joinCon:Disconnect()
-	round.RoundEndEvent.Event:Wait()
+	local con: RBXScriptConnection
+	con = round.RoundPhaseChangeEvent.Event:Connect(function(phase: Types.RoundPhase)
+		if phase == "Playing" then
+			joinCon:Disconnect()
+		elseif phase == "Intermission" then
+			con:Disconnect()
+		end
+	end)
 end

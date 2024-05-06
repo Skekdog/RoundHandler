@@ -351,7 +351,7 @@ local function newRound(gamemode): Types.Round
         RoundPhase = "Waiting",
         Paused = false,
 
-        RoundPhaseChangeEvent = Instance.new("BindableEvent"),
+        RoundPhaseChangeEvent = Instance.new("BindableEvent") :: any,
 
         Participants = {},
         EventLog = {},
@@ -552,6 +552,7 @@ local function newRound(gamemode): Types.Round
             end
 
             self.Map:Destroy()
+            self.RoundPhaseChangeEvent:Fire("Intermission")
 
             module.Rounds[self.ID] = nil
         end,
