@@ -44,7 +44,7 @@ local function onDeath(self: Types.Participant)
     }
 
     self.Round:LogEvent("Death", data)
-    Adapters.OnDeath(self.Character)
+    Adapters.OnDeath(self)
     self.Round.Gamemode:OnDeath(self)
 end
 
@@ -138,10 +138,7 @@ local function newParticipant(round, plr): Types.Participant
                 return
             end
 
-            return {
-                Name = targetRole.Name,
-                Colour = targetRole.Colour
-            }
+            return targetRole
         end,
 
         AssignRole = function(self, role)
@@ -327,6 +324,20 @@ local function newParticipant(round, plr): Types.Participant
                 hum.Health = 0
             end
         end,
+
+        IsDamageJustifiedAgainst = function(self, target)
+            if self.Round:CompareRoles(self:GetRole(), self:GetRole(), "__Enemy") then
+                return true
+            end
+            if self:HasSelfDefenseAgainst(target) then
+                return true
+            end
+
+            if #target.FreeKillReasons > 0 then
+                return true
+            end
+            return false
+        end
     }
 end
 
@@ -340,8 +351,7 @@ local function newRound(gamemode): Types.Round
         RoundPhase = "Waiting",
         Paused = false,
 
-        RoundStartEvent = Instance.new("BindableEvent"),
-        RoundEndEvent = Instance.new("BindableEvent"),
+        RoundPhaseChangeEvent = Instance.new("BindableEvent"),
 
         Participants = {},
         EventLog = {},
@@ -410,7 +420,7 @@ local function newRound(gamemode): Types.Round
                 char:PivotTo((spawns[chosen] :: BasePart).CFrame)
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
                 participant.Character = char
-                Adapters.OnCharacterLoad(char)
+                Adapters.OnCharacterLoad(participant)
                 self.Gamemode:OnCharacterLoad(char)
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
@@ -458,9 +468,15 @@ local function newRound(gamemode): Types.Round
             local participants = self.Participants
             API.ShuffleInPlace(participants)
 
+            local duration = self.Gamemode:Duration(#self.Participants)
+            self.TimeMilestone = workspace:GetServerTimeNow() + duration
+            self._roundTimerThread = task.delay(duration, function()
+                self:EndRound(self.Gamemode:TimeoutVictors(self))
+            end)
+
             gm:AssignRoles(participants)
 
-            return self.RoundStartEvent:Fire()
+            return self.RoundPhaseChangeEvent:Fire("Playing")
         end,
         PauseRound = function(self)
             if not self:IsRoundInProgress() then
@@ -499,6 +515,7 @@ local function newRound(gamemode): Types.Round
         EndRound = function(self, victors)
             self:LogEvent("Round", "End")
             self.RoundPhase = "Highlights"
+            self.TimeMilestone = workspace:GetServerTimeNow() + Adapters.Configuration.HIGHLIGHTS_TIME
 
             local scores = {}
             for _, v in self.Participants do
@@ -515,6 +532,7 @@ local function newRound(gamemode): Types.Round
                 Highlights = highlights
             }
 
+            self.RoundPhaseChangeEvent:Fire("Highlights")
             Adapters.SendRoundHighlights(self.Participants, highlights, events, scores)
 
             local updateNeeded = Adapters.CheckForUpdate(self)
@@ -532,11 +550,6 @@ local function newRound(gamemode): Types.Round
                     plr:Kick("This server is shutting down for an update.")
                 end)
             end
-
-            self.RoundEndEvent:Fire()
-
-            self.RoundEndEvent:Destroy()
-            self.RoundStartEvent:Destroy()
 
             self.Map:Destroy()
 

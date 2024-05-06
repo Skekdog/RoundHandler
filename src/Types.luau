@@ -15,8 +15,8 @@ export type RoleName = string
 export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
-type MessageSeverity = "info" | "warn" | "error"
-type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
+export type MessageSeverity = "info" | "warn" | "error"
+export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
     Configuration: {
         PREPARING_TIME: number,
@@ -39,8 +39,8 @@ export type Adapter = {
     CheckForUpdate: (round: Round) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}) -> (),
 
-    OnCharacterLoad: (char: Model) -> (),
-    OnDeath: (char: Model) -> (),
+    OnCharacterLoad: (participant: Participant) -> (),
+    OnDeath: (victim: Participant) -> (),
 }
 
 export type Extras = {[any]: any}?
@@ -66,17 +66,12 @@ export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName -- when
 
 export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
 
-export type PartialRole = {
-    Name: string,   -- Name of the original Role.
-    Colour: Color3, -- Colour of the original Role.
-}
-
 export type MurderWeapon = Equipment | DeathType
 
 export type ParticipantStatus = "Alive" | "Missing" | "Dead"
 export type PartialParticipant = {
     Player: Player,
-    Role: PartialRole?,
+    Role: Role?,
     Status: ParticipantStatus
 }
 
@@ -155,8 +150,7 @@ export type Round = {
 
     DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
-    RoundStartEvent: BindableEvent, -- Fired whenever the round starts (via StartRound(), after all other round start functions have run)
-    RoundEndEvent: BindableEvent, -- Fired whenever the round ends (via EndRound(), after all other round end functions have run)
+    RoundPhaseChangeEvent: BindableEvent,
 
     TryGetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant or nil, without erroring.
     GetParticipant: (self: Round, name: Username) -> Participant, -- Returns a Participant from a username. Errors if Participant is not in round.
@@ -302,13 +296,14 @@ export type Participant = {
     GetRole: (self: Participant) -> Role,       -- Returns this Participant's Role. Errors if nil.
     GetAllegiance: (self: Participant) -> Role, -- Returns this Participant's Role allegiance. Errors if nil.
     AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> PartialRole?,       -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
+    TryViewParticipantRole: (self: Participant, target: Participant) -> Role?,       -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
     LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
 
     GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
 
+    IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.
     Status: ParticipantStatus,  -- Missing if dead but body has not been searched by anyone.
     KilledAt: Timestamp,                   -- Timestamp of the Participant's demise. Initially 0.
@@ -347,7 +342,9 @@ export type Participant = {
 export type MapStructure = Folder & {
     EngineVersion: StringValue,
     WeaponSpawns: Folder,
+    ActionItems: Folder,
     Spawns: Folder,
+    Doors: Folder,
     Props: Folder,
     Map: Folder
 }
