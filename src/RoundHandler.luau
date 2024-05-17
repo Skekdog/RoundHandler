@@ -451,7 +451,7 @@ local function newRound(gamemode): Types.Round
             return participant
         end,
         StartRound = function(self)
-            if self:IsRoundInProgress() then
+            if not self:IsRoundPreparing() then
                 error("Attempt to start round whilst it is already in progress")
             end
             self.RoundPhase = "Playing"
