@@ -505,6 +505,12 @@ local function newRound(gamemode): Types.Round
         end,
 
         EndRound = function(self, victors)
+            if self:IsRoundOver() then
+                error("Round is already ended")
+            end
+            if self._roundTimerThread then
+                task.cancel(self._roundTimerThread)
+            end
             self:LogEvent("Round", "End")
             self.RoundPhase = "Highlights"
             self.TimeMilestone = workspace:GetServerTimeNow() + Adapters.Configuration.HIGHLIGHTS_TIME
