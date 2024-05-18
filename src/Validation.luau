@@ -139,9 +139,9 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         table.insert(issues, issue)
     end
 
-    if map:FindFirstChild("Lighting") then
-        assert(map.Lighting)
-        for _, v in map.Lighting:GetChildren() do
+    local lighting = map:FindFirstChild("Lighting")
+    if lighting then
+        for _, v in lighting:GetChildren() do
             local success, _ = pcall(function()
                 (Lighting :: any)[v.Name] = v.Value
             end)

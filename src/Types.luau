@@ -335,20 +335,20 @@ export type Participant = {
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean,       -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
 }
 
-export type MapStructure = Folder & {
+export type MapStructure = {
     EngineVersion: StringValue,
     WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     ActionItems: Folder,
-    Lighting: ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     Doors: Folder,
     Props: {GetChildren: (self: Folder) -> {Prop}} & Folder,
     Map: Folder,
-}
+    FindFirstChild: (self: Folder, name: "Lighting") -> ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?
+} & Folder
 
 export type Prop = BasePart & {
     Humanoid: Humanoid,
-    OnBreak: ModuleScript?,
+    FindFirstChild: (self: Folder, name: "OnBreak") -> ModuleScript?,
 }
 
 return {}

@@ -581,8 +581,9 @@ local function newRound(gamemode): Types.Round
             
             for _, prop in map.Props:GetChildren() do
                 prop.Humanoid.Died:Once(function()
-                    if prop:FindFirstChild("OnBreak") then
-                        (require)(prop.OnBreak)()
+                    local onBreak = prop:FindFirstChild("OnBreak")
+                    if onBreak then
+                        (require)(onBreak)()
                     end
                 end)
             end
@@ -626,12 +627,12 @@ local function newRound(gamemode): Types.Round
             end
             map.Spawns.Parent = mapFolder
 
-            if map:FindFirstChild("Lighting") then
-                assert(map.Lighting)
-                for _, setting in map.Lighting:GetChildren() do
+            local lighting = map:FindFirstChild("Lighting")
+            if lighting then
+                for _, setting in lighting:GetChildren() do
                     (Lighting :: any)[setting.Name] = setting.Value
                 end
-                map.Lighting.Parent = mapFolder
+                lighting.Parent = mapFolder
             end
             
             self.Map = mapFolder :: Types.MapStructure
