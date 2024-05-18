@@ -30,7 +30,7 @@ local function validateVersion(targetVersion: string, objectName: string): strin
 end
 
 function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
-    local issues: {string?} = {}
+    local issues = {}
     local i = function(issue: string?)
         table.insert(issues, issue)
     end
@@ -135,7 +135,7 @@ end
 
 function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     local issues = {}
-    local i = function(issue: string)
+    local i = function(issue: string?)
         table.insert(issues, issue)
     end
 
@@ -155,7 +155,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         i("Map must have at least 1 spawn.")
     end
 
-    validateVersion(map.EngineVersion.Value, map)
+    i(validateVersion(map.EngineVersion.Value, "Map"))
 
     return #issues<1, issues
 end
