@@ -96,7 +96,7 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
 
     local function validateRoleRelationship(list: {[Types.RoleRelationship]: any}, info: "Role.Table" | string)
         for relationship, _ in list do
-            if not table.find(Types.RoleRelationships, relationship) and not table.find(roleNames, relationship) then
+            if not table.find({"__Ally", "__Enemy", "__All"}, relationship) and not table.find(roleNames, relationship) then
                 i(`{relationship} is not a valid RoleRelationship in {info}.`)
             end
         end

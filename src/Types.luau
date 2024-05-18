@@ -1,5 +1,3 @@
-local module = {}
-
 -- These types exist for clarity
 export type Integer = number
 export type PositiveNumber = number
@@ -61,7 +59,6 @@ export type Equipment = {
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
 }
 
-module.RoleRelationships = {"__All", "__Ally", "__Enemy"}
 export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName -- when keyof() becomes available consider this
 
 export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
@@ -359,5 +356,4 @@ export type Prop = BasePart & {
     OnBreak: ModuleScript?,
 }
 
--- Defines all custom types used by RoundHandler.
-return module
+return {}
