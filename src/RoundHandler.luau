@@ -62,7 +62,7 @@ local function onDeath(self: Types.Participant)
 
     local data: Types.RoundEvent_Death = {
         CorrectKill = isCorrectKill,
-        FreeKill = #self.FreeKillReasons > 0,
+        FreeKill = self.FreeKill,
         SelfDefense = isSelfDefense,
         Victim = self,
         Weapon = self.KilledByWeapon,
@@ -90,13 +90,11 @@ local function newParticipant(round, plr): Types.Participant
         SearchedBy = {},
         KilledByWeapon = "Suicide",
         KilledAt = 0,
-        KilledByParticipant = nil,
         KilledInSelfDefense = false,
         KilledAsFreeKill = false,
         KilledByHeadshot = false,
 
         FreeKill = false,
-        FreeKillReasons = {},
 
         SelfDefenseList = {},
         KillList = {},
@@ -218,7 +216,7 @@ local function newParticipant(round, plr): Types.Participant
                 Role = target.Role,
                 DeathTime = target.KilledAt,
                 SelfDefense = target.KilledInSelfDefense,
-                FreeKill = #target.FreeKillReasons > 0,
+                FreeKill = target.FreeKill,
                 Headshot = target.KilledByHeadshot,
                 EquipmentList = equipmentList,
                 MurderWeapon = target.KilledByWeapon,
@@ -273,8 +271,8 @@ local function newParticipant(round, plr): Types.Participant
             end
             if not ignoreKarma then
                 local isAlly = round:GetRoleRelationship(victim.Role, self.Role) == "__Ally"
-                if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
-                    table.insert(self.FreeKillReasons, "Teamkill")
+                if isAlly and (victim.FreeKill or not self:HasSelfDefenseAgainst(victim)) then
+                    self.FreeKill = true
                     Adapters.SendSlayVote(victim, self)
                 end
             end
@@ -311,17 +309,9 @@ local function newParticipant(round, plr): Types.Participant
             end
         end,
 
-        GetFormattedName = function(self)
-            local role = self.Role
-            if role then
-                return `<font color='{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
-            end
-            return self.Player.Name
-        end,
-
         Kill = function(self, attacker, weapon, headshot, ignoreKarma)
             self.Status = "Missing"
-            self.KilledAsFreeKill = #self.FreeKillReasons > 0
+            self.KilledAsFreeKill = self.FreeKill
             self.KilledAt = workspace:GetServerTimeNow()
             self.KilledByHeadshot = headshot or false
             self.KilledByParticipant = attacker or nil
@@ -347,7 +337,7 @@ local function newParticipant(round, plr): Types.Participant
                 return true
             end
 
-            if #target.FreeKillReasons > 0 then
+            if target.FreeKill then
                 return true
             end
             return false

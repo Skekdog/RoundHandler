@@ -319,7 +319,7 @@ export type Participant = {
     Kill: (self: Participant, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
     Karma: number,                     -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
-    FreeKillReasons: {FreeKillReason}, -- A list of all the reasons this Participant is a Free Kill, if any. Free kill can be checked by #FreeKillReasons == 0.
+    FreeKill: boolean,
     SlayVotes: {Participant},          -- A list of Participants who have voted to slay this person due to RDM.
     TryAddSlayVote: (self: Participant, from: Participant) -> boolean, -- Tries to add a vote to slay this Participant, and executes them if required. Will return false if the vote could not be added, such as due to this Participant already voting to remove them, else returning true if successful.
     
