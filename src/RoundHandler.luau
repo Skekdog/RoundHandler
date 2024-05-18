@@ -573,7 +573,7 @@ local function newRound(gamemode): Types.Round
             end
             map.Props.Parent = mapFolder
 
-            for _, weapon in map.WeaponSpawns:GetChildren() do
+            local function onWeaponAdded(weapon: any)
                 weapon.Anchored = false
                 weapon.Touched:Once(function(part)
                     local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
@@ -595,6 +595,10 @@ local function newRound(gamemode): Types.Round
                     weapon:Destroy()
                 end)
             end
+            for _, weapon in map.WeaponSpawns:GetChildren() do
+                onWeaponAdded(weapon)
+            end
+            map.WeaponSpawns.ChildAdded:Connect(onWeaponAdded)
             map.WeaponSpawns.Parent = mapFolder
 
             for _, spawn in map.Spawns:GetChildren() do
