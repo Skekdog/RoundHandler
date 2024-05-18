@@ -29,7 +29,7 @@ function module.TestForOneSurvivingRole(self: Types.Gamemode, round: Types.Round
     }
     for _, v in round.Participants do
         if checkAlive(v) then
-            rolesAlive[v:GetAllegiance().Name] = true
+            rolesAlive[v.Role.Allegiance] = true
         end
         if rolesAlive[allegiances[1]] and rolesAlive[allegiances[2]] then
             return nil -- Both roles are still alive, nobody wins yet

@@ -29,7 +29,7 @@ local module: Types.Gamemode = {
         local murdererDeath: Types.RoundEvent_Death
         for _, v in round.EventLog["Death"] do
             local data: Types.RoundEvent_Death = v.Data
-            if data.Victim:GetAllegiance().Name == "Murderer" then
+            if data.Victim.Role.Allegiance == "Murderer" then
                 murdererDeath = data
                 break
             end
@@ -37,7 +37,7 @@ local module: Types.Gamemode = {
 
         if murdererDeath and murdererDeath.Attacker then
             local title, description = "", ""
-            if murdererDeath.Attacker:GetRole().Name == "Innocent" then
+            if murdererDeath.Attacker.Role.Name == "Innocent" then
                 title = "Now you're a hero"
                 description = `{murdererDeath.Attacker:GetFormattedName()} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
             else
@@ -236,7 +236,7 @@ local module: Types.Gamemode = {
     OnDeath = function(self, victim)
         local round = victim.Round
 
-        local role = victim:GetRole()
+        local role = victim.Role
         if role.Name == "Bystander" then
             local assailant
             for _, v in round.Participants do
@@ -251,7 +251,7 @@ local module: Types.Gamemode = {
                 end
             end
 
-            if assailant and (assailant:GetRole().Name == "Sheriff") then
+            if assailant and (assailant.Role.Name == "Sheriff") then
                 assailant:Kill()
             end
         elseif role.Name == "Sheriff" then
@@ -279,7 +279,7 @@ local module: Types.Gamemode = {
                     if not participant then
                         return
                     end
-                    if (participant:GetAllegiance().Name ~= "Bystander") or (participant:IsDead()) then
+                    if (participant.Role.Allegiance ~= "Bystander") or (participant:IsDead()) then
                         return
                     end
 

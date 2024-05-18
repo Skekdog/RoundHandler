@@ -72,8 +72,8 @@ local module: Types.Gamemode = {
             end
         end
         if firstKill then
-            local aRole = firstKill.Attacker:GetAllegiance().Name
-            local vRole = firstKill.Victim:GetAllegiance().Name
+            local aRole = firstKill.Attacker.Role.Allegiance
+            local vRole = firstKill.Victim.Role.Allegiance
 
             local attackerName = firstKill.Attacker:GetFormattedName()
             if (aRole == "Traitor") and (vRole == "Traitor") then
@@ -105,7 +105,7 @@ local module: Types.Gamemode = {
             local allyKills = 0
             local enemyKills = 0
             for _, kill in participant.KillList do
-                if (round:GetRoleRelationship(participant:GetRole(), kill:GetRole()) == "__Ally") then
+                if (round:GetRoleRelationship(participant.Role, kill.Role) == "__Ally") then
                     if (not kill.KilledInSelfDefense) then
                         allyKills += 1
                     end

@@ -18,6 +18,31 @@ local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the 
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
+local noRole: Types.Role = {
+    Name = "",
+    Description = "",
+    Colour = Color3.new(),
+    Allegiance = "",
+    StartingCredits = 0,
+    StartingEquipment = {},
+    EquipmentShop = {},
+    AnnounceDisconnect = false,
+    CorpseResultsPublicised = false,
+    CanSeeMissing = false,
+    CanStealCredits = false,
+    AwardOnDeath = {},
+    Accessories = {},
+    Health = 0,
+    Speed = 0,
+    JumpPower = 0,
+    Allies = {},
+    HighlightRules = {},
+    KnowsRoles = {},
+    TeamChat = false,
+    OnRoleAssigned = function() end,
+    OnRoleRemoved = function() end,
+}
+
 local function onDeath(self: Types.Participant)
     local round = self.Round
 
@@ -29,7 +54,7 @@ local function onDeath(self: Types.Participant)
     local killer = self.KilledByParticipant
     local isCorrectKill, isSelfDefense = false, false
     if killer then
-        isCorrectKill = round:GetRoleRelationship(self:GetRole(), killer:GetRole()) == "__Ally"
+        isCorrectKill = round:GetRoleRelationship(self.Role, killer.Role) == "__Ally"
         isSelfDefense = killer:HasSelfDefenseAgainst(self)
         killer:AddKill(self, false)
     end
@@ -56,7 +81,7 @@ local function newParticipant(round, plr): Types.Participant
         Round = round,
 
         Karma = if round.Gamemode.UseKarma then Adapters.GetKarma(plr) else 1000,
-        Role = nil,
+        Role = noRole,
         Credits = 0,
         Score = {},
 
@@ -161,7 +186,7 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if not table.find(target.SearchedBy, self) then
-                if self:GetRole().CorpseResultsPublicised then
+                if self.Role.CorpseResultsPublicised then
                     target.SearchedBy = self.Round.Participants
                 else
                     table.insert(target.SearchedBy, self)
@@ -169,11 +194,11 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target:GetRole())}!`, "info", "bodyFound", self.Round.Participants)
+                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target.Role)}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
-            if self:GetRole().CanStealCredits and (target.Credits > 0) then
+            if self.Role.CanStealCredits and (target.Credits > 0) then
                 Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
@@ -188,7 +213,7 @@ local function newParticipant(round, plr): Types.Participant
             end
             return {
                 Name = target:GetFormattedName(),
-                Role = target:GetRole(),
+                Role = target.Role,
                 DeathTime = target.KilledAt,
                 SelfDefense = target.KilledInSelfDefense,
                 FreeKill = #target.FreeKillReasons > 0,
@@ -196,19 +221,6 @@ local function newParticipant(round, plr): Types.Participant
                 EquipmentList = equipmentList,
                 MurderWeapon = target.KilledByWeapon,
             }
-        end,
-
-        GetRole = function(self)
-            if not self.Role then
-                error(`Participant {self.Player.Name} Role is nil`)
-            end
-            return self.Role
-        end,
-        GetAllegiance = function(self)
-            if not self.Role then
-                error(`Participant {self.Player.Name} Role is nil`)
-            end
-            return self.Round:GetRoleFromName(self.Role.Allegiance)
         end,
 
         LeaveRound = function(self)
@@ -226,8 +238,8 @@ local function newParticipant(round, plr): Types.Participant
                     task.cancel(timerThread)
                 end
             else
-                if self:GetRole().AnnounceDisconnect then
-                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self:GetRole())}.`, "info", "disconnect", self.Round.Participants)
+                if self.Role.AnnounceDisconnect then
+                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self.Role)}.`, "info", "disconnect", self.Round.Participants)
                 end
                 self:Kill()
             end
@@ -258,7 +270,7 @@ local function newParticipant(round, plr): Types.Participant
                 return
             end
             if not ignoreKarma then
-                local isAlly = round:GetRoleRelationship(victim:GetRole(), self:GetRole()) == "__Ally"
+                local isAlly = round:GetRoleRelationship(victim.Role, self.Role) == "__Ally"
                 if isAlly and ((#victim.FreeKillReasons == 0) or not self:HasSelfDefenseAgainst(victim)) then
                     table.insert(self.FreeKillReasons, "Teamkill")
                     Adapters.SendSlayVote(victim, self)
@@ -326,7 +338,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         IsDamageJustifiedAgainst = function(self, target)
-            if self.Round:CompareRoles(self:GetRole(), self:GetRole(), "__Enemy") then
+            if self.Round:CompareRoles(self.Role, self.Role, "__Enemy") then
                 return true
             end
             if self:HasSelfDefenseAgainst(target) then
@@ -358,7 +370,7 @@ local function newRound(gamemode): Types.Round
 
         DoMassDeath = function(self, victims, weapon, attacker: Types.Participant?, noGuilt: boolean?)
             table.sort(victims, function(a, b)
-                return a:GetRole() == self.Gamemode.PhyrricVictors
+                return a.Role == self.Gamemode.PhyrricVictors
             end)
 
             for _, v in victims do
