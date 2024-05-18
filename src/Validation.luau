@@ -155,7 +155,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         i("Map must have at least 1 spawn.")
     end
 
-    i(validateVersion(map.EngineVersion.Value, "Map"))
+    i(validateVersion(map.EngineVersion.Value, "map"))
 
     return #issues<1, issues
 end

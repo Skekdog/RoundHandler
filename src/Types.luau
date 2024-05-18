@@ -341,13 +341,13 @@ export type Participant = {
 
 export type MapStructure = Folder & {
     EngineVersion: StringValue,
-    WeaponSpawns: Folder,
+    WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     ActionItems: Folder,
-    Lighting: Folder?,
-    Spawns: Folder,
+    Lighting: ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?,
+    Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     Doors: Folder,
-    Props: Folder,
-    Map: Folder
+    Props: {GetChildren: (self: Folder) -> {Prop}} & Folder,
+    Map: Folder,
 }
 
 export type Prop = BasePart & {

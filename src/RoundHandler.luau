@@ -561,59 +561,58 @@ local function newRound(gamemode): Types.Round
         
             local mapFolder = Instance.new("Folder")
             mapFolder.Name = `__Map_{self.ID}`
-        
-            for _, v in map:GetChildren() do
-                task.wait()
-                if v.Name == "Spawns" then
-                    for _, spawn in v:GetChildren() do
-                        if not spawn:IsA("BasePart") then
-                            continue
-                        end
-                        spawn.Anchored = true
-                        spawn.Transparency = 1
-                        spawn.CanCollide = false
-                        spawn.CanTouch = false
-                        spawn.CanQuery = false
+
+            map.Map.Parent = mapFolder
+            
+            for _, prop in map.Props:GetChildren() do
+                prop.Humanoid.Died:Once(function()
+                    if prop:FindFirstChild("OnBreak") then
+                        (require)(prop.OnBreak)()
                     end
-                elseif v.Name == "WeaponSpawns" then
-                    for _, weapon in v:GetChildren() do
-                        if not weapon:IsA("BasePart") then
-                            continue
-                        end
-                        weapon.CanCollide = true
-                        weapon.CanTouch = true
-                        weapon.Anchored = false
-                        
-                        weapon.Touched:Connect(function(part)
-                            local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
-                            if plr then
-                                local participant = self:GetParticipant(plr.Name)
-                                if participant then
-                                    local equipment = self:GetEquipment(weapon.Name)
-                                    if not equipment then
-                                        return warn(`{weapon.Name} not found as Equipment`)
-                                    end
-                                    participant:GiveEquipment(equipment)
-                                    weapon:Destroy()
-                                end
-                            end
-                        end)
+                end)
+            end
+            map.Props.Parent = mapFolder
+
+            for _, weapon in map.WeaponSpawns:GetChildren() do
+                weapon.Anchored = false
+                weapon.Touched:Once(function(part)
+                    local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
+                    if not plr then
+                        return
                     end
-                elseif v.Name == "Props" then
-                    for _, prop in (v:GetChildren() :: {Types.Prop}) do
-                        prop.Humanoid.Died:Connect(function()
-                            if prop:FindFirstChild("OnBreak") then
-                                (require)(prop.OnBreak)()
-                            end
-                        end)
+
+                    local participant = self:GetParticipant(plr.Name)
+                    if not participant then
+                        return
                     end
-                elseif v.Name == "Lighting" then
-                    for _, property: any in v:GetChildren() do
-                        (Lighting :: any)[property.Name] = property.Value
+
+                    local equipment = self:GetEquipment(weapon.Name)
+                    if not equipment then
+                        return warn(weapon.Name.." not found as Equipment.")
                     end
+
+                    participant:GiveEquipment(equipment)
+                    weapon:Destroy()
+                end)
+            end
+            map.WeaponSpawns.Parent = mapFolder
+
+            for _, spawn in map.Spawns:GetChildren() do
+                spawn.Anchored = true
+                spawn.Transparency = 1
+                spawn.CanCollide = false
+                spawn.CanTouch = false
+                spawn.CanQuery = false
+                spawn:ClearAllChildren()
+            end
+            map.Spawns.Parent = mapFolder
+
+            if map:FindFirstChild("Lighting") then
+                assert(map.Lighting)
+                for _, setting in map.Lighting:GetChildren() do
+                    (Lighting :: any)[setting.Name] = setting.Value
                 end
-        
-                v.Parent = mapFolder
+                map.Lighting.Parent = mapFolder
             end
             
             self.Map = mapFolder :: Types.MapStructure
