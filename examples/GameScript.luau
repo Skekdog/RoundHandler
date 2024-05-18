@@ -8,8 +8,8 @@ local Players = game:GetService("Players")
 
 local RoundHandler = require("src/RoundHandler")
 local Types = require("src/Types")
-local ThoseYouTrust: any = require("examples/gamemodes/ThoseYouTrust")
-local Murder: any = require("examples/gamemodes/Murder")
+local ThoseYouTrust = require("examples/gamemodes/ThoseYouTrust")
+local Murder = require("examples/gamemodes/Murder")
 
 local maps = ServerStorage.Maps:GetChildren() :: {Types.MapStructure}
 local remotes = ReplicatedStorage.RoundHandler

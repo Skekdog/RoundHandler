@@ -41,8 +41,6 @@ export type Adapter = {
     OnDeath: (victim: Participant) -> (),
 }
 
-export type Extras = {[any]: any}?
-
 export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm" | "None"
 export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
 export type Equipment = {
@@ -51,7 +49,7 @@ export type Equipment = {
     Icon: Asset,               -- Icon of this equipment.
     Cost: Integer,             -- The number of credits that this equipment costs to buy.
     MaxStock: PositiveInteger, -- The maximum times a single Participant can purchase this equipment, per round
-    Extras: Extras,            -- Any extra info about the equipment, for use in custom functions.
+    Extras: any,            -- Any extra info about the equipment, for use in custom functions.
 
     AttackType: WeaponAttackType,
     NoGuilt: boolean,
@@ -134,7 +132,7 @@ export type PartialRound = {
     RoundEndInfo: RoundEndInfo?,
 }
 
-export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: any, phase: RoundPhase) -> ()}
+export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: RoundPhaseChangeEvent, phase: RoundPhase) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
 export type Round = {
     ID: UUID,           -- Unique identifier of the round.
@@ -196,7 +194,7 @@ export type RoundEndInfo = {
 export type Gamemode = {
     Name: string,          -- Name of the gamemode.
     Description: string,   -- Description of the gamemode.
-    Extras: Extras, -- Any extra info about the gamemode, for use in custom functions.
+    Extras: any, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string,   -- Indicates the engine version that this gamemode was designed for.
 
@@ -235,7 +233,7 @@ export type Role = {
     Name: string,          -- Name of this role.
     Description: string,   -- Description of this role.
     Colour: Color3,        -- Colour of this role. Not color.
-    Extras: Extras, -- Any extra info about the role, for use in custom functions.
+    Extras: any, -- Any extra info about the role, for use in custom functions.
 
     Allegiance: RoleName,   -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
