@@ -100,7 +100,7 @@ local function newParticipant(round, plr): Types.Participant
         KillList = {},
 
         SlayVotes = {},
-        TryAddSlayVote = function(self, from: Types.Participant)
+        TryAddSlayVote = function(self, from)
             if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
                 return false
             end
@@ -351,7 +351,7 @@ local function newRound(gamemode): Types.Round
         Gamemode = gamemode,
         Map = nil :: any,
 
-        TimeMilestone = workspace:GetServerTimeNow()+PREPARING_TIME,
+        TimeMilestone = workspace:GetServerTimeNow() + PREPARING_TIME,
         RoundPhase = "Waiting",
         Paused = false,
 
