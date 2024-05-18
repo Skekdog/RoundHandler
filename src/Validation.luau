@@ -139,11 +139,11 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         table.insert(issues, issue)
     end
 
-    local lightingSettings = map:FindFirstChild("Lighting")
-    if lightingSettings then
-        for _, v in lightingSettings:GetChildren() do
+    if map:FindFirstChild("Lighting") then
+        assert(map.Lighting)
+        for _, v in map.Lighting:GetChildren() do
             local success, _ = pcall(function()
-                (Lighting :: any)[lightingSettings.Name] = (v :: any).Value
+                (Lighting :: any)[v.Name] = v.Value
             end)
             if not success then
                 i(`Failed to set property {v.Name} of Lighting, check that it is the correct type and that it exists.`)
