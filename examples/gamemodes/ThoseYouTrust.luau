@@ -22,7 +22,7 @@ local module: Types.Gamemode = {
     PhyrricVictors = "Traitor",
 
     CalculateRoundHighlights = function(self, round)
-        local weaponList = common.GetWeaponHighlights(round.EventLog :: any)
+        local weaponList = common.GetWeaponHighlights(round.EventLog)
         local highlights: {Types.RoundHighlight} = {}
         
         for equipmentName, v in weaponList do
@@ -66,8 +66,8 @@ local module: Types.Gamemode = {
         local eventIndex = 1
         while (eventIndex < #deathLog) and (not firstKill) do
             eventIndex += 1
-            firstKill = deathLog[eventIndex] :: any
-            if not firstKill or not firstKill.Attacker then -- weird type-check stuff means "not firstKill" is needed
+            firstKill = deathLog[eventIndex]
+            if not firstKill or not firstKill.Attacker then
                 firstKill = nil
             end
         end

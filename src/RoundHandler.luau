@@ -76,13 +76,13 @@ local function newParticipant(round, plr): Types.Participant
         KillList = {},
 
         SlayVotes = {},
-        TryAddSlayVote = function(self, from)
+        TryAddSlayVote = function(self, from: Types.Participant)
             if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
                 return false
             end
     
             for _, v in self.KillList do
-                if v :: any == from then
+                if v.Player == from.Player then -- Comparing the Participants directly causes a type error. Presumably adding an __eq metamethod would solve this, but I don't want to do that because metatables make typechecking so much more annoying.
                     table.insert(self.SlayVotes, from)
                     if #self.SlayVotes >= SLAY_VOTES then
                         self:Kill()
@@ -282,7 +282,7 @@ local function newParticipant(round, plr): Types.Participant
                 return false
             end
             for _, v in self.SelfDefenseList do
-                if (v.Against :: any == against) and (v.Until < workspace:GetServerTimeNow()) then
+                if (v.Against.Player == against.Player) and (v.Until < workspace:GetServerTimeNow()) then -- see comment for TryAddSlayVote
                     return true
                 end
             end
@@ -351,7 +351,7 @@ local function newRound(gamemode): Types.Round
         RoundPhase = "Waiting",
         Paused = false,
 
-        RoundPhaseChangeEvent = Instance.new("BindableEvent") :: any,
+        RoundPhaseChangeEvent = Instance.new("BindableEvent") :: BindableEvent & Types.RoundPhaseChangeEvent,
 
         Participants = {},
         EventLog = {MetaEvent = {}, CorpseSearched = {}, Death = {}},
@@ -608,7 +608,7 @@ local function newRound(gamemode): Types.Round
                         end)
                     end
                 elseif v.Name == "Lighting" then
-                    for _, property: any in(v:GetChildren()) do
+                    for _, property: any in v:GetChildren() do
                         (Lighting :: any)[property.Name] = property.Value
                     end
                 end

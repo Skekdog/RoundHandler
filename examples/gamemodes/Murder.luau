@@ -28,7 +28,7 @@ local module: Types.Gamemode = {
 
         local murdererDeath: Types.RoundEvent_Death
         for _, v in round.EventLog["Death"] do
-            local data: Types.RoundEvent_Death = v.Data :: any
+            local data: Types.RoundEvent_Death = v.Data
             if data.Victim:GetAllegiance().Name == "Murderer" then
                 murdererDeath = data
                 break

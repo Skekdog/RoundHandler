@@ -134,6 +134,7 @@ export type PartialRound = {
     RoundEndInfo: RoundEndInfo?,
 }
 
+export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: any, phase: RoundPhase) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
 export type Round = {
     ID: UUID,           -- Unique identifier of the round.
@@ -152,7 +153,7 @@ export type Round = {
 
     DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
-    RoundPhaseChangeEvent: {Event: RBXScriptSignal<RoundPhase>, Fire: (self: any, phase: RoundPhase) -> ()},
+    RoundPhaseChangeEvent: RoundPhaseChangeEvent,
 
     GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant from a username.
     JoinRound: (self: Round, plr: Player) -> Participant,         -- Adds a Participant to this Round.
