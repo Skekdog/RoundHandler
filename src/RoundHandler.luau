@@ -370,6 +370,8 @@ local function newRound(gamemode): Types.Round
         Participants = {},
         EventLog = {MetaEvent = {}, CorpseSearched = {}, Death = {}},
 
+        _props = {},
+
         DoMassDeath = function(self, victims, weapon, attacker: Types.Participant?, noGuilt: boolean?)
             table.sort(victims, function(a, b)
                 return a.Role == self.Gamemode.PhyrricVictors
@@ -517,6 +519,10 @@ local function newRound(gamemode): Types.Round
             }
         end,
 
+        GetProp = function(self, propInstance)
+            return self._props[propInstance] or error(`Prop {propInstance.Name} was not found`)
+        end,
+
         EndRound = function(self, victors)
             if self:IsRoundOver() then
                 error("Round is already ended")
@@ -579,13 +585,20 @@ local function newRound(gamemode): Types.Round
 
             map.Map.Parent = mapFolder
             
-            for _, prop in map.Props:GetChildren() do
-                prop.Humanoid.Died:Once(function()
-                    local onBreak = prop:FindFirstChild("OnBreak")
-                    if onBreak then
-                        (require)(onBreak)()
+            for _, propInstance in map.Props:GetChildren() do
+                local onBreak = propInstance:FindFirstChild("OnBreak")
+                local prop: Types.Prop = {
+                    PropInstance = propInstance,
+                    Attacker = nil,
+                    Humanoid = propInstance.Humanoid,
+                    OnBreak = function(self)
+                        if onBreak then
+                            (require)(onBreak)(self.Attacker)
+                        end
                     end
-                end)
+                }
+                self._props[propInstance] = prop
+                prop.Humanoid.Died:Once(prop.OnBreak)
             end
             map.Props.Parent = mapFolder
 

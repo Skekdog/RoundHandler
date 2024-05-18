@@ -132,6 +132,12 @@ export type PartialRound = {
     RoundEndInfo: RoundEndInfo?,
 }
 
+export type Prop = {
+    PropInstance: PropInstance,
+    Attacker: Participant?,
+    Humanoid: Humanoid,
+    OnBreak: (self: Prop) -> (),
+}
 export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: RoundPhaseChangeEvent, phase: RoundPhase) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
 export type Round = {
@@ -148,6 +154,7 @@ export type Round = {
 
     LogEvent: (self: Round, category: RoundEventCategory, data: RoundEventData) -> (), -- Adds an event to the round.
     EventLog: RoundEventLog, -- A list of events that have taken place.
+    GetProp: (self: Round, propInstance: PropInstance) -> Prop,
 
     DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
@@ -175,7 +182,8 @@ export type Round = {
 
     -- Private members, should not be used from outside the module
     _roundTimerThread: thread?,
-    _roundTimerContinueFor: number?
+    _roundTimerContinueFor: number?,
+    _props: {[PropInstance]: Prop},
 }
 
 --[[
@@ -341,12 +349,12 @@ export type MapStructure = {
     ActionItems: Folder,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     Doors: Folder,
-    Props: {GetChildren: (self: Folder) -> {Prop}} & Folder,
+    Props: {GetChildren: (self: Folder) -> {PropInstance}} & Folder,
     Map: Folder,
     FindFirstChild: (self: Folder, name: "Lighting") -> ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?
 } & Folder
 
-export type Prop = BasePart & {
+export type PropInstance = BasePart & {
     Humanoid: Humanoid,
     FindFirstChild: (self: Folder, name: "OnBreak") -> ModuleScript?,
 }
