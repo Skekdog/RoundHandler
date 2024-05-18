@@ -127,10 +127,10 @@ local module: Types.Adapter = {
         remote:FireClient(to.Player, target.Player)
     end,
 
-    CalculateUserFacingEvents = function(events, winners)
+    CalculateUserFacingEvents = function(events: Types.RoundEventLog, winners)
         local userFacingLog: {Types.UserFacingRoundEvent} = {}
 
-        local function getDeathEvent(data: {Attacker: Types.Participant?, Weapon: string | Types.Equipment, Victim: Types.Participant})
+        local function getDeathEvent(data: Types.RoundEvent_Death)
             local attacker = data.Attacker
             local weapon = data.Weapon
             local text = data.Victim:GetFormattedName()
@@ -145,7 +145,7 @@ local module: Types.Adapter = {
                     text ..= ` at the hands of {attackerName}`
                 end
             elseif weapon == "Drown" then
-                text ..= " was doomed to fall"
+                text ..= " was doomed to drown"
                 if attacker then
                     text ..= ` at the hands of {attackerName}`
                 end
@@ -183,54 +183,45 @@ local module: Types.Adapter = {
             return text
         end
 
-        for i: Types.RoundEventType, v in events do
-            if i == "Death" then
-                for _, event in v do
-                    local data: Types.RoundEvent_Death = event.Data :: any
-                    table.insert(userFacingLog, {
-                        Text = getDeathEvent(data),
-                        Icons = {},
-                        Category = "Death",
-                        Timestamp = event.Timestamp,
-                    })
-                end
-            elseif i == "EquipmentGiven" then
-                continue
-            elseif i == "EquipmentPurchased" then
-                for _, event in v do
-                    local data: Types.RoundEvent_Equipment = event.Data :: any
-                    table.insert(userFacingLog, {
-                        Text = `{data.Target} purchased a {data.Equipment.Name}`,
-                        Icons = {},
-                        Category = "Equipment",
-                        Timestamp = event.Timestamp,
-                    })
-                end
-            elseif i == "EquipmentRemoved" then
-                continue
-            elseif i == "Round" then
-                for _, event in v do
-                    local phase: Types.RoundPhaseEventType = event.Data :: any
-                    local text: string = ""
-                    if phase == "Start" then
-                        text = "The round begins."
-                    elseif phase == "Pause" then
-                        text = "The round is paused."
-                    elseif phase == "Resume" then
-                        text = "The round is resumed."
-                    elseif phase == "NewMapLoaded" then
-                        text = "A new map is loaded."
-                    elseif phase == "End" then
-                        text = winners.VictoryText :: string
-                    end
-                    table.insert(userFacingLog, {
-                        Text = text,
-                        Icons = {},
-                        Category = "Round",
-                        Timestamp = event.Timestamp,
-                    })
-                end
+        for _, v in events.MetaEvent do
+            local event = {
+                Text = "",
+                Icons = {},
+                Category = "MetaEvent" :: Types.RoundEventCategory,
+                Timestamp = v.Timestamp,
+            }
+            if v.Data.RoundPhase then
+                event.Text = "The round begins."
+            elseif v.Data.NewMap then
+                event.Text = `The map changes to {v.Data.NewMap}.`
+            elseif v.Data.Winners then
+                event.Text = v.Data.Winners.VictoryText :: string
             end
+            table.insert(userFacingLog, event)
+        end
+
+        for _, v in events.CorpseSearched do
+            local event = {
+                Text = "",
+                Icons = {},
+                Category = "CorpseSearched" :: Types.RoundEventCategory,
+                Timestamp = v.Timestamp,
+            }
+            if v.Data.CreditsFound then
+                event.Text = `{v.Data.Participant} found {v.Data.CreditsFound} credits on the body of {v.Data.Corpse}.`
+            else
+                event.Text = `{v.Data.Participant} found the body of {v.Data.Corpse}.`
+            end
+            table.insert(userFacingLog, event)
+        end
+
+        for _, v in events.Death do
+            table.insert(userFacingLog, {
+                Text = getDeathEvent(v.Data),
+                Icons = {},
+                Category = "Death",
+                Timestamp = v.Timestamp
+            })
         end
 
         table.sort(userFacingLog, function(a, b)

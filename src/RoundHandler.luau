@@ -354,7 +354,7 @@ local function newRound(gamemode): Types.Round
         RoundPhaseChangeEvent = Instance.new("BindableEvent") :: any,
 
         Participants = {},
-        EventLog = {},
+        EventLog = {MetaEvent = {}, CorpseSearched = {}, Death = {}},
 
         DoMassDeath = function(self, victims, weapon, attacker: Types.Participant?, noGuilt: boolean?)
             table.sort(victims, function(a, b)
@@ -455,7 +455,7 @@ local function newRound(gamemode): Types.Round
                 error("Attempt to start round whilst it is already in progress")
             end
             self.RoundPhase = "Playing"
-            self:LogEvent("Round", "Start")
+            self:LogEvent("MetaEvent", {RoundPhase = "Start"})
             local gm = self.Gamemode
             local participants = self.Participants
             API.ShuffleInPlace(participants)
@@ -476,7 +476,6 @@ local function newRound(gamemode): Types.Round
             end
         
             self.Paused = not self.Paused
-            self:LogEvent("Round", if self.Paused then "Pause" else "Resume")
             
             if self.Paused then
                 assert(self._roundTimerThread)
@@ -511,7 +510,7 @@ local function newRound(gamemode): Types.Round
             if self._roundTimerThread then
                 task.cancel(self._roundTimerThread)
             end
-            self:LogEvent("Round", "End")
+            self:LogEvent("MetaEvent", {Winners = victors})
             self.RoundPhase = "Highlights"
             self.TimeMilestone = workspace:GetServerTimeNow() + Adapters.Configuration.HIGHLIGHTS_TIME
 
@@ -557,7 +556,7 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            self:LogEvent("Round", "NewMapLoaded")
+            self:LogEvent("MetaEvent", {NewMap = map.Name})
             map = map:Clone()
         
             local mapFolder = Instance.new("Folder")
@@ -659,14 +658,10 @@ local function newRound(gamemode): Types.Round
         end,
 
         LogEvent = function(self, type, data)
-            local event: Types.RoundEvent = {
+            local event: Types.RoundEvent<Types.RoundEventData> = {
                 Timestamp = workspace:GetServerTimeNow(),
                 Data = data,
             }
-            if not self.EventLog[type] then
-                self.EventLog[type] = {event}
-                return
-            end
             table.insert(self.EventLog[type], event)
         end,
 

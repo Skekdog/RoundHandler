@@ -28,7 +28,7 @@ export type Adapter = {
     SetKarma: (plr: Player, karma: number) -> (),
     CalculateDamageModifier: (karma: number) -> number,
 
-    CalculateUserFacingEvents: (events: {[RoundEventType]: {RoundEvent}}, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
+    CalculateUserFacingEvents: (events: RoundEventLog, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
 
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
@@ -85,8 +85,6 @@ export type RoundHighlight = {
     Description: string
 }
 
-export type RoundPhaseEventType = "Start" | "End" | "Pause" | "Resume" | "NewMapLoaded"
-export type RoundEventType = "Round" | "Death" | "EquipmentPurchased" | "EquipmentGiven" | "EquipmentRemoved" | string -- string used for custom events. Custom events should only be used in a Gamemode, not external framework
 export type RoundEvent_Death = {
     Attacker: Participant?,
     Victim: Participant,
@@ -95,17 +93,23 @@ export type RoundEvent_Death = {
     SelfDefense: boolean,
     FreeKill: boolean,
 }
-export type RoundEvent_Equipment = {
-    Target: Participant,
-    Equipment: Equipment
-}
-export type RoundEventData = RoundPhaseEventType | RoundEvent_Death | RoundEvent_Equipment | any
-export type RoundEvent = {
-    Timestamp: Timestamp, -- The time that this event occured at.
-    Data: RoundEventData,
+
+export type RoundEvent_CorpseSearched = {
+    Participant: Participant,
+    Corpse: Participant,
+    CreditsFound: PositiveInteger?,
 }
 
-export type RoundEventCategory = "Round" | "Death" | "Equipment"
+export type RoundEvent_MetaEvent = {RoundPhase: "Start"?, Winners: Role?, NewMap: string?}
+
+export type RoundEventData = RoundEvent_MetaEvent | RoundEvent_CorpseSearched | RoundEvent_Death
+export type RoundEvent<DataType> = {
+    Timestamp: Timestamp,
+    Data: DataType,
+}
+
+export type RoundEventCategory = "MetaEvent" | "CorpseSearched" | "Death"
+
 export type UserFacingRoundEvent = {
     Timestamp: Timestamp,
     Category: RoundEventCategory,
@@ -133,6 +137,7 @@ export type PartialRound = {
     RoundEndInfo: RoundEndInfo?,
 }
 
+export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
 export type Round = {
     ID: UUID,           -- Unique identifier of the round.
     Gamemode: Gamemode, -- A reference to the current gamemode.
@@ -145,8 +150,8 @@ export type Round = {
 
     Participants: {Participant}, -- A list of participants in this round.
 
-    LogEvent: (self: Round, type: RoundEventType, Data: RoundEventData) -> (), -- Adds an event to the round.
-    EventLog: {[RoundEventType]: {RoundEvent}},                                -- A list of events that have taken place.
+    LogEvent: (self: Round, category: RoundEventCategory, data: RoundEventData) -> (), -- Adds an event to the round.
+    EventLog: RoundEventLog, -- A list of events that have taken place.
 
     DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
