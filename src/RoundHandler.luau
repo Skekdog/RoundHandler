@@ -20,6 +20,7 @@ local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
 local noRole: Types.Role = {
     Name = "",
+    FormattedName = "",
     Description = "",
     Colour = Color3.new(),
     Allegiance = "",
@@ -77,7 +78,7 @@ local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
         Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
-        Name = plr.Name,
+        FormattedName = plr.Name,
         Round = round,
 
         Karma = if round.Gamemode.UseKarma then Adapters.GetKarma(plr) else 1000,
@@ -169,6 +170,7 @@ local function newParticipant(round, plr): Types.Participant
         AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
+            self.FormattedName = `<font color='#{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
             self.Credits += role.StartingCredits
             for _, v in role.StartingEquipment do
                 Adapters.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
@@ -194,12 +196,12 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(`{self.Player.Name} found the body of {target:GetFormattedName()}. They were a {target.Round:GetFormattedRole(target.Role)}!`, "info", "bodyFound", self.Round.Participants)
+                Adapters.SendMessage(`{self.Player.Name} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
             if self.Role.CanStealCredits and (target.Credits > 0) then
-                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target:GetFormattedName()}.`, "info", "creditsEarned", {self})
+                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
             end
@@ -212,7 +214,7 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
             return {
-                Name = target:GetFormattedName(),
+                Name = target.FormattedName,
                 Role = target.Role,
                 DeathTime = target.KilledAt,
                 SelfDefense = target.KilledInSelfDefense,
@@ -239,7 +241,7 @@ local function newParticipant(round, plr): Types.Participant
                 end
             else
                 if self.Role.AnnounceDisconnect then
-                    Adapters.SendMessage(`{self:GetFormattedName()} has disconnected. They were a {self.Round:GetFormattedRole(self.Role)}.`, "info", "disconnect", self.Round.Participants)
+                    Adapters.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
                 end
                 self:Kill()
             end
@@ -528,7 +530,7 @@ local function newRound(gamemode): Types.Round
 
             local scores = {}
             for _, v in self.Participants do
-                scores[v:GetFormattedName()] = v.Score
+                scores[v.FormattedName] = v.Score
             end
 
             local events = Adapters.CalculateUserFacingEvents(self.EventLog, victors)

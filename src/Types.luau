@@ -6,7 +6,6 @@ export type Timestamp = number
 
 export type Username = string
 export type FormattedUsername = string | "<font color='#{ROLE COLOUR}'>{USERNAME}</font>"
-export type FormattedRole = string | "<font color='#{ROLE COLOUR}'>{ROLE NAME}</font>"
 export type EquipmentName = string
 export type RoleName = string
 
@@ -165,8 +164,6 @@ export type Round = {
     IsRoundOver: (self: Round) -> boolean,       -- Returns true if the current round phase is Highlights or Intermission.
     IsRoundInProgress: (self: Round) -> boolean, -- Returns true if the current round phase is Playing.
 
-    GetFormattedRole: (self: Round, role: Role) -> FormattedRole,
-
     GetEquipment: (self: Round, name: EquipmentName) -> Equipment?,           -- Returns the Equipment from Gamemode.
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant}, -- Returns a list of Participants with the specified role.
     GetRoleFromName: (self: Round, name: RoleName) -> Role,                  -- Returns a Role.
@@ -231,6 +228,7 @@ export type Gamemode = {
 ]]
 export type Role = {
     Name: string,          -- Name of this role.
+    FormattedName: string, -- Rich text formatted name, usually with the role colour
     Description: string,   -- Description of this role.
     Colour: Color3,        -- Colour of this role. Not color.
     Extras: any, -- Any extra info about the role, for use in custom functions.
@@ -291,6 +289,7 @@ export type Participant = {
 
     Player: Player,   -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
     Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.
+    FormattedName: string, -- Rich text formatted name with the role colour
     
     Role: Role,                                -- A reference to their role. nil if Round hasn't started.
     AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
@@ -298,8 +297,6 @@ export type Participant = {
     ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
     LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
-
-    GetFormattedName: (self: Participant) -> string, -- Returns the username, formatted to a role colour.
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant},             -- A list of Participants who have searched this Corpse.

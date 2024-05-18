@@ -75,7 +75,7 @@ local module: Types.Gamemode = {
             local aRole = firstKill.Attacker.Role.Allegiance
             local vRole = firstKill.Victim.Role.Allegiance
 
-            local attackerName = firstKill.Attacker:GetFormattedName()
+            local attackerName = firstKill.Attacker.FormattedName
             if (aRole == "Traitor") and (vRole == "Traitor") then
                 table.insert(highlights, {
                     Name = "First Bloody Stupid Kill",
@@ -215,6 +215,7 @@ local module: Types.Gamemode = {
     Roles = {
         {
             Name = "Traitor",
+            FormattedName = "<font color='#ff0000>Traitor</font>",
             Description = "Work with the other Traitors to defeat all the Innocents. Keep your role secret.",
             Colour = Color3.new(1, 0, 0),
             Extras = {
@@ -258,6 +259,7 @@ local module: Types.Gamemode = {
         },
         {
             Name = "Detective",
+            FormattedName = "<font color='#0000ff>Detective</font>",
             Description = "Work with the Innocents to identify the Traitors.",
             Colour = Color3.new(0, 0, 1),
             Extras = {
@@ -296,6 +298,7 @@ local module: Types.Gamemode = {
         },
         {
             Name = "Innocent",
+            FormattedName = "<font color='#00ff00>Innocent</font>",
             Description = "Survive the Traitors.",
             Colour = Color3.new(0, 1, 0),
             Extras = {

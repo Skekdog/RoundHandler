@@ -89,7 +89,7 @@ local module: Types.Adapter = {
 
     SendRoleAlert = function(recipient, role)
         local remote = remotes.SendRoleAlert
-        remote:FireClient(recipient.Player, recipient.Round:GetFormattedRole(role), role.Description)
+        remote:FireClient(recipient.Player, recipient.Role.FormattedName, role.Description)
     end,
 
     SendRoundHighlights = function(recipients, highlights, events, scores)
@@ -133,11 +133,11 @@ local module: Types.Adapter = {
         local function getDeathEvent(data: Types.RoundEvent_Death)
             local attacker = data.Attacker
             local weapon = data.Weapon
-            local text = data.Victim:GetFormattedName()
+            local text = data.Victim.FormattedName
 
             local attackerName
             if attacker then
-                attackerName = attacker:GetFormattedName()
+                attackerName = attacker.FormattedName
             end
             if weapon == "Fall" then
                 text ..= " was doomed to fall"

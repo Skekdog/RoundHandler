@@ -39,10 +39,10 @@ local module: Types.Gamemode = {
             local title, description = "", ""
             if murdererDeath.Attacker.Role.Name == "Innocent" then
                 title = "Now you're a hero"
-                description = `{murdererDeath.Attacker:GetFormattedName()} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
+                description = `{murdererDeath.Attacker.FormattedName} found a gun on the floor, did a backflip, shot the bad guy in the face and then saved the day!`
             else
                 title = "New sheriff in town"
-                description = `{murdererDeath.Attacker:GetFormattedName()} asserted their authority by shooting a crazed killer in the face!`
+                description = `{murdererDeath.Attacker.FormattedName} asserted their authority by shooting a crazed killer in the face!`
             end
 
             table.insert(highlights, {
@@ -52,7 +52,7 @@ local module: Types.Gamemode = {
         end
 
         local murderer = round:GetParticipantsWithRole("Murderer")[1]
-        local murdererName = murderer:GetFormattedName()
+        local murdererName = murderer.FormattedName
         local mKills = #murderer.KillList
         local title, description = "", ""
         if mKills > 10 then
@@ -117,6 +117,7 @@ local module: Types.Gamemode = {
     Roles = {
         {
             Name = "Bystander",
+            FormattedName = "<font color='#00ff00>Bystander</font>",
             Description = "There is a Murderer on the loose. Survive them.",
             Colour = Color3.new(0, 1, 0),
 
@@ -151,6 +152,7 @@ local module: Types.Gamemode = {
         },
         {
             Name = "Sheriff",
+            FormattedName = "<font color='#0000ff>Detective</font>",
             Description = "There is a Murderer on the loose. Protect the bystanders.",
             Colour = Color3.new(0, 0, 1),
 
@@ -182,6 +184,7 @@ local module: Types.Gamemode = {
         },
         {
             Name = "Murderer",
+            FormattedName = "<font color='#ff0000>Murderer</font>",
             Description = "Leave nobody alive.",
             Colour = Color3.new(1, 0, 0),
 
