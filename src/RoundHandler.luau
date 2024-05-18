@@ -570,6 +570,7 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
+            Adapters.SetDefaultLighting()
             self:LogEvent("MetaEvent", {NewMap = map.Name})
             map = map:Clone()
         

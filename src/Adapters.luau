@@ -1,5 +1,6 @@
 -- Implementation-dependent functions that *should* be customised.
 
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local remotes = ReplicatedStorage.RoundHandler
 
@@ -120,6 +121,26 @@ local module: Types.Adapter = {
 
     OnDeath = function(char)
         -- As above
+    end,
+
+    SetDefaultLighting = function()
+        -- All values sourced from https://raw.githubusercontent.com/MaximumADHD/Roblox-Client-Tracker/roblox/Full-API-Dump.json
+        Lighting.Ambient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.Brightness = 1
+        Lighting.ClockTime = 14
+        Lighting.ColorShift_Bottom = Color3.new()
+        Lighting.ColorShift_Top = Color3.new()
+        Lighting.EnvironmentDiffuseScale = 0
+        Lighting.EnvironmentSpecularScale = 0
+        Lighting.ExposureCompensation = 0
+        Lighting.FogColor = Color3.new(0.75, 0.75, 0.75)
+        Lighting.FogEnd = 100000
+        Lighting.FogStart = 0
+        Lighting.GeographicLatitude = 41.7332993
+        Lighting.GlobalShadows = false
+        Lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
+        Lighting.ShadowSoftness = 0.5
+        Lighting.TimeOfDay = "14:00:00"
     end,
 
     SendSlayVote = function(to, target)
