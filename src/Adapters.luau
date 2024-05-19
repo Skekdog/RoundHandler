@@ -11,9 +11,9 @@ local Types = require(script.Parent.Types)
 
 local module: Types.Adapter = {
     Configuration = {
+        INTERMISSION_TIME = 10, -- Time to spend when DoIntermission() returns true
         HIGHLIGHTS_TIME = 10, -- Time to spend after the round ends before destroying the round
         PREPARING_TIME = 10, -- Time to spend after a round is created where players can join the round
-        INTERMISSION_TIME = 10,
         SLAY_VOTES = 2, -- Minimum number of votes to slay someone, at which point they will be slain
     },
 
