@@ -631,7 +631,6 @@ local function newRound(gamemode): Types.Round
                 local onBreak = propInstance:FindFirstChild("OnBreak")
                 local prop: Types.Prop = {
                     PropInstance = propInstance,
-                    Attacker = nil,
                     Humanoid = propInstance.Humanoid,
                     OnBreak = function(self)
                         if onBreak then
