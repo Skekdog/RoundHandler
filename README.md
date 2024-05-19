@@ -1,7 +1,7 @@
 # This is a Work In Progress!
 And as of yet, not actually tested.
 
-## Round Handler
+## RoundHandler
 A Roblox round engine, initially developed for [Those You Trust](https://www.roblox.com/games/2848381272). Provides a simple way to create role-based gamemodes, with support for advanced functions.
 
 ### Build
@@ -12,4 +12,4 @@ rojo build -o RoundHandler.rbxm
 ```
 This will build the src folder into RoundHandler.rbxm.
 
-[License](https://github.com/Skekdog/Round-Handler/blob/master/LICENSE)
+[License](https://github.com/Skekdog/RoundHandler/blob/master/LICENSE)
