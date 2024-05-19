@@ -91,6 +91,7 @@ local module: Types.Adapter = {
                 remote:FireClient(v.Player, message, messageType)
             end
         end
+        return
     end,
 
     SendRoleAlert = function(recipient, role)

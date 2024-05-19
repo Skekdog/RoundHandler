@@ -664,6 +664,7 @@ local function newRound(gamemode): Types.Round
 
                     participant:GiveEquipment(equipment)
                     weapon:Destroy()
+                    return
                 end)
             end
             for _, weapon in map.WeaponSpawns:GetChildren() do
