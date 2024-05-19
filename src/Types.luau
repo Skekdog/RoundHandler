@@ -305,7 +305,7 @@ export type Participant = {
     TryViewParticipantRole: (self: Participant, target: Participant) -> Role?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
     ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
     
-    LeaveRound: (self: Participant) -> (), -- Removes this Participant from the Round.
+    LeaveRound: (self: Participant, persistTimer: boolean?) -> (), -- Removes this Participant from the Round.
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant}, -- A list of Participants who have searched this Corpse.

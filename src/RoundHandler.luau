@@ -205,7 +205,7 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             local equipmentList = {}
-            for i, _ in target.EquipmentPurchases do
+            for i in target.EquipmentPurchases do
                 local equipment = self.Round:GetEquipment(i)
                 if type(equipment) == "function" then
                     table.insert(equipmentList, equipment)
@@ -223,14 +223,14 @@ local function newParticipant(round, plr): Types.Participant
             }
         end,
 
-        LeaveRound = function(self)
+        LeaveRound = function(self, persistTimer)
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
                     table.remove(self.Round.Participants, index)
                 end
 
-                if #self.Round.Participants < self.Round.Gamemode.MinimumPlayers then
+                if (#self.Round.Participants < self.Round.Gamemode.MinimumPlayers) and (not persistTimer) then
                     local timerThread = self.Round._roundTimerThread
                     if not timerThread then
                         return
@@ -330,17 +330,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         IsDamageJustifiedAgainst = function(self, target)
-            if self.Round:CompareRoles(self.Role, self.Role, "__Enemy") then
-                return true
-            end
-            if self:HasSelfDefenseAgainst(target) then
-                return true
-            end
-
-            if target.FreeKill then
-                return true
-            end
-            return false
+            return target.FreeKill or self:HasSelfDefenseAgainst(target) or self.Round:CompareRoles(self.Role, target.Role, "__Enemy")
         end
     }
 end
@@ -423,7 +413,7 @@ local function newRound(gamemode): Types.Round
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
-                        participant:LeaveRound()
+                        participant:LeaveRound(true)
                         self:JoinRound(plr)
                         return
                     end
