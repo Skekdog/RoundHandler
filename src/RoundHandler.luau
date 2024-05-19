@@ -427,10 +427,10 @@ local function newRound(gamemode): Types.Round
                 participant:LeaveRound()
             end)
         
-            local spawns = (self.Map.Spawns):GetChildren()
+            local spawns = self.Map.Spawns:GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
                 local chosen = math.random(1, #spawns)
-                char:PivotTo((spawns[chosen] :: BasePart).CFrame)
+                char:PivotTo((spawns[chosen]).CFrame)
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
                 participant.Character = char
                 Adapters.OnCharacterLoad(participant)
@@ -721,15 +721,12 @@ local function newRound(gamemode): Types.Round
         end,
 
         LogEvent = function(self, type, data)
-            local event: Types.RoundEvent<Types.RoundEventData> = {
+            local event: Types.RoundEvent<typeof(data)> = {
                 Timestamp = workspace:GetServerTimeNow(),
                 Data = data,
             }
             table.insert(self.EventLog[type], event)
         end,
-
-        _roundTimerThread = nil,
-        _roundTimerContinueFor = nil,
     }
 end
 
