@@ -185,11 +185,18 @@ local function newParticipant(round, plr): Types.Participant
                 error(`Target {target.Player.Name} is not dead`)
             end
 
-            if not table.find(target.SearchedBy, self) then
-                if self.Role.CorpseResultsPublicised then
-                    target.SearchedBy = self.Round.Participants
-                else
-                    table.insert(target.SearchedBy, self)
+            local event: Types.RoundEvent_CorpseSearched?
+            if #target.SearchedBy < 1 then
+                event = {
+                    Participant = self,
+                    Corpse = target,
+                }
+                if not table.find(target.SearchedBy, self) then
+                    if self.Role.CorpseResultsPublicised then
+                        target.SearchedBy = self.Round.Participants
+                    else
+                        table.insert(target.SearchedBy, self)
+                    end
                 end
             end
 
@@ -199,9 +206,18 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if self.Role.CanStealCredits and (target.Credits > 0) then
+                event = {
+                    Participant = self,
+                    Corpse = target,
+                    CreditsFound = target.Credits,
+                }
                 Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
+            end
+
+            if event then
+                self.Round:LogEvent("CorpseSearched", event)
             end
 
             local equipmentList = {}
