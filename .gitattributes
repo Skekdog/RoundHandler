@@ -1,2 +1,3 @@
+* text=lf
+*.luau text
 *.luau linguist-language=Lua
-* eol=lf
