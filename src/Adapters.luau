@@ -2,6 +2,7 @@
 
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local remotes = ReplicatedStorage.RoundHandler
 
 local API = require(script.Parent.API)
@@ -57,6 +58,10 @@ local module: Types.Adapter = {
         -- The Round object is provided to allow decisions based on whether a Round is important enough for a restart.
     
         -- Additional processing, such as saving player data, can also be done here.
+
+        if RunService:IsStudio() then
+            return false
+        end
     
         return false
     end,

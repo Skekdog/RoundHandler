@@ -464,7 +464,7 @@ local function newRound(gamemode): Types.Round
         end,
         StartRound = function(self)
             if not self:IsRoundPreparing() then
-                error("Attempt to start round whilst it is already in progress")
+                error("Attempt to start round whilst it is not preparing")
             end
             self.RoundPhase = "Playing"
             self:LogEvent("MetaEvent", {RoundPhase = "Start"})
@@ -613,7 +613,7 @@ local function newRound(gamemode): Types.Round
 
                     local equipment = self:GetEquipment(weapon.Name)
                     if not equipment then
-                        return warn(weapon.Name.." not found as Equipment.")
+                        return warn(weapon.Name.." not found as Equipment")
                     end
 
                     participant:GiveEquipment(equipment)
