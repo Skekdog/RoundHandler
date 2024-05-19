@@ -5,7 +5,11 @@ local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 
-local Adapters = require(script.Parent.Adapters)
+local _adapter = script.Parent.Adapter.Value
+assert(_adapter and _adapter.ClassName == "ModuleScript", script.Parent.Adapter:GetFullName()..".Value must be set to a valid ModuleScript.")
+local Adapters = (require)(_adapter)
+_adapter = nil
+
 local Types = require(script.Parent.Types)
 local API = require(script.Parent.API)
 
