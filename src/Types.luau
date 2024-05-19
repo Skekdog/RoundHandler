@@ -176,7 +176,7 @@ export type Round = {
     GetParticipantsWithRole: (self: Round, name: RoleName) -> {Participant}, -- Returns a list of Participants with the specified role.
     GetRoleFromName: (self: Round, name: RoleName) -> Role, -- Returns a Role.
     CompareRoles: (self: Round, role1: Role, role2: Role, comparison: RoleRelationship) -> boolean, -- Tests whether two roles are related by comparison.
-    GetRoleRelationship: (self: Round, role1: Role, role2: Role) -> "__Ally" | "__Enemy", -- Returns the relationship between two roles. Either Ally or Enemy.
+    IsRoleAlliedWith: (self: Round, role1: Role, role2: Role) -> boolean, -- Returns true if the roles are allied.
 
     LoadMap: (self: Round, map: MapStructure) -> (), -- Loads a map.
 

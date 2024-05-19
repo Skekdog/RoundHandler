@@ -20,28 +20,7 @@ local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
 local noRole: Types.Role = {
     Name = "",
-    FormattedName = "",
-    Description = "",
     Colour = Color3.new(),
-    Allegiance = "",
-    StartingCredits = 0,
-    StartingEquipment = {},
-    EquipmentShop = {},
-    AnnounceDisconnect = false,
-    CorpseResultsPublicised = false,
-    CanSeeMissing = false,
-    CanStealCredits = false,
-    AwardOnDeath = {},
-    Accessories = {},
-    Health = 0,
-    Speed = 0,
-    JumpPower = 0,
-    Allies = {},
-    HighlightRules = {},
-    KnowsRoles = {},
-    TeamChat = false,
-    OnRoleAssigned = function() end,
-    OnRoleRemoved = function() end,
 }
 
 local function onDeath(self: Types.Participant)
@@ -55,7 +34,7 @@ local function onDeath(self: Types.Participant)
     local killer = self.KilledByParticipant
     local isCorrectKill, isSelfDefense = false, false
     if killer then
-        isCorrectKill = round:GetRoleRelationship(self.Role, killer.Role) == "__Ally"
+        isCorrectKill = round:IsRoleAlliedWith(self.Role, killer.Role)
         isSelfDefense = killer:HasSelfDefenseAgainst(self)
         killer:AddKill(self, false)
     end
@@ -316,7 +295,7 @@ local function newParticipant(round, plr): Types.Participant
                 return
             end
             if not ignoreKarma then
-                local isAlly = round:GetRoleRelationship(victim.Role, self.Role) == "__Ally"
+                local isAlly = round:IsRoleAlliedWith(victim.Role, self.Role)
                 if isAlly and (victim.FreeKill or not self:HasSelfDefenseAgainst(victim)) then
                     self.FreeKill = true
                     Adapters.SendSlayVote(victim, self)
@@ -727,14 +706,18 @@ local function newRound(gamemode): Types.Round
             if comparison == "__All" then
                 return true
             end
-            return self:GetRoleRelationship(role1, role2) == comparison
+            if comparison == "__Ally" then
+                return self:IsRoleAlliedWith(role1, role2)
+            else
+                return not self:IsRoleAlliedWith(role1, role2)
+            end
         end,
         
-        GetRoleRelationship = function(self, role1, role2)
+        IsRoleAlliedWith = function(self, role1, role2)
             if not role1.Allies then
-                return "__Enemy"
+                return false
             end
-            return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
+            return table.find(role1.Allies, role2.Name) ~= nil
         end,
 
         LogEvent = function(self, type, data)

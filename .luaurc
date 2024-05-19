@@ -1,5 +1,4 @@
 {
-    "$schema": "https://pastebin.com/raw/WGckSjzd",
     "languageMode": "strict",
     "lint": {"*": true}
 }

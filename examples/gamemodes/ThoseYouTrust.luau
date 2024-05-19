@@ -103,7 +103,7 @@ local module: Types.Gamemode = {
             local allyKills = 0
             local enemyKills = 0
             for _, kill in participant.KillList do
-                if (round:GetRoleRelationship(participant.Role, kill.Role) == "__Ally") then
+                if (round:IsRoleAlliedWith(participant.Role, kill.Role)) then
                     if (not kill.KilledInSelfDefense) then
                         allyKills += 1
                     end
