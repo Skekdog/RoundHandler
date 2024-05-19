@@ -13,16 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install aftman
-        uses: ok-nick/setup-aftman@v0.4.2
+      - name: Build
+        uses: CompeyDev/rojo-build-action@0.1.5
         with:
-          cache: true
-
-      - name: Install Lune
-        run: aftman install
-
-      - name: Build project
-        run: lune run build
+          output: RoundHandler
+          type: rbxm
 
       - name: Create release
         id: create_release
