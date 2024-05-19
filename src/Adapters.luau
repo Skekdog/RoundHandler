@@ -188,7 +188,7 @@ local module: Types.Adapter = {
                     text ..= ` by {attackerName}`
                 end
             elseif type(weapon) == "table" then
-                local attack: Types.WeaponAttackType | "None" = weapon.AttackType
+                local attack = weapon.AttackType
                 local name = API.StringWithDeterminer(weapon.Name)
                 if attack == "Blade" then
                     text ..= `was stabbed by {name}`

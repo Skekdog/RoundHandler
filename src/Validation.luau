@@ -54,20 +54,30 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
     if (gamemode.RecommendedPlayers < gamemode.MinimumPlayers) or (gamemode.RecommendedPlayers > gamemode.MaximumPlayers) then
         i("RecommendedPlayers must be between MinimumPlayers and MaximumPlayers.")
     end
-    if gamemode.MinimumPlayers > gamemode.MaximumPlayers then
+    if gamemode.MaximumPlayers and gamemode.MinimumPlayers > gamemode.MaximumPlayers then
         i("MinimumPlayers must not be greater than MaximumPlayers.")
     end
 
     -- Good enough
-    if gamemode:Duration(gamemode.MinimumPlayers) <= 0 then
-        i("Gamemode duration is negative with MinimumPlayers.")
-    end
-    if gamemode:Duration(gamemode.MaximumPlayers) <= 0 then
-        i(`Gamemode duration is negative with {tostring(gamemode.MaximumPlayers)} players`)
+    if type(gamemode.Duration) == "number" then
+        if gamemode.Duration <= 0 then 
+            i("Gamemode duration is negative.")
+        end
+    else
+        if gamemode.Duration(gamemode, gamemode.MinimumPlayers) <= 0 then
+            i("Gamemode duration is negative with MinimumPlayers.")
+        end
+        if gamemode.Duration(gamemode, gamemode.MaximumPlayers or 700) <= 0 then
+            i(`Gamemode duration is negative with {tostring(gamemode.MaximumPlayers or 700)} players`)
+        end
     end
 
     local equipmentNames = {}
-    for _, equipment in gamemode.AvailableEquipment do table.insert(equipmentNames, equipment.Name) end
+    if gamemode.AvailableEquipment then
+        for _, equipment in gamemode.AvailableEquipment do
+            table.insert(equipmentNames, equipment.Name)
+        end
+    end
 
     local roleNames = {}
     local allegianceNames = {}
@@ -80,16 +90,20 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
 
         checkString(role.Name, "Role Name")
         
-        for _, equipmentName in role.StartingEquipment do
-            checkString(equipmentName, "Equipment Name")
-            if not table.find(equipmentNames, equipmentName) then
-                i((`Equipment {equipmentName} of {role.Name}.StartingEquipment is not defined in Gamemode.AvailableEquipment.`))
+        if role.StartingEquipment then
+            for _, equipmentName in role.StartingEquipment do
+                checkString(equipmentName, "Equipment Name")
+                if not table.find(equipmentNames, equipmentName) then
+                    i((`Equipment {equipmentName} of {role.Name}.StartingEquipment is not defined in Gamemode.AvailableEquipment.`))
+                end
             end
         end
-        for _, equipmentName in role.EquipmentShop do
-            checkString(equipmentName, "Equipment Name")
-            if not table.find(equipmentNames, equipmentName) then
-                i((`Equipment {equipmentName} of {role.Name}.EquipmentShop is not defined in Gamemode.AvailableEquipment.`))
+        if role.EquipmentShop then
+            for _, equipmentName in role.EquipmentShop do
+                checkString(equipmentName, "Equipment Name")
+                if not table.find(equipmentNames, equipmentName) then
+                    i((`Equipment {equipmentName} of {role.Name}.EquipmentShop is not defined in Gamemode.AvailableEquipment.`))
+                end
             end
         end
     end
@@ -103,10 +117,12 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
     end
 
     for _, role in gamemode.Roles do
-        for _, ally in role.Allies do
-            if not table.find(roleNames, ally) then i(`Role {role.Name}.Ally is undefined: {ally}`) end
+        if role.Allies then
+            for _, ally in role.Allies do
+                if not table.find(roleNames, ally) then i(`Role {role.Name}.Ally is undefined: {ally}`) end
+            end
         end
-        if not table.find(roleNames, role.Allegiance) then
+        if not table.find(roleNames, role.Allegiance or role.Name) then
             i(`Role {role.Name} has an undefined Allegiance: {role.Allegiance}`)
         end
 
@@ -123,9 +139,15 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
             i(`Role {role.Name}.Health must be greater than 0.`)
         end
 
-        validateRoleRelationship(role.KnowsRoles, `{role.Name}.KnowsRoles`)
-        validateRoleRelationship(role.HighlightRules, `{role.Name}.HighlightRules`)
-        validateRoleRelationship(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
+        if role.KnowsRoles then
+            validateRoleRelationship(role.KnowsRoles, `{role.Name}.KnowsRoles`)
+        end
+        if role.HighlightRules then
+            validateRoleRelationship(role.HighlightRules, `{role.Name}.HighlightRules`)
+        end
+        if role.AwardOnDeath then
+            validateRoleRelationship(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
+        end
     end
 
     i(validateVersion(gamemode.EngineVersion, "gamemode"))

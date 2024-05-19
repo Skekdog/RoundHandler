@@ -16,9 +16,7 @@ local module: Types.Gamemode = {
     RecommendedPlayers = 4,
     MaximumPlayers = 32,
     
-    TimeoutVictors = function(self)
-        return self.Roles[3]
-    end,
+    TimeoutVictors = "Traitor",
     PhyrricVictors = "Traitor",
 
     CalculateRoundHighlights = function(self, round)
@@ -146,30 +144,23 @@ local module: Types.Gamemode = {
     SelfDefense = true,
     UseKarma = true,
 
-    StartingCredits = 0,
     StartingEquipment = {"Crowbar"},
     AvailableEquipment = {
         {
             Name = "Crowbar",
             Description = "Become a Gordonite",
-            Cost = 0,
             Icon = "rbxassetid://",
-            MaxStock = 1,
 
             AttackType = "Blunt",
-            NoGuilt = false,
 
-            Item = items.Crowbar
+            Item = items.Crowbar,
         },
         {
             Name = "Pistol",
             Description = "Reliable",
-            Cost = 0,
             Icon = "rbxassetid://",
-            MaxStock = 1,
 
             AttackType = "Firearm",
-            NoGuilt = false,
 
             Item = items.Pistol
         },
@@ -181,7 +172,6 @@ local module: Types.Gamemode = {
             MaxStock = 1,
 
             AttackType = "Explosion",
-            NoGuilt = false,
 
             Item = items.Grenade
         },
@@ -191,9 +181,6 @@ local module: Types.Gamemode = {
             Cost = 1,
             Icon = "rbxassetid://",
             MaxStock = 1,
-
-            AttackType = "None",
-            NoGuilt = true,
 
             Item = function(item, participant)
                 print(`{participant.Player.Name} got radar`)
@@ -210,7 +197,7 @@ local module: Types.Gamemode = {
             AttackType = "Explosion",
             NoGuilt = true,
         }
-    },
+    } :: {Types.Equipment},
 
     Roles = {
         {
@@ -233,7 +220,6 @@ local module: Types.Gamemode = {
             AwardOnDeath = {
                 Detective = 1,
             },
-            CorpseResultsPublicised = false,
             CanSeeMissing = true,
 
             StartingCredits = 2,
@@ -253,9 +239,6 @@ local module: Types.Gamemode = {
                 Detective = true,
             },
             TeamChat = true,
-
-            OnRoleAssigned = function() end,
-            OnRoleRemoved = function() end,
         },
         {
             Name = "Detective",
@@ -276,25 +259,15 @@ local module: Types.Gamemode = {
                 Traitor = 1,
             },
             CorpseResultsPublicised = true,
-            CanSeeMissing = false,
 
             StartingCredits = 2,
-            StartingEquipment = {},
             EquipmentShop = {"Radar"},
 
             Accessories = {},
-            Health = 100,
-            Speed = 16,
-            JumpPower = 18,
 
-            HighlightRules = {},
             KnowsRoles = {
                 Detective = true,
             },
-            TeamChat = false,
-
-            OnRoleAssigned = function() end,
-            OnRoleRemoved = function() end,
         },
         {
             Name = "Innocent",

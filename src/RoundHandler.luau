@@ -71,7 +71,10 @@ local function onDeath(self: Types.Participant)
 
     self.Round:LogEvent("Death", data)
     Adapters.OnDeath(self)
-    self.Round.Gamemode:OnDeath(self)
+
+    if self.Round.Gamemode.OnDeath then
+        self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
+    end
 end
 
 local function newParticipant(round, plr): Types.Participant
@@ -143,7 +146,7 @@ local function newParticipant(round, plr): Types.Participant
         TryViewParticipantRole = function(self, target)
             local ownRole = self.Role
             local targetRole = target.Role
-            if not ownRole or not targetRole then
+            if not ownRole or not targetRole or not ownRole.KnowsRoles then
                 return
             end
 
@@ -169,14 +172,40 @@ local function newParticipant(round, plr): Types.Participant
             local previousRole = self.Role
             self.Role = role
             self.FormattedName = `<font color='#{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
-            self.Credits += role.StartingCredits
-            for _, v in role.StartingEquipment do
-                Adapters.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
+            self.Credits += role.StartingCredits or 0
+
+            if role.StartingEquipment then
+                for _, v in role.StartingEquipment do
+                    Adapters.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
+                end
             end
+
+            if self.Character:IsDescendantOf(workspace) then
+                local hum = self.Character:FindFirstChildOfClass("Humanoid")
+                assert(hum)
+                if role.Health then
+                    hum.MaxHealth = role.Health
+                    hum.Health = role.Health
+                end
+                if role.JumpPower then
+                    hum.JumpPower = role.JumpPower
+                end
+                if role.Speed then
+                    hum.WalkSpeed = role.Speed
+                end
+                if role.Accessories then
+                    for _, accessory in role.Accessories do
+                        hum:AddAccessory(accessory:Clone())
+                    end
+                end
+            end
+
             Adapters.SendRoleAlert(self, role)
-            role:OnRoleAssigned(self)
-            if previousRole then
-                previousRole:OnRoleRemoved(self)
+            if role.OnRoleAssigned then
+                role.OnRoleAssigned(role, self)
+            end
+            if previousRole and previousRole.OnRoleRemoved then
+                previousRole.OnRoleRemoved(previousRole, self)
             end
         end,
 
@@ -266,10 +295,10 @@ local function newParticipant(round, plr): Types.Participant
 
         PurchaseEquipment = function(self, equipment)
             local purchases = self.EquipmentPurchases
-            if (purchases[equipment.Name] or 0) >= equipment.MaxStock then
+            if (purchases[equipment.Name] or 0) >= (equipment.MaxStock or math.huge) then
                 return "NotInStock"
             end
-            if self.Credits < equipment.Cost then
+            if self.Credits < (equipment.Cost or 0) then
                 return "NotEnoughCredits"
             end
             if self.EquipmentPurchases[equipment.Name] then
@@ -277,6 +306,7 @@ local function newParticipant(round, plr): Types.Participant
             else
                 self.EquipmentPurchases[equipment.Name] = 0
             end
+            self.Credits -= equipment.Cost or 0
             return self:GiveEquipment(equipment)
         end,
 
@@ -410,7 +440,7 @@ local function newRound(gamemode): Types.Round
             end
         
             local participant = newParticipant(self, plr)
-            participant.Credits = self.Gamemode.StartingCredits
+            participant.Credits = self.Gamemode.StartingCredits or 0
         
             table.insert(self.Participants, participant)
         
@@ -425,7 +455,11 @@ local function newRound(gamemode): Types.Round
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
                 participant.Character = char
                 Adapters.OnCharacterLoad(participant)
-                self.Gamemode:OnCharacterLoad(char)
+
+                if self.Gamemode.OnCharacterLoad then
+                    self.Gamemode.OnCharacterLoad(self.Gamemode, char)
+                end
+
                 hum.Died:Once(function()
                     if self:IsRoundPreparing() then
                         -- Respawn if the round hasn't started
@@ -439,15 +473,10 @@ local function newRound(gamemode): Types.Round
             end)
             plr:LoadCharacter()
 
-            for _, v in self.Gamemode.StartingEquipment do
-                local index = 0
-                for i, a in self.Gamemode.AvailableEquipment do
-                    if a.Name == v then
-                        index = i
-                        break
-                    end
-                end
-                Adapters.GiveEquipment(participant, self.Gamemode.AvailableEquipment[index])
+            if self.Gamemode.StartingEquipment then
+                for _, v in self.Gamemode.StartingEquipment do
+                    Adapters.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
+                end 
             end
         
             if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
@@ -472,10 +501,21 @@ local function newRound(gamemode): Types.Round
             local participants = self.Participants
             API.ShuffleInPlace(participants)
 
-            local duration = self.Gamemode:Duration(#self.Participants)
+            local duration: number
+            if type(self.Gamemode.Duration) == "number" then
+                duration = self.Gamemode.Duration
+            else
+                duration = self.Gamemode.Duration(self.Gamemode, #self.Participants)
+            end
             self.TimeMilestone = workspace:GetServerTimeNow() + duration
             self._roundTimerThread = task.delay(duration, function()
-                self:EndRound(self.Gamemode:TimeoutVictors(self))
+                local victors: Types.Role
+                if type(self.Gamemode.TimeoutVictors) == "string" then
+                    victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors)
+                else
+                    victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
+                end
+                self:EndRound(victors)
             end)
 
             gm:AssignRoles(participants)
@@ -498,7 +538,13 @@ local function newRound(gamemode): Types.Round
                 assert(self._roundTimerContinueFor)
                 self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
                 self._roundTimerThread = task.delay(self._roundTimerContinueFor, function()
-                    self:EndRound(self.Gamemode:TimeoutVictors(self))
+                    local victors: Types.Role
+                    if type(self.Gamemode.TimeoutVictors) == "string" then
+                        victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors)
+                    else
+                        victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
+                    end
+                    self:EndRound(victors)
                 end)
             end
             return
@@ -659,6 +705,9 @@ local function newRound(gamemode): Types.Round
         end,
 
         GetEquipment = function(self, name)
+            if not self.Gamemode.AvailableEquipment then
+                return
+            end
             for _, v in self.Gamemode.AvailableEquipment do
                 if v.Name == name then
                     return v
@@ -682,6 +731,9 @@ local function newRound(gamemode): Types.Round
         end,
         
         GetRoleRelationship = function(self, role1, role2)
+            if not role1.Allies then
+                return "__Enemy"
+            end
             return (table.find(role1.Allies, role2.Name) and "__Ally") or "__Enemy"
         end,
 

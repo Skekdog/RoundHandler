@@ -41,18 +41,18 @@ export type Adapter = {
     OnDeath: (victim: Participant) -> (),
 }
 
-export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm" | "None"
+export type WeaponAttackType = ("Blunt" | "Blade" | "Explosion" | "Firearm")?
 export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
-    Description: string, -- Description of this equipment.
+    Description: string?, -- Description of this equipment.
     Icon: Asset, -- Icon of this equipment.
-    Cost: Integer, -- The number of credits that this equipment costs to buy.
-    MaxStock: PositiveInteger, -- The maximum times a single Participant can purchase this equipment, per round.
+    Cost: Integer?, -- The number of credits that this equipment costs to buy.
+    MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
     Extras: any, -- Any extra info about the equipment, for use in custom functions.
 
-    AttackType: WeaponAttackType, -- None if this is not a weapon. This determines the event flavour text that will be shown to players.
-    NoGuilt: boolean, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
+    AttackType: WeaponAttackType, -- This determines the event flavour text that will be shown to players.
+    NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
 
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
 }
@@ -199,34 +199,34 @@ export type RoundEndInfo = {
 }
 export type Gamemode = {
     Name: string, -- Name of the gamemode.
-    Description: string, -- Description of the gamemode.
+    Description: string?, -- Description of the gamemode.
     Extras: any, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string, -- Indicates the engine version that this gamemode was designed for.
 
     MinimumPlayers: PositiveInteger, -- The gamemode will not start without at least this many players.
-    RecommendedPlayers: PositiveInteger, -- The gamemode will not appear in voting without at least this many players.
-    MaximumPlayers: PositiveInteger, -- The gamemode will not appear in voting if there are more players than this value.
+    RecommendedPlayers: PositiveInteger?, -- The gamemode will not appear in voting without at least this many players.
+    MaximumPlayers: PositiveInteger?, -- The gamemode will not appear in voting if there are more players than this value.
 
-    TimeoutVictors: (self: Gamemode, round: Round) -> Role, -- Which role wins if the round timer expires?
+    TimeoutVictors: RoleName | (self: Gamemode, round: Round) -> RoleName, -- Which role wins if the round timer expires?
     PhyrricVictors: RoleName, -- Which role wins if everyone dies at the same time? Cannot be a function because this is checked on every mass death event. --todo: So what if it gets checked every time?
 
-    CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight},
+    CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight}, -- Returns an ordered list of round highlights.
     CalculateNonDefaultUserFacingEvents: ((self: Gamemode, round: Round) -> {UserFacingRoundEvent})?, -- Calculates the user facing event log for non-default events. Only needed if this Gamemode uses custom events. If any custom event is not converted, it will not be displayed to players.
 
-    FriendlyFire: boolean, -- Whether allies can damage each other. Has no bearing on self-defense.
-    SelfDefense: boolean, -- Whether self-defense is allowed.
-    UseKarma: boolean, -- Whether karma will be affected by this round, and whether it will have an effect in this round.
+    FriendlyFire: boolean?, -- Whether allies can damage each other. Has no bearing on self-defense.
+    SelfDefense: boolean?, -- Whether self-defense is allowed.
+    UseKarma: boolean?, -- Whether karma will be affected by this round, and whether it will have an effect in this round.
 
-    StartingCredits: Integer, -- Amount of credits to start with.
-    StartingEquipment: {EquipmentName}, -- Equipment to start with.
-    AvailableEquipment: {Equipment}, -- All equipment that is available, including standard weapons.
+    StartingCredits: Integer?, -- Amount of credits to start with.
+    StartingEquipment: {EquipmentName}?, -- Equipment to start with.
+    AvailableEquipment: {Equipment}?, -- All equipment that is available, including standard weapons. Due to type solver weirdness, this must be non-nil for now.
 
     Roles: {Role}, -- Defines roles for this gamemode.
 
-    Duration: (self: Gamemode, numParticipants: PositiveInteger) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
-    OnDeath: (self: Gamemode, victim: Participant) -> (), -- Called when a Participant in this gamemode dies.
-    OnCharacterLoad: (self: Gamemode, char: Model) -> (), -- Called when CharacterAppearanceLoaded fires.
+    Duration: PositiveNumber | (self: Gamemode, numParticipants: PositiveInteger) -> PositiveNumber, -- Function that determines how long a round will last. Defaults to 120 + (numParticipants * 15)
+    OnDeath: ((self: Gamemode, victim: Participant) -> ())?, -- Called when a Participant in this gamemode dies.
+    OnCharacterLoad: ((self: Gamemode, char: Model) -> ())?, -- Called when CharacterAppearanceLoaded fires.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> (), -- Function that assigns all Participants roles.
 }
 
@@ -237,37 +237,37 @@ export type Gamemode = {
 ]]
 export type Role = {
     Name: string, -- Name of this role.
-    FormattedName: string, -- Rich text formatted name, usually with the role colour
-    Description: string, -- Description of this role.
+    FormattedName: string?, -- Rich text formatted name, usually with the role colour
+    Description: string?, -- Description of this role.
     Colour: Color3, -- Colour of this role. Not color.
     Extras: any, -- Any extra info about the role, for use in custom functions.
 
-    Allegiance: RoleName, -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
+    Allegiance: RoleName?, -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
     VictoryText: string?, -- Text shown in event log. Must not be nil for the Allegiance roles, no effect on other roles.
     
-    StartingCredits: Integer, -- Added onto gamemode StartingCredits.
-    StartingEquipment: {EquipmentName}, -- Added onto gamemode StartingEquipment.
-    EquipmentShop: {EquipmentName}, -- List of equipment available to this role.
+    StartingCredits: Integer?, -- Added onto gamemode StartingCredits.
+    StartingEquipment: {EquipmentName}?, -- Added onto gamemode StartingEquipment.
+    EquipmentShop: {EquipmentName}?, -- List of equipment available to this role.
 
-    AnnounceDisconnect: boolean, -- If true, a message is sent to all participants when this player leaves the round.
-    CorpseResultsPublicised: boolean, -- Whether this role will publicise the results from searching a corpse.
-    CanStealCredits: boolean, -- Whether this role can steal credits from corpses.
-    CanSeeMissing: boolean, -- Whether this role can see Missing participants, or if they will be shown as alive instead.
-    AwardOnDeath: {[RoleRelationship]: Integer}, -- How many credits to award to other roles when this role is killed.
+    AnnounceDisconnect: boolean?, -- If true, a message is sent to all participants when this player leaves the round.
+    CorpseResultsPublicised: boolean?, -- Whether this role will publicise the results from searching a corpse.
+    CanStealCredits: boolean?, -- Whether this role can steal credits from corpses.
+    CanSeeMissing: boolean?, -- Whether this role can see Missing participants, or if they will be shown as alive instead.
+    AwardOnDeath: {[RoleRelationship]: Integer}?, -- How many credits to award to other roles when a member of this role is killed.
 
-    Accessories: {Asset}, -- A list of accessories to add to the character.
-    Health: number, -- Sets Health and MaxHealth (of Humanoid).
-    Speed: number,  -- Sets normal WalkSpeed.
-    JumpPower: number, -- Sets JumpPower (of Humanoid).
+    Accessories: {Accessory}?, -- A list of accessories to add to the character.
+    Health: number?, -- Sets Health and MaxHealth (of Humanoid).
+    Speed: number?,  -- Sets normal WalkSpeed.
+    JumpPower: number?, -- Sets JumpPower (of Humanoid).
 
-    Allies: {RoleName}, -- Allies to this role. Own role is not an ally by default.
-    HighlightRules: {[RoleRelationship]: boolean}, -- Determines which roles will be highlighted for this role.
-    KnowsRoles: {[RoleRelationship]: boolean}, -- Determines which roles will be revealed to this role.
-    TeamChat: boolean, -- Can this role chat in private to other role members?
+    Allies: {RoleName}?, -- Allies to this role. Own role is not an ally by default.
+    HighlightRules: {[RoleRelationship]: boolean}?, -- Determines which roles will be highlighted for this role.
+    KnowsRoles: {[RoleRelationship]: boolean}?, -- Determines which roles will be revealed to this role.
+    TeamChat: boolean?, -- Can this role chat in private to other role members?
 
-    OnRoleAssigned: (self: Role, participant: Participant) -> (), -- Any extra code that should run for AssignRole.
-    OnRoleRemoved: (self: Role, participant: Participant) -> (), -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
+    OnRoleAssigned: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run for AssignRole.
+    OnRoleRemoved: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
 }
 
 export type CorpseInfo = {

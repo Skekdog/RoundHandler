@@ -14,14 +14,11 @@ local module: Types.Gamemode = {
     Description = "Survive the murderer.",
     EngineVersion = "0.0.1",
 
-    MaximumPlayers = 700,
     RecommendedPlayers = 4,
     MinimumPlayers = 2,
 
-    PhyrricVictors = "Innocent",
-    TimeoutVictors = function(self)
-        return self.Roles[1]
-    end,
+    PhyrricVictors = "Bystander",
+    TimeoutVictors = "Bystander",
 
     CalculateRoundHighlights = function(self, round)
         local highlights: {Types.RoundHighlight} = {}
@@ -84,35 +81,24 @@ local module: Types.Gamemode = {
     end,
 
     FriendlyFire = true,
-    SelfDefense = false,
-    UseKarma = false,
-
-    StartingCredits = 0,
-    StartingEquipment = {},
     AvailableEquipment = {
         {
             Name = "Knife",
             Description = "Stabby stab stab.",
-            Cost = 0,
             Icon = "rbxassetid://",
             Item = items.Knife,
-            MaxStock = 1,
 
             AttackType = "Blade",
-            NoGuilt = false,
         },
         {
             Name = "Gun",
             Description = "Shooty shoot shoot.",
-            Cost = 0,
             Icon = "rbxassetid://",
             Item = items.Gun,
-            MaxStock = 1,
 
             AttackType = "Firearm",
-            NoGuilt = false,
         },
-    },
+    } :: {Types.Equipment},
 
     Roles = {
         {
@@ -126,29 +112,6 @@ local module: Types.Gamemode = {
 
             VictoryText = "The loveable bystanders have survived the day!",
             VictoryMusic = {},
-
-            StartingCredits = 0,
-            StartingEquipment = {},
-
-            AnnounceDisconnect = false,
-            CanStealCredits = false,
-            EquipmentShop = {},
-            AwardOnDeath = {},
-
-            Accessories = {},
-            Health = 100,
-            JumpPower = 18,
-            Speed = 16,
-
-            CorpseResultsPublicised = false,
-            CanSeeMissing = false,
-
-            HighlightRules = {},
-            KnowsRoles = {},
-            TeamChat = false,
-
-            OnRoleAssigned = function() end,
-            OnRoleRemoved = function() end,
         },
         {
             Name = "Sheriff",
@@ -159,28 +122,7 @@ local module: Types.Gamemode = {
             Allegiance = "Bystander",
             Allies = {"Bystander", "Sheriff"},
 
-            StartingCredits = 0,
             StartingEquipment = {"Gun"},
-
-            AnnounceDisconnect = false,
-            CanStealCredits = false,
-            CanSeeMissing = false,
-            EquipmentShop = {},
-            AwardOnDeath = {},
-
-            Accessories = {},
-            Health = 100,
-            JumpPower = 18,
-            Speed = 16,
-
-            CorpseResultsPublicised = false,
-
-            HighlightRules = {},
-            KnowsRoles = {},
-            TeamChat = false,
-
-            OnRoleAssigned = function() end,
-            OnRoleRemoved = function() end,
         },
         {
             Name = "Murderer",
@@ -198,24 +140,7 @@ local module: Types.Gamemode = {
             StartingEquipment = {"Knife"},
 
             AnnounceDisconnect = true,
-            CanStealCredits = false,
-            EquipmentShop = {},
-            AwardOnDeath = {},
-
-            Accessories = {},
-            Health = 100,
-            JumpPower = 18,
-            Speed = 16,
-
-            CorpseResultsPublicised = false,
             CanSeeMissing = true,
-
-            HighlightRules = {},
-            KnowsRoles = {},
-            TeamChat = false,
-
-            OnRoleAssigned = function() end,
-            OnRoleRemoved = function() end,
         },
     },
 
@@ -286,6 +211,7 @@ local module: Types.Gamemode = {
                         return
                     end
 
+                    assert(self.AvailableEquipment)
                     participant:GiveEquipment(self.AvailableEquipment[2])
                     handle:Destroy()
                 end)
@@ -297,8 +223,6 @@ local module: Types.Gamemode = {
             round:EndRound(round:GetRoleFromName(winner))
         end
     end,
-
-    OnCharacterLoad = function() end
 }
 
 return module
