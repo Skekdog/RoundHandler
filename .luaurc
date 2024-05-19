@@ -1,7 +1,5 @@
 {
+    "$schema": "https://pastebin.com/raw/WGckSjzd",
     "languageMode": "strict",
-    "lint": {"*": true},
-    "lintErrors": false,
-    "typeErrors": true,
-    "globals": []
+    "lint": {"*": true}
 }
