@@ -16,6 +16,7 @@ local module = {
 
 local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local INTERMISSION_TIME = Adapters.Configuration.INTERMISSION_TIME
 local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
 
 local noRole: Types.Role = {
@@ -589,6 +590,11 @@ local function newRound(gamemode): Types.Round
                 Players.PlayerAdded:Connect(function(plr)
                     plr:Kick("This server is shutting down for an update.")
                 end)
+            else
+                if Adapters.DoIntermission(self) then
+                    self.TimeMilestone = workspace:GetServerTimeNow() + INTERMISSION_TIME
+                    task.wait(INTERMISSION_TIME)
+                end
             end
 
             self.Map:Destroy()

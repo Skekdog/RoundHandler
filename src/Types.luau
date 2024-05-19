@@ -16,8 +16,9 @@ export type MessageSeverity = "info" | "warn" | "error"
 export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
     Configuration: {
-        PREPARING_TIME: number,
-        HIGHLIGHTS_TIME: number,
+        PREPARING_TIME: PositiveNumber,
+        HIGHLIGHTS_TIME: PositiveNumber,
+        INTERMISSION_TIME: PositiveNumber,
         SLAY_VOTES: PositiveInteger,
     },
 
@@ -39,6 +40,8 @@ export type Adapter = {
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
+
+    DoIntermission: (round: Round) -> boolean, -- Returns true if an intermission should be held, delaying the destruction of the round. Should also run anything that an intermission should handle, like map voting.
 }
 
 export type WeaponAttackType = ("Blunt" | "Blade" | "Explosion" | "Firearm")?

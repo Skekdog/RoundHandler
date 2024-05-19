@@ -3,6 +3,7 @@
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 local remotes = ReplicatedStorage.RoundHandler
 
 local API = require(script.Parent.API)
@@ -12,6 +13,7 @@ local module: Types.Adapter = {
     Configuration = {
         HIGHLIGHTS_TIME = 10, -- Time to spend after the round ends before destroying the round
         PREPARING_TIME = 10, -- Time to spend after a round is created where players can join the round
+        INTERMISSION_TIME = 10,
         SLAY_VOTES = 2, -- Minimum number of votes to slay someone, at which point they will be slain
     },
 
@@ -152,6 +154,16 @@ local module: Types.Adapter = {
     SendSlayVote = function(to, target)
         local remote = remotes.SlayVote
         remote:FireClient(to.Player, target.Player)
+    end,
+
+    DoIntermission = function(round)
+        local roundNumber = (ServerStorage:GetAttribute("RoundNumber") or -1) + 1 -- or -1, because +1, so then == 0, so % 5 == 0.
+        ServerStorage:SetAttribute("RoundNumber", roundNumber)
+        if roundNumber % 5 == 0 then
+            -- also enable map voting here, or whatever
+            return true
+        end
+        return false
     end,
 
     CalculateUserFacingEvents = function(events: Types.RoundEventLog, winners)
