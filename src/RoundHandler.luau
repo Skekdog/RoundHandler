@@ -4,24 +4,26 @@ local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
+local ServerScriptService = game:GetService("ServerScriptService")
 
-local _adapter = script.Parent.Adapter.Value
-assert(_adapter and _adapter.ClassName == "ModuleScript", script.Parent.Adapter:GetFullName()..".Value must be set to a valid ModuleScript.")
-local Adapters = (require)(_adapter)
-_adapter = nil
-
-local Types = require(script.Parent.Types)
 local API = require(script.Parent.API)
+local Types = require(script.Parent.Types)
+
+local _adapter = ServerScriptService:FindFirstChild("Adapter") :: ObjectValue?
+assert(_adapter, "ServerScriptService must have an Adapter ObjectValue, which points to a valid ModuleScript.")
+assert(_adapter.Value and _adapter.Value.ClassName == "ModuleScript", "Adapter ObjectValue must be set to a valid ModuleScript.")
+local Adapter: Types.Adapter = (require)(_adapter)
+_adapter = nil
 
 -- The main module. New rounds are created from here via module.CreateRound().
 local module = {
     Rounds = {}
 }
 
-local PREPARING_TIME = Adapters.Configuration.PREPARING_TIME -- Duration of the preparing phase
-local HIGHLIGHTS_TIME = Adapters.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
-local INTERMISSION_TIME = Adapters.Configuration.INTERMISSION_TIME
-local SLAY_VOTES = Adapters.Configuration.SLAY_VOTES
+local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
+local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local INTERMISSION_TIME = Adapter.Configuration.INTERMISSION_TIME
+local SLAY_VOTES = Adapter.Configuration.SLAY_VOTES
 
 local noRole: Types.Role = {
     Name = "",
@@ -54,7 +56,7 @@ local function onDeath(self: Types.Participant)
     }
 
     self.Round:LogEvent("Death", data)
-    Adapters.OnDeath(self)
+    Adapter.OnDeath(self)
 
     if self.Round.Gamemode.OnDeath then
         self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
@@ -68,7 +70,7 @@ local function newParticipant(round, plr): Types.Participant
         FormattedName = plr.Name,
         Round = round,
 
-        Karma = if round.Gamemode.UseKarma then Adapters.GetKarma(plr) else 1000,
+        Karma = if round.Gamemode.UseKarma then Adapter.GetKarma(plr) else 1000,
         Role = noRole,
         Credits = 0,
         Score = {},
@@ -160,7 +162,7 @@ local function newParticipant(round, plr): Types.Participant
 
             if role.StartingEquipment then
                 for _, v in role.StartingEquipment do
-                    Adapters.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
+                    Adapter.GiveEquipment(self, self.Round:GetEquipment(v) :: Types.Equipment)
                 end
             end
 
@@ -184,7 +186,7 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
 
-            Adapters.SendRoleAlert(self, role)
+            Adapter.SendRoleAlert(self, role)
             if role.OnRoleAssigned then
                 role.OnRoleAssigned(role, self)
             end
@@ -214,7 +216,7 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target.Status == "Missing" then
-                Adapters.SendMessage(`{self.Player.Name} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
+                Adapter.SendMessage(`{self.Player.Name} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
                 target.Status = "Dead"
             end
 
@@ -224,7 +226,7 @@ local function newParticipant(round, plr): Types.Participant
                     Corpse = target,
                     CreditsFound = target.Credits,
                 }
-                Adapters.SendMessage(`You have found {target.Credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
+                Adapter.SendMessage(`You have found {target.Credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
                 self.Credits += target.Credits
                 target.Credits = 0
             end
@@ -268,14 +270,14 @@ local function newParticipant(round, plr): Types.Participant
                 end
             else
                 if self.Role.AnnounceDisconnect then
-                    Adapters.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
+                    Adapter.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
                 end
                 self:Kill()
             end
         end,
 
-        GiveEquipment = Adapters.GiveEquipment,
-        RemoveEquipment = Adapters.RemoveEquipment,
+        GiveEquipment = Adapter.GiveEquipment,
+        RemoveEquipment = Adapter.RemoveEquipment,
 
         PurchaseEquipment = function(self, equipment)
             local purchases = self.EquipmentPurchases
@@ -303,7 +305,7 @@ local function newParticipant(round, plr): Types.Participant
                 local isAlly = round:IsRoleAlliedWith(victim.Role, self.Role)
                 if isAlly and (victim.FreeKill or not self:HasSelfDefenseAgainst(victim)) then
                     self.FreeKill = true
-                    Adapters.SendSlayVote(victim, self)
+                    Adapter.SendSlayVote(victim, self)
                 end
             end
             table.insert(self.KillList, victim)
@@ -438,7 +440,7 @@ local function newRound(gamemode): Types.Round
                 char:PivotTo((spawns[chosen]).CFrame)
                 local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
                 participant.Character = char
-                Adapters.OnCharacterLoad(participant)
+                Adapter.OnCharacterLoad(participant)
 
                 if self.Gamemode.OnCharacterLoad then
                     self.Gamemode.OnCharacterLoad(self.Gamemode, char)
@@ -459,7 +461,7 @@ local function newRound(gamemode): Types.Round
 
             if self.Gamemode.StartingEquipment then
                 for _, v in self.Gamemode.StartingEquipment do
-                    Adapters.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
+                    Adapter.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
                 end 
             end
         
@@ -467,10 +469,10 @@ local function newRound(gamemode): Types.Round
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
             end
 
-            Adapters.SendMessage(`The round will begin in {math.round(self.TimeMilestone-workspace:GetServerTimeNow())}s. Prepare yourself.`, "info", "timeToRoundStart", {participant})
+            Adapter.SendMessage(`The round will begin in {math.round(self.TimeMilestone-workspace:GetServerTimeNow())}s. Prepare yourself.`, "info", "timeToRoundStart", {participant})
             
             if self.Gamemode.UseKarma then
-                Adapters.SendMessage(`Your karma is {participant.Karma}. You will deal {Adapters.CalculateDamageModifier(participant.Karma)*100}% damage this round.`, "info", "karma", {participant})
+                Adapter.SendMessage(`Your karma is {participant.Karma}. You will deal {Adapter.CalculateDamageModifier(participant.Karma)*100}% damage this round.`, "info", "karma", {participant})
             end
 
             return participant
@@ -558,14 +560,14 @@ local function newRound(gamemode): Types.Round
             end
             self:LogEvent("MetaEvent", {Winners = victors})
             self.RoundPhase = "Highlights"
-            self.TimeMilestone = workspace:GetServerTimeNow() + Adapters.Configuration.HIGHLIGHTS_TIME
+            self.TimeMilestone = workspace:GetServerTimeNow() + Adapter.Configuration.HIGHLIGHTS_TIME
 
             local scores = {}
             for _, v in self.Participants do
                 scores[v.FormattedName] = v.Score
             end
 
-            local events = Adapters.CalculateUserFacingEvents(self.EventLog, victors)
+            local events = Adapter.CalculateUserFacingEvents(self.EventLog, victors)
             local highlights = self.Gamemode:CalculateRoundHighlights(self)
 
             assert(victors.VictoryMusic)
@@ -578,24 +580,24 @@ local function newRound(gamemode): Types.Round
             }
 
             self.RoundPhaseChangeEvent:Fire("Highlights")
-            Adapters.SendRoundHighlights(self.Participants, highlights, events, scores)
+            Adapter.SendRoundHighlights(self.Participants, highlights, events, scores)
 
-            local updateNeeded = Adapters.CheckForUpdate(self)
+            local updateNeeded = Adapter.CheckForUpdate(self)
             if updateNeeded then
-                Adapters.SendMessage("This server is outdated and will restart soon.", "error", "update", true)
+                Adapter.SendMessage("This server is outdated and will restart soon.", "error", "update", true)
             end
 
             -- Destroy the round
             task.wait(HIGHLIGHTS_TIME)
 
             if updateNeeded then
-                Adapters.SendMessage("Server restarting...", "error", "update", true)
+                Adapter.SendMessage("Server restarting...", "error", "update", true)
                 TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
                 Players.PlayerAdded:Connect(function(plr)
                     plr:Kick("This server is shutting down for an update.")
                 end)
             else
-                if Adapters.DoIntermission(self) then
+                if Adapter.DoIntermission(self) then
                     self.TimeMilestone = workspace:GetServerTimeNow() + INTERMISSION_TIME
                     task.wait(INTERMISSION_TIME)
                 end
@@ -607,7 +609,7 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            Adapters.SetDefaultLighting()
+            Adapter.SetDefaultLighting()
             self:LogEvent("MetaEvent", {NewMap = map.Name})
             map = map:Clone()
         

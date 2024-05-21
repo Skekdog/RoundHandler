@@ -1,9 +1,6 @@
 {
   "name": "RoundHandler",
   "tree": {
-    "$path": "src",
-    "Adapter": {
-      "$className": "ObjectValue"
-    }
+    "$path": "src"
   }
 }
