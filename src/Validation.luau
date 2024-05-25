@@ -173,8 +173,29 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    if #map.Spawns:GetChildren() < 1 then
-        i("Map must have at least 1 spawn.")
+    if not map:FindFirstChild("Map") then
+        i("Map must have a Folder named Map.")
+    end
+
+    if not map:FindFirstChild("EngineVersion") or map.EngineVersion.ClassName ~= "StringValue" then
+        i("Map must have a StringValue named EngineVersion.")
+    end
+
+    if not map:FindFirstChild("Spawns") then
+        i("Map must have a Folder named Spawns.")
+    else
+        local didIterate = false
+        for _, spawn in map.Spawns:GetChildren() do
+            if not spawn:IsA("BasePart") then
+                i("Spawns must only have BaseParts.")
+                break
+            end
+            didIterate = true
+        end
+
+        if not didIterate then
+            i("Map must have at least 1 spawn.")
+        end
     end
 
     i(validateVersion(map.EngineVersion.Value, "map"))

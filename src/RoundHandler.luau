@@ -12,7 +12,7 @@ local Types = require(script.Parent.Types)
 local _adapter = ServerScriptService:FindFirstChild("Adapter") :: ObjectValue?
 assert(_adapter, "ServerScriptService must have an Adapter ObjectValue, which points to a valid ModuleScript.")
 assert(_adapter.Value and _adapter.Value.ClassName == "ModuleScript", "Adapter ObjectValue must be set to a valid ModuleScript.")
-local Adapter: Types.Adapter = (require)(_adapter)
+local Adapter: Types.Adapter = (require)(_adapter.Value)
 _adapter = nil
 
 -- The main module. New rounds are created from here via module.CreateRound().
@@ -617,51 +617,6 @@ local function newRound(gamemode): Types.Round
             mapFolder.Name = `__Map_{self.ID}`
 
             map.Map.Parent = mapFolder
-            
-            for _, propInstance in map.Props:GetChildren() do
-                local onBreak = propInstance:FindFirstChild("OnBreak")
-                local prop: Types.Prop = {
-                    PropInstance = propInstance,
-                    Humanoid = propInstance.Humanoid,
-                    OnBreak = function(self)
-                        if onBreak then
-                            (require)(onBreak)(self.Attacker)
-                        end
-                    end
-                }
-                self._props[propInstance] = prop
-                prop.Humanoid.Died:Once(prop.OnBreak)
-            end
-            map.Props.Parent = mapFolder
-
-            local function onWeaponAdded(weapon: any)
-                weapon.Anchored = false
-                weapon.Touched:Once(function(part)
-                    local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
-                    if not plr then
-                        return
-                    end
-
-                    local participant = self:GetParticipant(plr.Name)
-                    if not participant then
-                        return
-                    end
-
-                    local equipment = self:GetEquipment(weapon.Name)
-                    if not equipment then
-                        return warn(weapon.Name.." not found as Equipment")
-                    end
-
-                    participant:GiveEquipment(equipment)
-                    weapon:Destroy()
-                    return
-                end)
-            end
-            for _, weapon in map.WeaponSpawns:GetChildren() do
-                onWeaponAdded(weapon)
-            end
-            map.WeaponSpawns.ChildAdded:Connect(onWeaponAdded)
-            map.WeaponSpawns.Parent = mapFolder
 
             for _, spawn in map.Spawns:GetChildren() do
                 spawn.Anchored = true
