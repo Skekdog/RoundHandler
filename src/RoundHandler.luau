@@ -618,10 +618,15 @@ local function newRound(gamemode): Types.Round
                 end)
             else
                 if Adapter.DoIntermission(self) then
+                    self.RoundPhase = "Intermission"
+                    self.RoundPhaseChangeEvent:Fire("Intermission")
                     self.TimeMilestone = workspace:GetServerTimeNow() + INTERMISSION_TIME
                     task.wait(INTERMISSION_TIME)
                 end
             end
+
+            self.Map:Destroy()
+            self.RoundPhaseChangeEvent:Fire("Destroy")
 
             self.Map:Destroy()
             self.RoundPhaseChangeEvent:Fire("Intermission")
@@ -637,6 +642,51 @@ local function newRound(gamemode): Types.Round
             mapFolder.Name = `__Map_{self.ID}`
 
             map.Map.Parent = mapFolder
+
+            for _, propInstance in map.Props:GetChildren() do
+                local onBreak = propInstance:FindFirstChild("OnBreak")
+                local prop: Types.Prop = {
+                    PropInstance = propInstance,
+                    Humanoid = propInstance.Humanoid,
+                    OnBreak = function(self)
+                        if onBreak then
+                            (require)(onBreak)(self.Attacker)
+                        end
+                    end
+                }
+                self._props[propInstance] = prop
+                prop.Humanoid.Died:Once(prop.OnBreak)
+            end
+            map.Props.Parent = mapFolder
+
+            local function onWeaponAdded(weapon: any)
+                weapon.Anchored = false
+                weapon.Touched:Once(function(part)
+                    local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
+                    if not plr then
+                        return
+                    end
+
+                    local participant = self:GetParticipant(plr.Name)
+                    if not participant then
+                        return
+                    end
+
+                    local equipment = self:GetEquipment(weapon.Name)
+                    if not equipment then
+                        return warn(weapon.Name.." not found as Equipment")
+                    end
+
+                    participant:GiveEquipment(equipment)
+                    weapon:Destroy()
+                    return
+                end)
+            end
+            for _, weapon in map.WeaponSpawns:GetChildren() do
+                onWeaponAdded(weapon)
+            end
+            map.WeaponSpawns.ChildAdded:Connect(onWeaponAdded)
+            map.WeaponSpawns.Parent = mapFolder
 
             for _, spawn in map.Spawns:GetChildren() do
                 spawn.Anchored = true

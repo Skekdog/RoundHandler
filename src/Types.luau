@@ -116,7 +116,7 @@ export type UserFacingRoundEvent = {
 }
 
 export type UUID = "00000000-0000-0000-0000-000000000000" | string
-export type RoundPhase = "Waiting" | "Preparing" | "Playing" | "Highlights" | "Intermission"
+export type RoundPhase = "Waiting" | "Preparing" | "Playing" | "Highlights" | "Intermission" | "Destroy"
 --[[
 Round Phases:
     Waiting: Not enough players, waiting indefinitely
@@ -124,6 +124,7 @@ Round Phases:
     Playing: Round in progress
     Highlights: Round ended but still loaded
     Intermission: Round unloaded and voting time if applicable
+    Destroy: Sent as signal when the round ends
 ]]
 
 export type PartialRound = {
@@ -348,9 +349,13 @@ export type Participant = {
 
 export type MapStructure = {
     EngineVersion: StringValue,
+    WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
+    ActionItems: Folder,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
+    Doors: Folder,
+    Props: {GetChildren: (self: Folder) -> {PropInstance}} & Folder,
     Map: Folder,
-    FindFirstChild: ((self: Folder, name: "Lighting") -> ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?)
+    FindFirstChild: (self: Folder, name: "Lighting") -> ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?
 } & Folder
 
 export type PropInstance = BasePart & {
