@@ -32,18 +32,6 @@ local function color3ToHex(color: Color3): string
 	return string.format("#%02X%02X%02X", color.R*0xFF, color.G*0xFF, color.B*0xFF)
 end
 
-local vowels = {"a", "e", "i", "o", "u"}
-function module.StringWithDeterminer(str: string): string
-    local lowered = str:lower()
-
-    local determiner = "a "
-    if table.find(vowels, lowered:sub(1)) then
-        determiner = "an "
-    end
-
-    return determiner..str
-end
-
 local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local INTERMISSION_TIME = Adapter.Configuration.INTERMISSION_TIME
