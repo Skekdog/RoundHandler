@@ -576,7 +576,7 @@ local function newRound(gamemode): Types.Round
             if self:IsRoundOver() then
                 error("Round is already ended")
             end
-            if self._roundTimerThread then
+            if self._roundTimerThread and self._roundTimerThread ~= coroutine.running() then
                 task.cancel(self._roundTimerThread)
             end
             self:LogEvent("MetaEvent", {Winners = victors})
@@ -601,7 +601,7 @@ local function newRound(gamemode): Types.Round
             }
 
             self.RoundPhaseChangeEvent:Fire("Highlights")
-            Adapter.SendRoundHighlights(self.Participants, highlights, events, scores)
+            Adapter.SendRoundHighlights(self.Participants, highlights, events, scores, victors)
 
             local updateNeeded = Adapter.CheckForUpdate(self)
             if updateNeeded then
