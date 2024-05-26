@@ -6,11 +6,11 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
-local API = require(script.Parent.API)
 local Types = require(script.Parent.Types)
 
 local _adapter = ServerScriptService:FindFirstChild("Adapter") :: ObjectValue?
 assert(_adapter, "ServerScriptService must have an Adapter ObjectValue, which points to a valid ModuleScript.")
+assert(_adapter.ClassName == "ObjectValue", "Adapter must be an ObjectValue.")
 assert(_adapter.Value and _adapter.Value.ClassName == "ModuleScript", "Adapter ObjectValue must be set to a valid ModuleScript.")
 local Adapter: Types.Adapter = (require)(_adapter.Value)
 _adapter = nil
@@ -19,6 +19,30 @@ _adapter = nil
 local module = {
     Rounds = {}
 }
+
+local function shuffleInPlace(t)
+    math.randomseed(os.clock())
+    for i = #t, 2, -1 do
+        local j = math.random(i)
+        t[i], t[j] = t[j], t[i]
+    end
+end
+
+local function color3ToHex(color: Color3): string
+	return string.format("#%02X%02X%02X", color.R*0xFF, color.G*0xFF, color.B*0xFF)
+end
+
+local vowels = {"a", "e", "i", "o", "u"}
+function module.StringWithDeterminer(str: string): string
+    local lowered = str:lower()
+
+    local determiner = "a "
+    if table.find(vowels, lowered:sub(1)) then
+        determiner = "an "
+    end
+
+    return determiner..str
+end
 
 local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
@@ -157,7 +181,7 @@ local function newParticipant(round, plr): Types.Participant
         AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
-            self.FormattedName = `<font color='#{API.Color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
+            self.FormattedName = `<font color='#{color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
             self.Credits += role.StartingCredits or 0
 
             if role.StartingEquipment then
@@ -394,10 +418,6 @@ local function newRound(gamemode): Types.Round
             end
         end,
 
-        GetFormattedRole = function(self, role)
-            return `<font color='{API.Color3ToHex(role.Colour)}'>{role.Name}</font>`
-        end,
-
         GetParticipant = function(self, name)
             for _, participant in self.Participants do
                 if participant.Player.Name == name then
@@ -485,7 +505,7 @@ local function newRound(gamemode): Types.Round
             self:LogEvent("MetaEvent", {RoundPhase = "Start"})
             local gm = self.Gamemode
             local participants = self.Participants
-            API.ShuffleInPlace(participants)
+            shuffleInPlace(participants)
 
             local duration: number
             if type(self.Gamemode.Duration) == "number" then
