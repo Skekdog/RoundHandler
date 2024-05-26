@@ -28,10 +28,6 @@ local function shuffleInPlace(t)
     end
 end
 
-local function color3ToHex(color: Color3): string
-	return string.format("#%02X%02X%02X", color.R*0xFF, color.G*0xFF, color.B*0xFF)
-end
-
 local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local INTERMISSION_TIME = Adapter.Configuration.INTERMISSION_TIME
@@ -170,7 +166,7 @@ local function newParticipant(round, plr): Types.Participant
         AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
-            self.FormattedName = `<font color='#{color3ToHex(role.Colour)}'>{self.Player.Name}</font>`
+            self.FormattedName = `<font color='#{role.Colour:ToHex()}'>{self.Player.Name}</font>`
             self.Credits += role.StartingCredits or 0
 
             if role.StartingEquipment then
