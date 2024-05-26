@@ -90,6 +90,7 @@ end
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
+        Kind = "Participant",
         Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
         FormattedName = plr.Name,
         Round = round,
@@ -646,6 +647,7 @@ local function newRound(gamemode): Types.Round
             for _, propInstance in map.Props:GetChildren() do
                 local onBreak = propInstance:FindFirstChild("OnBreak")
                 local prop: Types.Prop = {
+                    Kind = "Prop",
                     PropInstance = propInstance,
                     Humanoid = propInstance.Humanoid,
                     OnBreak = function(self)

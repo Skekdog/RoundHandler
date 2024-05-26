@@ -137,6 +137,7 @@ export type PartialRound = {
 }
 
 export type Prop = {
+    Kind: "Prop",
     PropInstance: PropInstance,
     Attacker: Participant?,
     Humanoid: Humanoid,
@@ -298,6 +299,7 @@ export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock"
 export type ParticipantScoring = {[ScoreReason]: Integer}
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
+    Kind: "Participant",
     Round: Round, -- A reference to the round.
 
     Player: Player, -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
