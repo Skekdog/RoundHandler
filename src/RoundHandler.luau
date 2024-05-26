@@ -441,9 +441,13 @@ local function newRound(gamemode): Types.Round
         
             local spawns = self.Map.Spawns:GetChildren()
             plr.CharacterAppearanceLoaded:Once(function(char)
-                local chosen = math.random(1, #spawns)
-                char:PivotTo((spawns[chosen]).CFrame)
-                local hum: Humanoid = char:WaitForChild("Humanoid") :: Humanoid
+                local hum = char:WaitForChild("Humanoid") :: Humanoid
+                if not char.Parent then
+                    char.AncestryChanged:Wait() -- There doesn't seem to be any documentation for "when should character be parented?". If we don't wait then we won't be at the correct spawn
+                    task.wait() -- Also appears that waiting a frame is also necessary. Very fun!
+                end
+                local chosen = spawns[math.random(1, #spawns)]
+                char:PivotTo(chosen.CFrame)
                 participant.Character = char
                 Adapter.OnCharacterLoad(participant)
 
