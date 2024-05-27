@@ -618,6 +618,13 @@ local function newRound(gamemode): Types.Round
             self.RoundPhase = "Destroy"
             self.RoundPhaseChangeEvent:Fire("Destroy")
 
+            for _, v in self.Participants do
+                if v.Character.Parent then
+                    v.Player.Character = nil
+                    v.Character:Destroy()
+                end
+            end
+
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
