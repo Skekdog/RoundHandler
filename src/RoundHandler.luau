@@ -615,10 +615,8 @@ local function newRound(gamemode): Types.Round
             end
 
             self.Map:Destroy()
+            self.RoundPhase = "Destroy"
             self.RoundPhaseChangeEvent:Fire("Destroy")
-
-            self.Map:Destroy()
-            self.RoundPhaseChangeEvent:Fire("Intermission")
 
             module.Rounds[self.ID] = nil
         end,
