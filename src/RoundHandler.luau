@@ -707,7 +707,7 @@ local function newRound(gamemode): Types.Round
             return self.RoundPhase == "Playing"
         end,
         IsRoundOver = function(self)
-            return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights"
+            return self.RoundPhase == "Intermission" or self.RoundPhase == "Highlights" or self.RoundPhase == "Destroy"
         end,
 
         GetEquipment = function(self, name)
