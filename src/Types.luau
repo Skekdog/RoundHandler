@@ -164,6 +164,7 @@ export type Round = {
     ID: UUID, -- Unique identifier of the round.
     Gamemode: Gamemode, -- A reference to the current gamemode.
     Map: MapStructure, -- A reference to the loaded map folder.
+    MaterialVariantsFolder: MaterialVariantsStructure?,
 
     RoundEndInfo: RoundEndInfo?,
     Paused: boolean, -- Whether the round is paused or not.
@@ -370,6 +371,8 @@ export type Participant = {
     [any]: nil,
 }
 
+export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder
+export type MaterialVariantsStructure = {GetChildren: (self: Folder) -> {MaterialVariant}} & Folder
 export type MapStructure = {
     EngineVersion: StringValue,
     WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
@@ -378,7 +381,7 @@ export type MapStructure = {
     Doors: Folder,
     Props: {GetChildren: (self: Folder) -> {PropInstance}} & Folder,
     Map: Folder,
-    FindFirstChild: (self: Folder, name: "Lighting") -> ({GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder)?,
+    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants") -> (LightingStructure | MaterialVariantsStructure)?,
 } & Folder
 
 export type PropInstance = BasePart & {

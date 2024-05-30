@@ -3,6 +3,7 @@
 local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
+local MaterialService = game:GetService("MaterialService")
 local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -618,6 +619,10 @@ local function newRound(gamemode): Types.Round
             self.RoundPhase = "Destroy"
             self.RoundPhaseChangeEvent:Fire("Destroy")
 
+            if self.MaterialVariantsFolder then
+                self.MaterialVariantsFolder:Destroy()
+            end
+
             for _, v in self.Participants do
                 if v.Character.Parent then
                     v.Player.Character = nil
@@ -693,12 +698,19 @@ local function newRound(gamemode): Types.Round
             end
             map.Spawns.Parent = mapFolder
 
-            local lighting = map:FindFirstChild("Lighting")
+            local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
             if lighting then
                 for _, setting in lighting:GetChildren() do
                     (Lighting :: any)[setting.Name] = setting.Value
                 end
                 lighting.Parent = mapFolder
+            end
+
+            local matVariants = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
+            if matVariants then
+                matVariants.Name = "Variants_"..mapFolder.Name
+                self.MaterialVariantsFolder = matVariants
+                matVariants.Parent = MaterialService
             end
             
             self.Map = mapFolder :: Types.MapStructure
