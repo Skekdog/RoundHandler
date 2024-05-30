@@ -42,7 +42,7 @@ export type Adapter = {
     OnDeath: (victim: Participant) -> (),
 
     DoIntermission: (round: Round) -> boolean, -- Returns true if an intermission should be held, delaying the destruction of the round. Should also run anything that an intermission should handle, like map voting.
-    [any]: never
+    [any]: nil
 }
 
 export type WeaponAttackType = ("Blunt" | "Blade" | "Explosion" | "Firearm")?
@@ -59,7 +59,7 @@ export type Equipment = {
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
 
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
@@ -73,7 +73,7 @@ export type PartialParticipant = {
     Player: Player,
     Role: Role?,
     Status: ParticipantStatus,
-    [any]: never,
+    [any]: nil,
 }
 
 export type SelfDefenseEntry = {
@@ -84,7 +84,7 @@ export type SelfDefenseEntry = {
 export type RoundHighlight = {
     Name: string, -- Title of the highlight.
     Description: string, -- Description of the highlight.
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoundEvent_Death = {
@@ -94,28 +94,28 @@ export type RoundEvent_Death = {
     CorrectKill: boolean,
     SelfDefense: boolean,
     FreeKill: boolean,
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoundEvent_CorpseSearched = {
     Participant: Participant,
     Corpse: Participant,
     CreditsFound: PositiveInteger?,
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoundEvent_MetaEvent = {
     RoundPhase: "Start"?,
     Winners: Role?,
     NewMap: string?,
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoundEventData = RoundEvent_MetaEvent | RoundEvent_CorpseSearched | RoundEvent_Death
 export type RoundEvent<DataType> = {
     Timestamp: Timestamp,
     Data: DataType,
-    [any]: never,
+    [any]: nil,
 }
 
 export type RoundEventCategory = "MetaEvent" | "CorpseSearched" | "Death"
@@ -125,7 +125,7 @@ export type UserFacingRoundEvent = {
     Category: RoundEventCategory,
     Icons: {Asset},
     Text: string,
-    [any]: never,
+    [any]: nil,
 }
 
 export type UUID = "00000000-0000-0000-0000-000000000000" | string
@@ -147,7 +147,7 @@ export type PartialRound = {
     TimeMilestone: Timestamp,
     Paused: boolean,
     RoundEndInfo: RoundEndInfo?,
-    [any]: never,
+    [any]: nil,
 }
 
 export type Prop = {
@@ -156,7 +156,7 @@ export type Prop = {
     Attacker: Participant?,
     Humanoid: Humanoid,
     OnBreak: (self: Prop) -> (),
-    [any]: never,
+    [any]: nil,
 }
 export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: RoundPhaseChangeEvent, phase: RoundPhase) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
@@ -204,7 +204,7 @@ export type Round = {
     _roundTimerThread: thread?,
     _roundTimerContinueFor: number?,
     _props: {[PropInstance]: Prop},
-    [any]: never,
+    [any]: nil,
 }
 
 --[[
@@ -217,7 +217,7 @@ export type RoundEndInfo = {
     Highlights: {RoundHighlight},
     Events: {UserFacingRoundEvent},
     Scores: {[FormattedUsername]: ParticipantScoring},
-    [any]: never,
+    [any]: nil,
 }
 export type Gamemode = {
     Name: string, -- Name of the gamemode.
@@ -250,7 +250,7 @@ export type Gamemode = {
     OnDeath: ((self: Gamemode, victim: Participant) -> ())?, -- Called when a Participant in this gamemode dies.
     OnCharacterLoad: ((self: Gamemode, char: Model) -> ())?, -- Called when CharacterAppearanceLoaded fires.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> (), -- Function that assigns all Participants roles.
-    [any]: never,
+    [any]: nil,
 }
 
 --[[
@@ -291,7 +291,7 @@ export type Role = {
 
     OnRoleAssigned: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run for AssignRole.
     OnRoleRemoved: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
-    [any]: never,
+    [any]: nil,
 }
 
 export type CorpseInfo = {
@@ -303,7 +303,7 @@ export type CorpseInfo = {
     EquipmentList: {Equipment},
     SelfDefense: boolean,
     FreeKill: boolean,
-    [any]: never,
+    [any]: nil,
 }
 
 --[[
@@ -367,7 +367,7 @@ export type Participant = {
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean, -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
-    [any]: never,
+    [any]: nil,
 }
 
 export type MapStructure = {
