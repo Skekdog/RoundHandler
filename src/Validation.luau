@@ -161,7 +161,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         table.insert(issues, issue)
     end
 
-    local lighting = map:FindFirstChild("Lighting")
+    local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
     if lighting then
         for _, v in lighting:GetChildren() do
             local success, _ = pcall(function()
@@ -169,6 +169,16 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
             end)
             if not success then
                 i(`Failed to set property {v.Name} of Lighting, check that it is the correct type and that it exists.`)
+            end
+        end
+    end
+
+    local mats = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
+    if mats then
+        for _, v in mats:GetChildren() do
+            if v.ClassName ~= "MaterialService" then
+                i("MaterialVariants must only contain MaterialVariants.")
+                break
             end
         end
     end

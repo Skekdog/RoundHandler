@@ -223,6 +223,7 @@ export type RoundEndInfo = {
 export type Gamemode = {
     Name: string, -- Name of the gamemode.
     Description: string?, -- Description of the gamemode.
+    Authors: string?, -- Authors of the gamemode.
     Extras: any, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string, -- Indicates the engine version that this gamemode was designed for.
@@ -375,6 +376,7 @@ export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | N
 export type MaterialVariantsStructure = {GetChildren: (self: Folder) -> {MaterialVariant}} & Folder
 export type MapStructure = {
     EngineVersion: StringValue,
+    Authors: StringValue?,
     WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     ActionItems: Folder,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
