@@ -609,8 +609,8 @@ local function newRound(gamemode): Types.Round
             else
                 if Adapter.DoIntermission(self) then
                     self.RoundPhase = "Intermission"
-                    self.RoundPhaseChangeEvent:Fire("Intermission")
                     self.TimeMilestone = workspace:GetServerTimeNow() + INTERMISSION_TIME
+                    self.RoundPhaseChangeEvent:Fire("Intermission")
                     task.wait(INTERMISSION_TIME)
                 end
             end
@@ -647,7 +647,7 @@ local function newRound(gamemode): Types.Round
                 local prop: Types.Prop = {
                     Kind = "Prop",
                     PropInstance = propInstance,
-                    Humanoid = propInstance.Humanoid,
+                    Humanoid = propInstance:FindFirstChild("Humanoid") :: Humanoid?,
                     OnBreak = function(self)
                         if onBreak then
                             (require)(onBreak)(self.Attacker)
@@ -655,7 +655,9 @@ local function newRound(gamemode): Types.Round
                     end
                 }
                 self._props[propInstance] = prop
-                prop.Humanoid.Died:Once(prop.OnBreak)
+                if prop.Humanoid then
+                    prop.Humanoid.Died:Once(prop.OnBreak)
+                end
             end
             map.Props.Parent = mapFolder
 

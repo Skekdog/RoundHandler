@@ -154,7 +154,7 @@ export type Prop = {
     Kind: "Prop",
     PropInstance: PropInstance,
     Attacker: Participant?,
-    Humanoid: Humanoid,
+    Humanoid: Humanoid?,
     OnBreak: (self: Prop) -> (),
     [any]: nil,
 }
@@ -387,8 +387,7 @@ export type MapStructure = {
 } & Folder
 
 export type PropInstance = BasePart & {
-    Humanoid: Humanoid,
-    FindFirstChild: (self: Folder, name: "OnBreak") -> ModuleScript?,
+    FindFirstChild: ((self: Folder, name: "OnBreak") -> ModuleScript?) & ((self: Folder, name: "Humanoid") -> Humanoid?),
 }
 
 return {}
