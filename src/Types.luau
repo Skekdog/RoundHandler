@@ -383,7 +383,7 @@ export type MapStructure = {
     Doors: Folder,
     Props: {GetChildren: (self: Folder) -> {PropInstance}} & Folder,
     Map: Folder,
-    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants") -> (LightingStructure | MaterialVariantsStructure)?,
+    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion)?,
 } & Folder
 
 export type PropInstance = BasePart & {

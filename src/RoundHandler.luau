@@ -714,6 +714,12 @@ local function newRound(gamemode): Types.Round
                 self.MaterialVariantsFolder = matVariants
                 matVariants.Parent = MaterialService
             end
+
+            workspace.Terrain:Clear()
+            local region = map:FindFirstChild("TerrainRegion")
+            if region then
+                workspace.Terrain:PasteRegion(region, Vector3int16.new(-32000, -32000, -32000), true)
+            end
             
             self.Map = mapFolder :: Types.MapStructure
             mapFolder.Parent = workspace
