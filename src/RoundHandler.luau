@@ -703,7 +703,11 @@ local function newRound(gamemode): Types.Round
             local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
             if lighting then
                 for _, setting in lighting:GetChildren() do
-                    (Lighting :: any)[setting.Name] = setting.Value
+                    if setting:IsA("Color3Value") or setting:IsA("BoolValue") or setting:IsA("NumberValue") or setting:IsA("StringValue") then
+                        (Lighting :: any)[setting.Name] = setting.Value
+                    else
+                        setting.Parent = Lighting
+                    end
                 end
                 lighting.Parent = mapFolder
             end

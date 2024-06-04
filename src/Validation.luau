@@ -165,7 +165,9 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     if lighting then
         for _, v in lighting:GetChildren() do
             local success, _ = pcall(function()
-                (Lighting :: any)[v.Name] = v.Value
+                if v:IsA("Color3Value") or v:IsA("BoolValue") or v:IsA("NumberValue") or v:IsA("StringValue") then
+                    (Lighting :: any)[v.Name] = v.Value
+                end
             end)
             if not success then
                 i(`Failed to set property {v.Name} of Lighting, check that it is the correct type and that it exists.`)
@@ -199,9 +201,6 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
             if not prop:IsA("BasePart") then
                 i("Props must only contain BaseParts.")
                 break
-            end
-            if not prop:FindFirstChild("Humanoid") or prop.Humanoid.ClassName ~= "Humanoid" then
-                i(prop:GetFullName().." have a Humanoid named Humanoid.")
             end
         end
     end

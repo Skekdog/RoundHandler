@@ -372,7 +372,7 @@ export type Participant = {
     [any]: nil,
 }
 
-export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value}} & Folder
+export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
 export type MaterialVariantsStructure = {GetChildren: (self: Folder) -> {MaterialVariant}} & Folder
 export type MapStructure = {
     EngineVersion: StringValue,
