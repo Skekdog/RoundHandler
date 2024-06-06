@@ -5,9 +5,47 @@ local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require(script.Parent.Types)
+
+local rh: Types.ClientRoundHandler | Types.ServerRoundHandler
+if RunService:IsClient() then
+    rh = {
+        GetRolesMatchingRelationship = function(allRoles, relativeTo, relationship)
+            if relationship == "__All" then
+                return allRoles
+            end
+            local roles = {}
+            for _, role in allRoles do
+                if relationship == "__Enemy" then
+                    if not role.Allies or not table.find(role.Allies, relativeTo.Name) then
+                        table.insert(roles, role)
+                    end
+                elseif relationship == "__Ally" then
+                    if role.Allies and table.find(role.Allies, relativeTo.Name) then
+                        table.insert(roles, role)
+                    end
+                elseif relationship == role.Name then
+                    table.insert(roles, role)
+                end
+            end
+            return roles
+        end,
+
+        GetParticipantsWithRole = function(allParticipants, role, thisParticipant)
+            local participants = {}
+            for _, p in allParticipants do
+                if p.Role == role then
+                    table.insert(participants, p)
+                end
+            end
+            return participants
+        end,
+    }
+    return rh
+end
 
 local _adapter = ServerScriptService:FindFirstChild("Adapter") :: ObjectValue?
 assert(_adapter, "ServerScriptService must have an Adapter ObjectValue, which points to a valid ModuleScript.")
