@@ -288,7 +288,7 @@ export type Role = {
 
     Allies: {RoleName}?, -- Allies to this role. Own role is not an ally by default.
     HighlightRoles: {RoleRelationship}?, -- Determines which roles will be highlighted for this role.
-    KnowsRoles: {[RoleRelationship]: true?}?, -- Determines which roles will be revealed to this role.
+    KnowsRoles: {RoleRelationship}?, -- Determines which roles will be revealed to this role.
     TeamChat: boolean?, -- Can this role chat in private to other role members?
 
     OnRoleAssigned: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run for AssignRole.

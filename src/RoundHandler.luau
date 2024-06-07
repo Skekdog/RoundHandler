@@ -185,12 +185,12 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             local verdict = nil
-            for relation, knows in ownRole.KnowsRoles do
+            for _, relation in ownRole.KnowsRoles do
                 -- Explicit references to the role name take priority over things like ally or enemy
                 if relation == ownRole.Name then
-                    verdict = knows
+                    verdict = true
                     break
-                elseif verdict == nil then
+                elseif not verdict then
                     verdict = self.Round:CompareRoles(ownRole, targetRole, relation)
                 end
             end

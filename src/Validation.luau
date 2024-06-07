@@ -108,10 +108,18 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
         end
     end
 
-    local function validateRoleRelationship(list: {[Types.RoleRelationship]: boolean | number}, info: "Role.Table" | string)
-        for relationship, _ in list do
+    local function validateRoleRelationshipDict(dict: {[Types.RoleRelationship]: number}, info: "Role.Table" | string)
+        for relationship, _ in dict do
             if not table.find({"__Ally", "__Enemy", "__All"}, relationship) and not table.find(roleNames, relationship) then
                 i(`{relationship} is not a valid RoleRelationship in {info}.`)
+            end
+        end
+    end
+
+    local function validateRoleRelationshipArray(array: {Types.RoleRelationship}, info: "Role.Table" | string)
+        for _, relationship in array do
+            if not table.find({"__Ally", "__Enemy", "__All"}, relationship) and not table.find(roleNames, relationship) then
+                i(`RoleRelationship {relationship} is not a valid RoleRelationship in {info}.`)
             end
         end
     end
@@ -140,13 +148,13 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
         end
 
         if role.KnowsRoles then
-            validateRoleRelationship(role.KnowsRoles, `{role.Name}.KnowsRoles`)
+            validateRoleRelationshipArray(role.KnowsRoles or {}, `{role.Name}.KnowsRoles`)
         end
         if role.HighlightRules then
-            validateRoleRelationship(role.HighlightRules, `{role.Name}.HighlightRules`)
+            validateRoleRelationshipArray(role.HighlightRoles or {}, `{role.Name}.HighlightRules`)
         end
         if role.AwardOnDeath then
-            validateRoleRelationship(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
+            validateRoleRelationshipDict(role.AwardOnDeath, `{role.Name}.AwardOnDeath`)
         end
     end
 
