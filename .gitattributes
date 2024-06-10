@@ -1,3 +1,2 @@
 * text=lf
-*.luau text linguist-language=Lua
-*.luaurc text linguist-language=JSON
+* .luaurc text linguist-language=JSON
