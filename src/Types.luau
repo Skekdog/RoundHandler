@@ -120,10 +120,11 @@ export type RoundEvent<DataType> = {
 
 export type RoundEventCategory = "MetaEvent" | "CorpseSearched" | "Death"
 
+export type Icon = "CorrectKill" | "IncorrectKill" | "SelfDefense" | "FreeKill"
 export type UserFacingRoundEvent = {
     Timestamp: Timestamp,
     Category: RoundEventCategory,
-    Icons: {Asset},
+    Icons: {Asset | Icon},
     Text: string,
     [any]: never,
 }
