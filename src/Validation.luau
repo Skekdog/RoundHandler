@@ -186,7 +186,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     local mats = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
     if mats then
         for _, v in mats:GetChildren() do
-            if v.ClassName ~= "MaterialService" then
+            if v.ClassName ~= "MaterialVariant" then
                 i("MaterialVariants must only contain MaterialVariants.")
                 break
             end
@@ -199,6 +199,8 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
 
     if not map:FindFirstChild("EngineVersion") or map.EngineVersion.ClassName ~= "StringValue" then
         i("Map must have a StringValue named EngineVersion.")
+    else
+        i(validateVersion(map.EngineVersion.Value, "map"))
     end
 
     -- We don't actually care if it is a folder or not, just that it exists
@@ -240,8 +242,6 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
             i("Map must have at least 1 spawn.")
         end
     end
-
-    i(validateVersion(map.EngineVersion.Value, "map"))
 
     return #issues<1, issues
 end
