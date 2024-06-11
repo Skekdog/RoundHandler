@@ -203,11 +203,16 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         i(validateVersion(map.EngineVersion.Value, "map"))
     end
 
+    if not map:FindFirstChild("Authors") or map.Authors.ClassName ~= "StringValue" then
+        i("Map must have a StringValue named Authors.")
+    end
+
     -- We don't actually care if it is a folder or not, just that it exists
-    if not map:FindFirstChild("Props") then
+    local props = map:FindFirstChild("Props") :: Types.PropsStructure
+    if not props then
         i("Map must have a Folder named Props.")
     else
-        for _, prop in map.Props:GetChildren() do
+        for _, prop in props:GetChildren() do
             if not prop:IsA("BasePart") then
                 i("Props must only contain BaseParts.")
                 break
@@ -215,10 +220,11 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    if not map:FindFirstChild("WeaponSpawns") then
+    local weaponSpawns = map:FindFirstChild("WeaponSpawns") :: Types.WeaponSpawnsStructure
+    if not weaponSpawns then
         i("Map must have a Folder named WeaponSpawns.")
     else
-        for _, spawn in map.WeaponSpawns:GetChildren() do
+        for _, spawn in weaponSpawns:GetChildren() do
             if not spawn:IsA("BasePart") then
                 i("Spawns must only contain BaseParts.")
                 break

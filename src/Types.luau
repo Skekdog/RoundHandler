@@ -374,16 +374,15 @@ export type Participant = {
 
 export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
 export type MaterialVariantsStructure = {GetChildren: (self: Folder) -> {MaterialVariant}} & Folder
+export type WeaponSpawnsStructure = {GetChildren: (self: Folder) -> {BasePart & {Name: EquipmentName}}} & Folder
+export type PropsStructure = {GetChildren: (self: Folder) -> {PropInstance}} & Folder
+
 export type MapStructure = {
     EngineVersion: StringValue,
-    Authors: StringValue?,
-    WeaponSpawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
-    ActionItems: Folder,
+    Authors: StringValue,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
-    Doors: Folder,
-    Props: {GetChildren: (self: Folder) -> {PropInstance}} & Folder,
     Map: Folder,
-    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion)?,
+    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion" | "WeaponSpawns" | "Props") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion | WeaponSpawnsStructure | PropsStructure)?,
 } & Folder
 
 export type ClientRoundHandler = {

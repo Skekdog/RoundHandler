@@ -680,24 +680,27 @@ local function newRound(gamemode): Types.Round
 
             map.Map.Parent = mapFolder
 
-            for _, propInstance in map.Props:GetChildren() do
-                local onBreak = propInstance:FindFirstChild("OnBreak")
-                local prop: Types.Prop = {
-                    Kind = "Prop",
-                    PropInstance = propInstance,
-                    Humanoid = propInstance:FindFirstChild("Humanoid") :: Humanoid?,
-                    OnBreak = function(self)
-                        if onBreak then
-                            (require)(onBreak)(self.Attacker)
+            local props = map:FindFirstChild("Props") :: Types.PropsStructure
+            if props then
+                for _, propInstance in props:GetChildren() do
+                    local onBreak = propInstance:FindFirstChild("OnBreak")
+                    local prop: Types.Prop = {
+                        Kind = "Prop",
+                        PropInstance = propInstance,
+                        Humanoid = propInstance:FindFirstChild("Humanoid") :: Humanoid?,
+                        OnBreak = function(self)
+                            if onBreak then
+                                (require)(onBreak)(self.Attacker)
+                            end
                         end
+                    }
+                    self._props[propInstance] = prop
+                    if prop.Humanoid then
+                        prop.Humanoid.Died:Once(prop.OnBreak)
                     end
-                }
-                self._props[propInstance] = prop
-                if prop.Humanoid then
-                    prop.Humanoid.Died:Once(prop.OnBreak)
                 end
+                props.Parent = mapFolder
             end
-            map.Props.Parent = mapFolder
 
             local function onWeaponAdded(weapon: any)
                 weapon.Anchored = false
@@ -722,11 +725,15 @@ local function newRound(gamemode): Types.Round
                     return
                 end)
             end
-            for _, weapon in map.WeaponSpawns:GetChildren() do
-                onWeaponAdded(weapon)
+
+            local weaponSpawns = map:FindFirstChild("WeaponSpawns") :: Types.WeaponSpawnsStructure
+            if weaponSpawns then
+                for _, weapon in weaponSpawns:GetChildren() do
+                    onWeaponAdded(weapon)
+                end
+                weaponSpawns.ChildAdded:Connect(onWeaponAdded)
+                weaponSpawns.Parent = mapFolder
             end
-            map.WeaponSpawns.ChildAdded:Connect(onWeaponAdded)
-            map.WeaponSpawns.Parent = mapFolder
 
             for _, spawn in map.Spawns:GetChildren() do
                 spawn.Anchored = true
