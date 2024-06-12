@@ -69,39 +69,6 @@ local noRole: Types.Role = {
     Colour = Color3.new(),
 }
 
-local function onDeath(self: Types.Participant)
-    local round = self.Round
-
-    if not self:IsDead() then
-        -- Ideally Participant:Kill() would always be used, but sometimes things like reset character happen
-        self:Kill()
-    end
-    
-    local killer = self.KilledByParticipant
-    local isCorrectKill, isSelfDefense = false, false
-    if killer then
-        isCorrectKill = round:IsRoleAlliedWith(self.Role, killer.Role)
-        isSelfDefense = killer:HasSelfDefenseAgainst(self)
-        killer:AddKill(self, false)
-    end
-
-    local data: Types.RoundEvent_Death = {
-        CorrectKill = isCorrectKill,
-        FreeKill = self.FreeKill,
-        SelfDefense = isSelfDefense,
-        Victim = self,
-        Weapon = self.KilledByWeapon,
-        Attacker = killer,
-    }
-
-    self.Round:LogEvent("Death", data)
-    Adapter.OnDeath(self)
-
-    if self.Round.Gamemode.OnDeath then
-        self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
-    end
-end
-
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
@@ -382,6 +349,9 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         Kill = function(self, attacker, weapon, headshot, ignoreKarma)
+            if self:IsDead() then
+                return
+            end
             self.Status = "Missing"
             self.KilledAsFreeKill = self.FreeKill
             self.KilledAt = workspace:GetServerTimeNow()
@@ -389,7 +359,9 @@ local function newParticipant(round, plr): Types.Participant
             self.KilledByParticipant = attacker
             self.KilledByWeapon = weapon or "Suicide"
 
+            local isCorrectKill = true
             if attacker then
+                isCorrectKill = not round:IsRoleAlliedWith(self.Role, attacker.Role)
                 self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
                 self.KilledByParticipant = attacker
                 attacker:AddKill(self, ignoreKarma or true)
@@ -398,6 +370,22 @@ local function newParticipant(round, plr): Types.Participant
             local hum = self.Character:FindFirstChildOfClass("Humanoid")
             if hum then
                 hum.Health = 0
+            end
+
+            local data: Types.RoundEvent_Death = {
+                CorrectKill = isCorrectKill,
+                FreeKill = self.FreeKill,
+                SelfDefense = self.KilledInSelfDefense,
+                Victim = self,
+                Weapon = self.KilledByWeapon,
+                Attacker = attacker,
+            }
+
+            self.Round:LogEvent("Death", data)
+            Adapter.OnDeath(self)
+
+            if self.Round.Gamemode.OnDeath then
+                self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
             end
         end,
 
@@ -494,7 +482,7 @@ local function newRound(gamemode): Types.Round
                         return
                     end
 
-                    onDeath(participant)
+                    participant:Kill()
                 end)
             end)
             plr:LoadCharacter()

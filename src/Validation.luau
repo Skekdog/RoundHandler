@@ -150,7 +150,7 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
         if role.KnowsRoles then
             validateRoleRelationshipArray(role.KnowsRoles or {}, `{role.Name}.KnowsRoles`)
         end
-        if role.HighlightRules then
+        if role.HighlightRoles then
             validateRoleRelationshipArray(role.HighlightRoles or {}, `{role.Name}.HighlightRules`)
         end
         if role.AwardOnDeath then
