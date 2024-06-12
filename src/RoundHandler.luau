@@ -620,7 +620,8 @@ local function newRound(gamemode): Types.Round
 
             if updateNeeded then
                 Adapter.SendMessage("Server restarting...", "error", "update", true)
-                TeleportService:TeleportAsync(game.PlaceId, Players:GetPlayers())
+                local acc, _ = TeleportService:ReserveServer(game.PlaceId)
+                TeleportService:TeleportToPrivateServer(game.PlaceId, acc, Players:GetPlayers())
                 Players.PlayerAdded:Connect(function(plr)
                     plr:Kick("This server is shutting down for an update.")
                 end)
