@@ -386,7 +386,7 @@ local function newParticipant(round, plr): Types.Participant
             self.KilledAsFreeKill = self.FreeKill
             self.KilledAt = workspace:GetServerTimeNow()
             self.KilledByHeadshot = headshot or false
-            self.KilledByParticipant = attacker or nil
+            self.KilledByParticipant = attacker
             self.KilledByWeapon = weapon or "Suicide"
 
             if attacker then
@@ -727,13 +727,13 @@ local function newRound(gamemode): Types.Round
                 weaponSpawns.Parent = mapFolder
             end
 
-            for _, spawn in map.Spawns:GetChildren() do
-                spawn.Anchored = true
-                spawn.Transparency = 1
-                spawn.CanCollide = false
-                spawn.CanTouch = false
-                spawn.CanQuery = false
-                spawn:ClearAllChildren()
+            for _, playerSpawn in map.Spawns:GetChildren() do
+                playerSpawn.Anchored = true
+                playerSpawn.Transparency = 1
+                playerSpawn.CanCollide = false
+                playerSpawn.CanTouch = false
+                playerSpawn.CanQuery = false
+                playerSpawn:ClearAllChildren()
             end
             map.Spawns.Parent = mapFolder
 
@@ -778,14 +778,14 @@ local function newRound(gamemode): Types.Round
 
         GetEquipment = function(self, name)
             if not self.Gamemode.AvailableEquipment then
-                return
+                return warn("No available equipment")
             end
             for _, v in self.Gamemode.AvailableEquipment do
                 if v.Name == name then
                     return v
                 end
             end
-            return
+            return warn("Could not find equipment with name "..name)
         end,
         GetRoleFromName = function(self, roleName)
             for _, v in self.Gamemode.Roles do
