@@ -59,14 +59,6 @@ local module = {
     Rounds = {}
 }
 
-local function shuffleInPlace(t)
-    math.randomseed(os.clock())
-    for i = #t, 2, -1 do
-        local j = math.random(i)
-        t[i], t[j] = t[j], t[i]
-    end
-end
-
 local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
 local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
 local INTERMISSION_TIME = Adapter.Configuration.INTERMISSION_TIME
@@ -533,7 +525,7 @@ local function newRound(gamemode): Types.Round
             self:LogEvent("MetaEvent", {RoundPhase = "Start"})
             local gm = self.Gamemode
             local participants = self.Participants
-            shuffleInPlace(participants)
+            Random.new(os.clock()):Shuffle(participants)
 
             local duration: number
             if type(self.Gamemode.Duration) == "number" then
