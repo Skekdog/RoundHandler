@@ -20,6 +20,8 @@ export type Adapter = {
         HIGHLIGHTS_TIME: PositiveNumber,
         INTERMISSION_TIME: PositiveNumber,
         SLAY_VOTES: PositiveInteger,
+        LOAD_LIGHTING_SETTINGS: boolean,
+        LOAD_TERRAIN_SETTINGS: boolean,
     },
 
     GetKarma: (plr: Player) -> number,
@@ -377,13 +379,15 @@ export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | N
 export type MaterialVariantsStructure = {GetChildren: (self: Folder) -> {MaterialVariant}} & Folder
 export type WeaponSpawnsStructure = {GetChildren: (self: Folder) -> {BasePart & {Name: EquipmentName}}} & Folder
 export type PropsStructure = {GetChildren: (self: Folder) -> {PropInstance}} & Folder
+export type TerrainColorsStructure = {GetChildren: (self: Folder) -> {Color3Value}} & Folder
+export type WaterSettingsStructure = {GetChildren: (self: Folder) -> {NumberValue | Color3Value}} & Folder
 
 export type MapStructure = {
     EngineVersion: StringValue,
     Authors: StringValue,
     Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
     Map: Folder,
-    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion" | "WeaponSpawns" | "Props") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion | WeaponSpawnsStructure | PropsStructure)?,
+    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion" | "WeaponSpawns" | "Props" | "TerrainColors" | "WaterSettings") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion | WeaponSpawnsStructure | PropsStructure | TerrainColorsStructure | WaterSettingsStructure)?,
 } & Folder
 
 export type ClientRoundHandler = {

@@ -727,7 +727,7 @@ local function newRound(gamemode): Types.Round
             map.Spawns.Parent = mapFolder
 
             local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
-            if lighting then
+            if lighting and Adapter.Configuration.LOAD_LIGHTING_SETTINGS then
                 for _, setting in lighting:GetChildren() do
                     if setting:IsA("Color3Value") or setting:IsA("BoolValue") or setting:IsA("NumberValue") or setting:IsA("StringValue") then
                         (Lighting :: any)[setting.Name] = setting.Value
@@ -749,6 +749,22 @@ local function newRound(gamemode): Types.Round
             local region = map:FindFirstChild("TerrainRegion")
             if region then
                 workspace.Terrain:PasteRegion(region, Vector3int16.new(-32000, -32000, -32000), true)
+            end
+
+            if Adapter.Configuration.LOAD_TERRAIN_SETTINGS then
+                local terrainColors = map:FindFirstChild("TerrainColors") :: Types.TerrainColorsStructure?
+                if terrainColors then
+                    for _, v in terrainColors:GetChildren() do
+                        workspace.Terrain:SetMaterialColor((Enum :: any).Material[v.Name], v.Value)
+                    end
+                end
+
+                local waterSettings = map:FindFirstChild("WaterSettings") :: Types.WaterSettingsStructure?
+                if waterSettings then
+                    for _, v in waterSettings:GetChildren() do
+                        (workspace :: any).Terrain[v.Name] = v.Value
+                    end
+                end
             end
             
             self.Map = mapFolder :: Types.MapStructure

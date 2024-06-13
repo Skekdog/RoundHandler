@@ -183,6 +183,30 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
+    local terrainColors = map:FindFirstChild("TerrainColors") :: Types.TerrainColorsStructure?
+    if terrainColors then
+        for _, v in terrainColors:GetChildren() do
+            local success, _ = pcall(function()
+                workspace.Terrain:SetMaterialColor((Enum :: any).Material[v.Name], v.Value)
+            end)
+            if not success then
+                i(`Failed to set material {v.Name} color for Terrain, check that this material exists.`)
+            end
+        end
+    end
+
+    local waterSettings = map:FindFirstChild("WaterSettings") :: Types.WaterSettingsStructure?
+    if waterSettings then
+        for _, v in waterSettings:GetChildren() do
+            local success, _ = pcall(function()
+                (workspace.Terrain :: any)[v.Name] = v.Value
+            end)
+            if not success then
+                i(`Failed to set property {v.Name} for Terrain, check that this property exists and that it is the correct type.`)
+            end
+        end
+    end
+
     local mats = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
     if mats then
         for _, v in mats:GetChildren() do
@@ -221,12 +245,10 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     end
 
     local weaponSpawns = map:FindFirstChild("WeaponSpawns") :: Types.WeaponSpawnsStructure
-    if not weaponSpawns then
-        i("Map must have a Folder named WeaponSpawns.")
-    else
+    if weaponSpawns then
         for _, spawn in weaponSpawns:GetChildren() do
             if not spawn:IsA("BasePart") then
-                i("Spawns must only contain BaseParts.")
+                i("WeaponSpawns must only contain BaseParts.")
                 break
             end
         end
