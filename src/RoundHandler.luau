@@ -638,6 +638,10 @@ local function newRound(gamemode): Types.Round
             self.RoundPhase = "Destroy"
             self.RoundPhaseChangeEvent:Fire("Destroy")
 
+            for _, participant in self.Participants do
+                Adapter.ClearAllEquipment(participant)
+            end
+
             if self.MaterialVariantsFolder then
                 self.MaterialVariantsFolder:Destroy()
             end

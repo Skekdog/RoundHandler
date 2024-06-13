@@ -32,6 +32,7 @@ export type Adapter = {
 
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
+    ClearAllEquipment: (participant: Participant) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
     SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
@@ -44,7 +45,6 @@ export type Adapter = {
     OnDeath: (victim: Participant) -> (),
 
     DoIntermission: (round: Round) -> boolean, -- Returns true if an intermission should be held, delaying the destruction of the round. Should also run anything that an intermission should handle, like map voting.
-    [any]: never
 }
 
 export type WeaponAttackType = ("Blunt" | "Blade" | "Explosion" | "Firearm")?
@@ -61,7 +61,6 @@ export type Equipment = {
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
 
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
-    
 }
 
 export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
@@ -75,7 +74,6 @@ export type PartialParticipant = {
     Player: Player,
     Role: Role?,
     Status: ParticipantStatus,
-    
 }
 
 export type SelfDefenseEntry = {
@@ -86,7 +84,6 @@ export type SelfDefenseEntry = {
 export type RoundHighlight = {
     Name: string, -- Title of the highlight.
     Description: string, -- Description of the highlight.
-    
 }
 
 export type RoundEvent_Death = {
@@ -96,28 +93,24 @@ export type RoundEvent_Death = {
     CorrectKill: boolean,
     SelfDefense: boolean,
     FreeKill: boolean,
-    
 }
 
 export type RoundEvent_CorpseSearched = {
     Participant: Participant,
     Corpse: Participant,
     CreditsFound: PositiveInteger?,
-    
 }
 
 export type RoundEvent_MetaEvent = {
     RoundPhase: "Start"?,
     Winners: Role?,
     NewMap: string?,
-    
 }
 
 export type RoundEventData = RoundEvent_MetaEvent | RoundEvent_CorpseSearched | RoundEvent_Death
 export type RoundEvent<DataType> = {
     Timestamp: Timestamp,
     Data: DataType,
-    
 }
 
 export type RoundEventCategory = "MetaEvent" | "CorpseSearched" | "Death"
@@ -128,7 +121,6 @@ export type UserFacingRoundEvent = {
     Category: RoundEventCategory,
     Icons: {Asset | Icon},
     Text: string,
-    
 }
 
 export type UUID = "00000000-0000-0000-0000-000000000000" | string
@@ -150,7 +142,6 @@ export type PartialRound = {
     TimeMilestone: Timestamp,
     Paused: boolean,
     RoundEndInfo: RoundEndInfo?,
-    
 }
 
 export type Prop = {
@@ -208,7 +199,6 @@ export type Round = {
     _roundTimerThread: thread?,
     _roundTimerContinueFor: number?,
     _props: {[PropInstance]: Prop},
-    
 }
 
 --[[
@@ -221,7 +211,6 @@ export type RoundEndInfo = {
     Highlights: {RoundHighlight},
     Events: {UserFacingRoundEvent},
     Scores: {[FormattedUsername]: ParticipantScoring},
-    
 }
 export type Gamemode = {
     Name: string, -- Name of the gamemode.
@@ -255,7 +244,6 @@ export type Gamemode = {
     OnDeath: ((self: Gamemode, victim: Participant) -> ())?, -- Called when a Participant in this gamemode dies.
     OnCharacterLoad: ((self: Gamemode, char: Model) -> ())?, -- Called when CharacterAppearanceLoaded fires.
     AssignRoles: (self: Gamemode, participants: {Participant}) -> (), -- Function that assigns all Participants roles.
-    
 }
 
 --[[
@@ -296,7 +284,6 @@ export type Role = {
 
     OnRoleAssigned: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run for AssignRole.
     OnRoleRemoved: ((self: Role, participant: Participant) -> ())?, -- Any extra code that should run when AssignRole is called on a Participant that previously had this role.
-    
 }
 
 export type CorpseInfo = {
@@ -308,7 +295,6 @@ export type CorpseInfo = {
     EquipmentList: {Equipment},
     SelfDefense: boolean,
     FreeKill: boolean,
-    
 }
 
 --[[
@@ -372,7 +358,6 @@ export type Participant = {
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean, -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
-    
 }
 
 export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
@@ -393,14 +378,12 @@ export type MapStructure = {
 export type ClientRoundHandler = {
     GetRolesMatchingRelationship: (allRoles: {Role}, relativeTo: Role, relationship: RoleRelationship) -> {Role},
     GetParticipantsWithRole: (allParticipants: {PartialParticipant}, role: Role, thisParticipant: Participant) -> {PartialParticipant},
-    
 }
 
 export type ServerRoundHandler = {
     Rounds: {[UUID]: Round},
     GetRound: (roundId: UUID) -> Round,
     CreateRound: (map: MapStructure, gamemode: Gamemode) -> Round,
-    
 }
 
 export type PropInstance = BasePart & {
