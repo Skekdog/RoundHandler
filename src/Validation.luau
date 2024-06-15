@@ -183,7 +183,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    local terrainColors = map:FindFirstChild("TerrainColors") :: Types.TerrainColorsStructure?
+    local terrainColors = map:FindFirstChild("TerrainColors")
     if terrainColors then
         for _, v in terrainColors:GetChildren() do
             local success, _ = pcall(function()
@@ -195,7 +195,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    local waterSettings = map:FindFirstChild("WaterSettings") :: Types.WaterSettingsStructure?
+    local waterSettings = map:FindFirstChild("WaterSettings")
     if waterSettings then
         for _, v in waterSettings:GetChildren() do
             local success, _ = pcall(function()
@@ -207,7 +207,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    local mats = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
+    local mats = map:FindFirstChild("MaterialVariants")
     if mats then
         for _, v in mats:GetChildren() do
             if v.ClassName ~= "MaterialVariant" then
@@ -232,7 +232,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
     end
 
     -- We don't actually care if it is a folder or not, just that it exists
-    local props = map:FindFirstChild("Props") :: Types.PropsStructure
+    local props = map:FindFirstChild("Props")
     if not props then
         i("Map must have a Folder named Props.")
     else
@@ -244,7 +244,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    local weaponSpawns = map:FindFirstChild("WeaponSpawns") :: Types.WeaponSpawnsStructure
+    local weaponSpawns = map:FindFirstChild("WeaponSpawns")
     if weaponSpawns then
         for _, spawn in weaponSpawns:GetChildren() do
             if not spawn:IsA("BasePart") then

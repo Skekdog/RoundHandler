@@ -15,14 +15,13 @@ export type PauseFailReason = "RoundNotInProgress"
 export type MessageSeverity = "info" | "warn" | "error"
 export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
-    Configuration: {
-        PREPARING_TIME: PositiveNumber,
-        HIGHLIGHTS_TIME: PositiveNumber,
-        INTERMISSION_TIME: PositiveNumber,
-        SLAY_VOTES: PositiveInteger,
-        LOAD_LIGHTING_SETTINGS: boolean,
-        LOAD_TERRAIN_SETTINGS: boolean,
-    },
+    PREPARING_TIME: PositiveNumber,
+    HIGHLIGHTS_TIME: PositiveNumber,
+    INTERMISSION_TIME: PositiveNumber,
+    SLAY_VOTES: PositiveInteger,
+    LOAD_LIGHTING_SETTINGS: boolean,
+    LOAD_TERRAIN_SETTINGS: boolean,
+    BOUNDS_COLLISION_GROUP: string,
 
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),
@@ -367,13 +366,28 @@ export type PropsStructure = {GetChildren: (self: Folder) -> {PropInstance}} & F
 export type TerrainColorsStructure = {GetChildren: (self: Folder) -> {Color3Value}} & Folder
 export type WaterSettingsStructure = {GetChildren: (self: Folder) -> {NumberValue | Color3Value}} & Folder
 
-export type MapStructure = {
+export type MapStructure =  {
+    Name: string,
+    Clone: (MapStructure) -> MapStructure,
+    Destroy: (MapStructure) -> (),
+
     EngineVersion: StringValue,
     Authors: StringValue,
-    Spawns: {GetChildren: (self: Folder) -> {BasePart}} & Folder,
+    Spawns: {Parent: Folder, GetChildren: ({}) -> {BasePart}},
     Map: Folder,
-    FindFirstChild: (self: Folder, name: "Lighting" | "MaterialVariants" | "TerrainRegion" | "WeaponSpawns" | "Props" | "TerrainColors" | "WaterSettings") -> (LightingStructure | MaterialVariantsStructure | TerrainRegion | WeaponSpawnsStructure | PropsStructure | TerrainColorsStructure | WaterSettingsStructure)?,
-} & Folder
+
+    FindFirstChild:
+    ((MapStructure, "Lighting") -> LightingStructure?) &
+    ((MapStructure, "Props") -> PropsStructure?) &
+    ((MapStructure, "MaterialVariants") -> MaterialVariantsStructure?) &
+    ((MapStructure, "WeaponSpawns") -> WeaponSpawnsStructure?) &
+    ((MapStructure, "TerrainColors") -> TerrainColorsStructure?) &
+    ((MapStructure, "WaterSettings") -> WaterSettingsStructure?) &
+    ((MapStructure, "TerrainRegion") -> TerrainRegion?) &
+    ((MapStructure, string) -> Instance?)
+}
+
+export type MapStructureCast = Instance & MapStructure
 
 export type ClientRoundHandler = {
     GetRolesMatchingRelationship: (allRoles: {Role}, relativeTo: Role, relationship: RoleRelationship) -> {Role},

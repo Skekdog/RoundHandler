@@ -59,10 +59,10 @@ local module = {
     Rounds = {}
 }
 
-local PREPARING_TIME = Adapter.Configuration.PREPARING_TIME -- Duration of the preparing phase
-local HIGHLIGHTS_TIME = Adapter.Configuration.HIGHLIGHTS_TIME -- Duration of the highlights phase
-local INTERMISSION_TIME = Adapter.Configuration.INTERMISSION_TIME
-local SLAY_VOTES = Adapter.Configuration.SLAY_VOTES
+local PREPARING_TIME = Adapter.PREPARING_TIME -- Duration of the preparing phase
+local HIGHLIGHTS_TIME = Adapter.HIGHLIGHTS_TIME -- Duration of the highlights phase
+local INTERMISSION_TIME = Adapter.INTERMISSION_TIME
+local SLAY_VOTES = Adapter.SLAY_VOTES
 
 local noRole: Types.Role = {
     Name = "",
@@ -588,7 +588,7 @@ local function newRound(gamemode): Types.Round
             end
             self:LogEvent("MetaEvent", {Winners = victors})
             self.RoundPhase = "Highlights"
-            self.TimeMilestone = workspace:GetServerTimeNow() + Adapter.Configuration.HIGHLIGHTS_TIME
+            self.TimeMilestone = workspace:GetServerTimeNow() + Adapter.HIGHLIGHTS_TIME
 
             local scores = {}
             for _, v in self.Participants do
@@ -665,7 +665,7 @@ local function newRound(gamemode): Types.Round
 
             map.Map.Parent = mapFolder
 
-            local props = map:FindFirstChild("Props") :: Types.PropsStructure
+            local props = map:FindFirstChild("Props")
             if props then
                 for _, propInstance in props:GetChildren() do
                     local onBreak = propInstance:FindFirstChild("OnBreak")
@@ -711,7 +711,7 @@ local function newRound(gamemode): Types.Round
                 end)
             end
 
-            local weaponSpawns = map:FindFirstChild("WeaponSpawns") :: Types.WeaponSpawnsStructure
+            local weaponSpawns = map:FindFirstChild("WeaponSpawns")
             if weaponSpawns then
                 for _, weapon in weaponSpawns:GetChildren() do
                     onWeaponAdded(weapon)
@@ -722,8 +722,8 @@ local function newRound(gamemode): Types.Round
 
             map.Spawns.Parent = mapFolder
 
-            local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
-            if lighting and Adapter.Configuration.LOAD_LIGHTING_SETTINGS then
+            local lighting = map:FindFirstChild("Lighting")
+            if lighting and Adapter.LOAD_LIGHTING_SETTINGS then
                 for _, setting in lighting:GetChildren() do
                     if setting:IsA("Color3Value") or setting:IsA("BoolValue") or setting:IsA("NumberValue") or setting:IsA("StringValue") then
                         (Lighting :: any)[setting.Name] = setting.Value
@@ -734,7 +734,7 @@ local function newRound(gamemode): Types.Round
                 lighting.Parent = mapFolder
             end
 
-            local matVariants = map:FindFirstChild("MaterialVariants") :: Types.MaterialVariantsStructure?
+            local matVariants = map:FindFirstChild("MaterialVariants")
             if matVariants then
                 matVariants.Name = "Variants_"..mapFolder.Name
                 self.MaterialVariantsFolder = matVariants
@@ -747,15 +747,15 @@ local function newRound(gamemode): Types.Round
                 workspace.Terrain:PasteRegion(region, Vector3int16.new(-32000, -32000, -32000), true)
             end
 
-            if Adapter.Configuration.LOAD_TERRAIN_SETTINGS then
-                local terrainColors = map:FindFirstChild("TerrainColors") :: Types.TerrainColorsStructure?
+            if Adapter.LOAD_TERRAIN_SETTINGS then
+                local terrainColors = map:FindFirstChild("TerrainColors")
                 if terrainColors then
                     for _, v in terrainColors:GetChildren() do
                         workspace.Terrain:SetMaterialColor((Enum :: any).Material[v.Name], v.Value)
                     end
                 end
 
-                local waterSettings = map:FindFirstChild("WaterSettings") :: Types.WaterSettingsStructure?
+                local waterSettings = map:FindFirstChild("WaterSettings")
                 if waterSettings then
                     for _, v in waterSettings:GetChildren() do
                         (workspace :: any).Terrain[v.Name] = v.Value
@@ -763,7 +763,7 @@ local function newRound(gamemode): Types.Round
                 end
             end
             
-            self.Map = mapFolder :: Types.MapStructure
+            self.Map = mapFolder :: any
             mapFolder.Parent = workspace
         end,
         
