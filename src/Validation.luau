@@ -29,7 +29,7 @@ local function validateVersion(targetVersion: string, objectName: string): strin
     return
 end
 
-function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
+function module.ValidateGamemode(gamemode: Types.Gamemode): {string?}
     local issues = {}
     local i = function(issue: string?)
         table.insert(issues, issue)
@@ -160,16 +160,16 @@ function module.ValidateGamemode(gamemode: Types.Gamemode): (boolean, {string?})
 
     i(validateVersion(gamemode.EngineVersion, "gamemode"))
 
-    return #issues<1, issues
+    return issues
 end
 
-function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
+function module.ValidateMap(map: Types.MapStructure): {string?}
     local issues = {}
     local i = function(issue: string?)
         table.insert(issues, issue)
     end
 
-    local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
+    local lighting = map:FindFirstChild("Lighting")
     if lighting then
         local oldLightingProperties = {}
         for _, v in lighting:GetChildren() do
@@ -276,7 +276,7 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
         end
     end
 
-    return #issues<1, issues
+    return issues
 end
 
 return module
