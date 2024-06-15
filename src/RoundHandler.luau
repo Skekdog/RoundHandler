@@ -5,47 +5,9 @@ local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require(script.Parent.Types)
-
-local rh: Types.ClientRoundHandler | Types.ServerRoundHandler
-if RunService:IsClient() then
-    rh = {
-        GetRolesMatchingRelationship = function(allRoles, relativeTo, relationship)
-            if relationship == "__All" then
-                return allRoles
-            end
-            local roles = {}
-            for _, role in allRoles do
-                if relationship == "__Enemy" then
-                    if not role.Allies or not table.find(role.Allies, relativeTo.Name) then
-                        table.insert(roles, role)
-                    end
-                elseif relationship == "__Ally" then
-                    if role.Allies and table.find(role.Allies, relativeTo.Name) then
-                        table.insert(roles, role)
-                    end
-                elseif relationship == role.Name then
-                    table.insert(roles, role)
-                end
-            end
-            return roles
-        end,
-
-        GetParticipantsWithRole = function(allParticipants, role, thisParticipant)
-            local participants = {}
-            for _, p in allParticipants do
-                if p.Role == role then
-                    table.insert(participants, p)
-                end
-            end
-            return participants
-        end,
-    }
-    return rh
-end
 
 local _adapter = ServerScriptService:FindFirstChild("Adapter") :: ObjectValue?
 assert(_adapter, "ServerScriptService must have an Adapter ObjectValue, which points to a valid ModuleScript.")
@@ -68,6 +30,10 @@ local noRole: Types.Role = {
     Name = "",
     Colour = Color3.new(),
 }
+
+local function getGamemodeRoleString(round: Types.Round, role: Types.Role): Types.GamemodeRoleString
+    return round.Gamemode.Name.."__"..role.Name
+end
 
 local function newParticipant(round, plr): Types.Participant
     return {
@@ -96,6 +62,17 @@ local function newParticipant(round, plr): Types.Participant
         KillList = {},
 
         SlayVotes = {},
+
+        ViewPartialSelf = function(self)
+            return {
+                Player = self.Player,
+                Role = getGamemodeRoleString(round, self.Role),
+                Status = self.Status,
+                Credits = self.Credits,
+                EquipmentPurchases = self.EquipmentPurchases,
+            }
+        end,
+
         TryAddSlayVote = function(self, from)
             if from.KilledAsFreeKill or table.find(self.SlayVotes, from) or self:IsDead() then
                 return false
@@ -125,14 +102,14 @@ local function newParticipant(round, plr): Types.Participant
             if self.Role and self.Role.CanSeeMissing then
                 canSeeMissing = true
             end
-            local status = target.Status
+            local status: Types.ParticipantStatus = target.Status
             if (status == "Missing") and (not canSeeMissing) then
                 status = "Alive"
             end
             return {
                 Player = target.Player,
-                Role = self:TryViewParticipantRole(target),
-                Status = status :: "Alive" | "Dead" | "Missing"
+                Role = getGamemodeRoleString(round, self:TryViewParticipantRole(target)),
+                Status = status,
             }
         end,
 
@@ -140,7 +117,7 @@ local function newParticipant(round, plr): Types.Participant
             local ownRole = self.Role
             local targetRole = target.Role
             if not ownRole or not targetRole or not ownRole.KnowsRoles then
-                return
+                return noRole
             end
 
             local verdict = nil
@@ -155,7 +132,7 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if not verdict then
-                return
+                return noRole
             end
 
             return targetRole

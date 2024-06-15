@@ -12,6 +12,23 @@ export type RoleName = string
 export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
+-- The participant that a client can view of themselves
+export type GamemodeRoleString = "GAMEMODE_ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE_ROLE -> Role table
+export type ParticipantStatus = "Alive" | "Dead" | "Missing"
+export type ClientOwnParticipant = {
+    Player: Player,
+    Role: GamemodeRoleString,
+    Status: ParticipantStatus,
+    Credits: Integer,
+    EquipmentPurchases: {[EquipmentName]: Integer},
+}
+
+export type ClientParticipant = {
+    Player: Player,
+    Role: GamemodeRoleString,
+    Status: ParticipantStatus,
+}
+
 export type MessageSeverity = "info" | "warn" | "error"
 export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
 export type Adapter = {
@@ -67,13 +84,6 @@ export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
 export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
 
 export type MurderWeapon = Equipment | DeathType
-
-export type ParticipantStatus = "Alive" | "Missing" | "Dead"
-export type PartialParticipant = {
-    Player: Player,
-    Role: Role?,
-    Status: ParticipantStatus,
-}
 
 export type SelfDefenseEntry = {
     Against: Participant, -- A reference to the Participant who is able to freely kill this participant until the entry expires.
@@ -318,9 +328,10 @@ export type Participant = {
     
     Role: Role, -- A reference to their role. Uses a blank default role if the round hasn't started yet.
     AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> Role?, -- Returns the target's RoleName and RoleColour, if allowed by the viewer's Role.
-    ViewPartialParticipant: (self: Participant, target: Participant) -> PartialParticipant, -- Returns a limited view of the Participant, for clients.
-    
+    TryViewParticipantRole: (self: Participant, target: Participant) -> Role,
+    ViewPartialParticipant: (self: Participant, target: Participant) -> ClientParticipant, -- Returns a limited view of the Participant, for clients.
+    ViewPartialSelf: (self: Participant) -> ClientOwnParticipant, -- Returns a limited view of the Participant, for clients.
+
     LeaveRound: (self: Participant, persistTimer: boolean?) -> (), -- Removes this Participant from the Round.
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
@@ -388,17 +399,6 @@ export type MapStructure =  {
 }
 
 export type MapStructureCast = Instance & MapStructure
-
-export type ClientRoundHandler = {
-    GetRolesMatchingRelationship: (allRoles: {Role}, relativeTo: Role, relationship: RoleRelationship) -> {Role},
-    GetParticipantsWithRole: (allParticipants: {PartialParticipant}, role: Role, thisParticipant: Participant) -> {PartialParticipant},
-}
-
-export type ServerRoundHandler = {
-    Rounds: {[UUID]: Round},
-    GetRound: (roundId: UUID) -> Round,
-    CreateRound: (map: MapStructure, gamemode: Gamemode) -> Round,
-}
 
 export type PropInstance = BasePart & {
     FindFirstChild: ((self: Folder, name: "OnBreak") -> ModuleScript?) & ((self: Folder, name: "Humanoid") -> Humanoid?),
