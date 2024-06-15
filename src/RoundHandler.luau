@@ -192,14 +192,21 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
 
+            local killList = {}
+            for _, v in self.KillList do
+                table.insert(killList, v.FormattedName)
+            end
+
             return {
-                Name = self.FormattedName,
+                Player = self.Player,
+                FormattedName = self.FormattedName,
                 Role = self.Role,
                 DeathTime = self.KilledAt,
                 SelfDefense = self.KilledInSelfDefense,
                 FreeKill = self.FreeKill,
                 Headshot = self.KilledByHeadshot,
                 EquipmentList = equipmentList,
+                KillList = killList,
                 MurderWeapon = self.KilledByWeapon,
             }
         end,

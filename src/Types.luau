@@ -63,7 +63,7 @@ export type Adapter = {
     DoIntermission: (round: Round) -> boolean, -- Returns true if an intermission should be held, delaying the destruction of the round. Should also run anything that an intermission should handle, like map voting.
 }
 
-export type WeaponAttackType = ("Blunt" | "Blade" | "Explosion" | "Firearm")?
+export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm"
 export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
@@ -73,7 +73,7 @@ export type Equipment = {
     MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
     Extras: any, -- Any extra info about the equipment, for use in custom functions.
 
-    AttackType: WeaponAttackType, -- This determines the event flavour text that will be shown to players.
+    AttackType: WeaponAttackType?, -- This determines the event flavour text that will be shown to players.
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
 
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
@@ -296,12 +296,14 @@ export type Role = {
 }
 
 export type CorpseInfo = {
-    Name: string,
+    Player: Player,
+    FormattedName: FormattedUsername,
     Role: Role,
     Headshot: boolean,
     DeathTime: Timestamp,
     MurderWeapon: Equipment | DeathType,
     EquipmentList: {Equipment},
+    KillList: {FormattedUsername},
     SelfDefense: boolean,
     FreeKill: boolean,
 }
@@ -313,7 +315,7 @@ export type CorpseInfo = {
     Created by Round:JoinRound().
 ]]
 export type FreeKillReason = "Teamkill" | string
-export type DeathType = "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation"
+export type DeathType = "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation" | "Burn" | WeaponAttackType
 export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEquipment
 export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 export type ParticipantScoring = {[ScoreReason]: Integer}
