@@ -720,14 +720,6 @@ local function newRound(gamemode): Types.Round
                 weaponSpawns.Parent = mapFolder
             end
 
-            for _, playerSpawn in map.Spawns:GetChildren() do
-                playerSpawn.Anchored = true
-                playerSpawn.Transparency = 1
-                playerSpawn.CanCollide = false
-                playerSpawn.CanTouch = false
-                playerSpawn.CanQuery = false
-                playerSpawn:ClearAllChildren()
-            end
             map.Spawns.Parent = mapFolder
 
             local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
