@@ -356,7 +356,8 @@ export type Participant = {
     GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?, -- Adds this Equipment to the Participant's inventory.
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
-    SearchCorpse: (self: Participant, target: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if target is not dead.
+    ViewCorpse: (self: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if self is not dead.
+    SearchCorpse: (self: Participant, target: Participant) -> (), -- Errors if target is not dead.
     IsDead: (self: Participant) -> boolean, -- Returns true if Status == "Missing" or "Dead"
     
     KillList: {Participant}, -- A list of Participants this player has killed.

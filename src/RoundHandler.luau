@@ -179,6 +179,31 @@ local function newParticipant(round, plr): Types.Participant
             end
         end,
 
+        ViewCorpse = function(self)
+            if not self:IsDead() then
+                error(`Target {self.Player.Name} is not dead`)
+            end
+
+            local equipmentList = {}
+            for i in self.EquipmentPurchases do
+                local equipment = self.Round:GetEquipment(i)
+                if type(equipment) == "function" then
+                    table.insert(equipmentList, equipment)
+                end
+            end
+
+            return {
+                Name = self.FormattedName,
+                Role = self.Role,
+                DeathTime = self.KilledAt,
+                SelfDefense = self.KilledInSelfDefense,
+                FreeKill = self.FreeKill,
+                Headshot = self.KilledByHeadshot,
+                EquipmentList = equipmentList,
+                MurderWeapon = self.KilledByWeapon,
+            }
+        end,
+
         SearchCorpse = function(self, target)
             if not target:IsDead() then
                 error(`Target {target.Player.Name} is not dead`)
@@ -218,24 +243,6 @@ local function newParticipant(round, plr): Types.Participant
             if event then
                 self.Round:LogEvent("CorpseSearched", event)
             end
-
-            local equipmentList = {}
-            for i in target.EquipmentPurchases do
-                local equipment = self.Round:GetEquipment(i)
-                if type(equipment) == "function" then
-                    table.insert(equipmentList, equipment)
-                end
-            end
-            return {
-                Name = target.FormattedName,
-                Role = target.Role,
-                DeathTime = target.KilledAt,
-                SelfDefense = target.KilledInSelfDefense,
-                FreeKill = target.FreeKill,
-                Headshot = target.KilledByHeadshot,
-                EquipmentList = equipmentList,
-                MurderWeapon = target.KilledByWeapon,
-            }
         end,
 
         LeaveRound = function(self, persistTimer)
