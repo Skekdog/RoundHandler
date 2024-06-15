@@ -171,15 +171,20 @@ function module.ValidateMap(map: Types.MapStructure): (boolean, {string?})
 
     local lighting = map:FindFirstChild("Lighting") :: Types.LightingStructure?
     if lighting then
+        local oldLightingProperties = {}
         for _, v in lighting:GetChildren() do
             local success, _ = pcall(function()
                 if v:IsA("Color3Value") or v:IsA("BoolValue") or v:IsA("NumberValue") or v:IsA("StringValue") then
                     (Lighting :: any)[v.Name] = v.Value
+                    oldLightingProperties[v.Name] = v.Value
                 end
             end)
             if not success then
                 i(`Failed to set property {v.Name} of Lighting, check that it is the correct type and that it exists.`)
             end
+        end
+        for index, v in oldLightingProperties do
+            (Lighting :: any)[index] = v
         end
     end
 
