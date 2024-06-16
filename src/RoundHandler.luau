@@ -32,6 +32,17 @@ local function getGamemodeRoleString(round: Types.Round, role: Types.Role): Type
     return round.Gamemode.Name.."__"..role.Name
 end
 
+local function unloadMap(round: Types.Round): ()
+    Adapter.SetDefaultLighting()
+    Adapter.SetDefaultTerrain()
+    workspace.Terrain:Clear()
+
+    round.Map:Destroy()
+    if round.MaterialVariantsFolder then
+        round.MaterialVariantsFolder:Destroy()
+    end
+end
+
 local function newParticipant(round, plr): Types.Participant
     return {
         Player = plr,
@@ -614,16 +625,12 @@ local function newRound(gamemode): Types.Round
                 end
             end
 
-            self.Map:Destroy()
+            unloadMap(self)
             self.RoundPhase = "Destroy"
             self.RoundPhaseChangeEvent:Fire("Destroy")
 
             for _, participant in self.Participants do
                 Adapter.ClearAllEquipment(participant)
-            end
-
-            if self.MaterialVariantsFolder then
-                self.MaterialVariantsFolder:Destroy()
             end
 
             for _, v in self.Participants do
@@ -636,7 +643,6 @@ local function newRound(gamemode): Types.Round
             module.Rounds[self.ID] = nil
         end,
         LoadMap = function(self, map)
-            Adapter.SetDefaultLighting()
             self:LogEvent("MetaEvent", {NewMap = map.Name})
             map = map:Clone()
         
@@ -721,10 +727,9 @@ local function newRound(gamemode): Types.Round
                 matVariants.Parent = MaterialService
             end
 
-            workspace.Terrain:Clear()
             local region = map:FindFirstChild("TerrainRegion")
             if region then
-                workspace.Terrain:PasteRegion(region, Vector3int16.new(-32000, -32000, -32000), true)
+                workspace.Terrain:PasteRegion(region, Vector3int16.new(-32000, -32000, -32000), false)
             end
 
             if Adapter.LOAD_TERRAIN_SETTINGS then

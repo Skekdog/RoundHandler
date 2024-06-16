@@ -56,6 +56,7 @@ export type Adapter = {
     CheckForUpdate: (round: Round, timeDelay: number) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Role) -> (),
     SetDefaultLighting: () -> (),
+    SetDefaultTerrain: () -> (),
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
