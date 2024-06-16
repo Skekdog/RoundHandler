@@ -17,6 +17,7 @@ export type GamemodeRoleString = "GAMEMODE_ROLE" | string -- Instead of sending 
 export type ParticipantStatus = "Alive" | "Dead" | "Missing"
 export type ClientOwnParticipant = {
     Player: Player,
+    FormattedName: FormattedUsername,
     Role: GamemodeRoleString,
     Status: ParticipantStatus,
     Credits: Integer,
@@ -25,6 +26,7 @@ export type ClientOwnParticipant = {
 
 export type ClientParticipant = {
     Player: Player,
+    FormattedName: FormattedUsername,
     Role: GamemodeRoleString,
     Status: ParticipantStatus,
 }

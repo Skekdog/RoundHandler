@@ -23,10 +23,10 @@ local HIGHLIGHTS_TIME = Adapter.HIGHLIGHTS_TIME -- Duration of the highlights ph
 local INTERMISSION_TIME = Adapter.INTERMISSION_TIME
 local SLAY_VOTES = Adapter.SLAY_VOTES
 
-local noRole: Types.Role = {
+module.NoRole = {
     Name = "",
     Colour = Color3.new(),
-}
+} :: Types.Role
 
 local function getGamemodeRoleString(round: Types.Round, role: Types.Role): Types.GamemodeRoleString
     return round.Gamemode.Name.."__"..role.Name
@@ -52,7 +52,7 @@ local function newParticipant(round, plr): Types.Participant
         Round = round,
 
         Karma = if round.Gamemode.UseKarma then Adapter.GetKarma(plr) else 1000,
-        Role = noRole,
+        Role = module.NoRole,
         Credits = 0,
         Score = {},
 
@@ -74,6 +74,7 @@ local function newParticipant(round, plr): Types.Participant
         ViewPartialSelf = function(self)
             return {
                 Player = self.Player,
+                FormattedName = self.FormattedName,
                 Role = getGamemodeRoleString(round, self.Role),
                 Status = self.Status,
                 Credits = self.Credits,
@@ -118,6 +119,7 @@ local function newParticipant(round, plr): Types.Participant
             
             return {
                 Player = self.Player,
+                FormattedName = self.FormattedName,
                 Role = getGamemodeRoleString(round, self:TryViewParticipantRole(viewer)),
                 Status = status,
             }
@@ -125,7 +127,7 @@ local function newParticipant(round, plr): Types.Participant
 
         TryViewParticipantRole = function(self, viewer)
             if not viewer or not viewer.Role.KnowsRoles then
-                return noRole
+                return module.NoRole
             end
 
             for _, v: Types.RoleRelationship in viewer.Role.KnowsRoles do
@@ -140,7 +142,7 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
 
-            return noRole
+            return module.NoRole
         end,
 
         AssignRole = function(self, role)
@@ -818,12 +820,7 @@ function module.CreateRound(map: Types.MapStructure, gamemode: Types.Gamemode): 
 end
 
 function module.GetRound(identifier: Types.UUID): Types.Round
-    for _, v in module.Rounds do
-        if v.ID == identifier then
-            return v
-        end
-    end
-    error(`Could not find round with ID: {identifier}`)
+    return module.Rounds[identifier] or error(`Could not find round with ID: {identifier}`)
 end
 
 return module
