@@ -53,7 +53,7 @@ export type Adapter = {
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
     SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
-    CheckForUpdate: (round: Round) -> boolean,
+    CheckForUpdate: (round: Round, timeDelay: number) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Role) -> (),
     SetDefaultLighting: () -> (),
 

@@ -1,6 +1,3 @@
--- The main RoundHandler. Used to create and interact with rounds.
-
-local TeleportService = game:GetService("TeleportService")
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
@@ -598,7 +595,7 @@ local function newRound(gamemode): Types.Round
             self.RoundPhaseChangeEvent:Fire("Highlights")
             Adapter.SendRoundHighlights(self.Participants, highlights, events, scores, victors)
 
-            local updateNeeded = Adapter.CheckForUpdate(self)
+            local updateNeeded = Adapter.CheckForUpdate(self, HIGHLIGHTS_TIME)
             if updateNeeded then
                 Adapter.SendMessage("This server is outdated and will restart soon.", "error", "update", true)
             end
@@ -608,11 +605,6 @@ local function newRound(gamemode): Types.Round
 
             if updateNeeded then
                 Adapter.SendMessage("Server restarting...", "error", "update", true)
-                local acc, _ = TeleportService:ReserveServer(game.PlaceId)
-                TeleportService:TeleportToPrivateServer(game.PlaceId, acc, Players:GetPlayers())
-                Players.PlayerAdded:Connect(function(plr)
-                    plr:Kick("This server is shutting down for an update.")
-                end)
             else
                 if Adapter.DoIntermission(self) then
                     self.RoundPhase = "Intermission"
