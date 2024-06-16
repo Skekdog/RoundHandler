@@ -330,8 +330,8 @@ export type Participant = {
     
     Role: Role, -- A reference to their role. Uses a blank default role if the round hasn't started yet.
     AssignRole: (self: Participant, role: Role) -> (), -- Assigns Role to this Participant. By default does not override inventory or credits.
-    TryViewParticipantRole: (self: Participant, target: Participant) -> Role,
-    ViewPartialParticipant: (self: Participant, target: Participant) -> ClientParticipant, -- Returns a limited view of the Participant, for clients.
+    TryViewParticipantRole: (self: Participant, viewer: Participant?) -> Role,
+    ViewPartialParticipant: (self: Participant, viewer: Participant?) -> ClientParticipant, -- Returns a limited view of the Participant, for clients.
     ViewPartialSelf: (self: Participant) -> ClientOwnParticipant, -- Returns a limited view of the Participant, for clients.
 
     LeaveRound: (self: Participant, persistTimer: boolean?) -> (), -- Removes this Participant from the Round.

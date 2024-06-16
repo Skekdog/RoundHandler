@@ -97,45 +97,42 @@ local function newParticipant(round, plr): Types.Participant
             return (self.Status == "Missing") or (self.Status == "Dead")
         end,
 
-        ViewPartialParticipant = function(self, target)
+        ViewPartialParticipant = function(self, viewer)
             local canSeeMissing = false
-            if self.Role and self.Role.CanSeeMissing then
+            if viewer and viewer.Role and viewer.Role.CanSeeMissing then
                 canSeeMissing = true
             end
-            local status: Types.ParticipantStatus = target.Status
+
+            local status: Types.ParticipantStatus = self.Status
             if (status == "Missing") and (not canSeeMissing) then
                 status = "Alive"
             end
+            
             return {
-                Player = target.Player,
-                Role = getGamemodeRoleString(round, self:TryViewParticipantRole(target)),
+                Player = self.Player,
+                Role = getGamemodeRoleString(round, self:TryViewParticipantRole(viewer)),
                 Status = status,
             }
         end,
 
-        TryViewParticipantRole = function(self, target)
-            local ownRole = self.Role
-            local targetRole = target.Role
-            if not ownRole or not targetRole or not ownRole.KnowsRoles then
+        TryViewParticipantRole = function(self, viewer)
+            if not viewer or not viewer.Role.KnowsRoles then
                 return noRole
             end
 
-            local verdict = nil
-            for _, relation in ownRole.KnowsRoles do
-                -- Explicit references to the role name take priority over things like ally or enemy
-                if relation == ownRole.Name then
-                    verdict = true
-                    break
-                elseif not verdict then
-                    verdict = self.Round:CompareRoles(ownRole, targetRole, relation)
+            for _, v: Types.RoleRelationship in viewer.Role.KnowsRoles do
+                if v == "__All" then
+                    return self.Role
+                elseif v == "__Enemy" and not self.Round:IsRoleAlliedWith(self.Role, viewer.Role) then
+                    return self.Role
+                elseif v == "__Ally" and self.Round:IsRoleAlliedWith(self.Role, viewer.Role) then
+                    return self.Role
+                elseif v == self.Role.Name then
+                    return self.Role
                 end
             end
 
-            if not verdict then
-                return noRole
-            end
-
-            return targetRole
+            return noRole
         end,
 
         AssignRole = function(self, role)
