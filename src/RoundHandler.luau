@@ -24,6 +24,7 @@ local INTERMISSION_TIME = Adapter.INTERMISSION_TIME
 local SLAY_VOTES = Adapter.SLAY_VOTES
 
 module.NoRole = {
+    Kind = "Role",
     Name = "",
     Colour = Color3.new(),
 } :: Types.Role
@@ -73,6 +74,7 @@ local function newParticipant(round, plr): Types.Participant
 
         ViewPartialSelf = function(self)
             return {
+                Kind = "ClientOwnParticipant",
                 Player = self.Player,
                 FormattedName = self.FormattedName,
                 Role = getGamemodeRoleString(round, self.Role),
@@ -118,6 +120,7 @@ local function newParticipant(round, plr): Types.Participant
             end
             
             return {
+                Kind = "ClientParticipant",
                 Player = self.Player,
                 FormattedName = self.FormattedName,
                 Role = getGamemodeRoleString(round, self:TryViewParticipantRole(viewer)),
@@ -126,6 +129,9 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         TryViewParticipantRole = function(self, viewer)
+            if self.Round:IsRoundOver() then
+                return self.Role
+            end
             if not viewer or not viewer.Role.KnowsRoles then
                 return module.NoRole
             end
@@ -596,13 +602,24 @@ local function newRound(gamemode): Types.Round
             local events = Adapter.CalculateUserFacingEvents(self.EventLog, victors)
             local highlights = self.Gamemode:CalculateRoundHighlights(self)
 
-            assert(victors.VictoryMusic)
+            local victoryMusic
+            local winners: Types.ClientParticipant | Types.Role
+            if victors.Kind == "Participant" then
+                victoryMusic = victors.Role.VictoryMusic
+                winners = victors:ViewPartialParticipant()
+            else
+                victoryMusic = victors.VictoryMusic
+                winners = victors
+            end
+
+            assert(victoryMusic)
+
             self.RoundEndInfo = {
-                Winners = victors,
+                Winners = winners,
                 Events = events,
                 Scores = scores,
                 Highlights = highlights,
-                Music = victors.VictoryMusic[math.random(1, math.max(#victors.VictoryMusic, 1))]
+                Music = victoryMusic[math.random(1, math.max(#victoryMusic, 1))]
             }
 
             self.RoundPhaseChangeEvent:Fire("Highlights")

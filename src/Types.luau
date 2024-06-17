@@ -16,6 +16,7 @@ export type PauseFailReason = "RoundNotInProgress"
 export type GamemodeRoleString = "GAMEMODE_ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE_ROLE -> Role table
 export type ParticipantStatus = "Alive" | "Dead" | "Missing"
 export type ClientOwnParticipant = {
+    Kind: "ClientOwnParticipant",
     Player: Player,
     FormattedName: FormattedUsername,
     Role: GamemodeRoleString,
@@ -25,11 +26,14 @@ export type ClientOwnParticipant = {
 }
 
 export type ClientParticipant = {
+    Kind: "ClientParticipant",
     Player: Player,
     FormattedName: FormattedUsername,
     Role: GamemodeRoleString,
     Status: ParticipantStatus,
 }
+
+export type Victor = Participant | Role
 
 export type MessageSeverity = "info" | "warn" | "error"
 export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
@@ -46,7 +50,7 @@ export type Adapter = {
     SetKarma: (plr: Player, karma: number) -> (),
     CalculateDamageModifier: (karma: number) -> number,
 
-    CalculateUserFacingEvents: (events: RoundEventLog, winners: Role) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
+    CalculateUserFacingEvents: (events: RoundEventLog, winners: Victor) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
 
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
     RemoveEquipment: (participant: Participant, item: Equipment) -> (),
@@ -56,7 +60,7 @@ export type Adapter = {
     SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round, timeDelay: number) -> boolean,
-    SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Role) -> (),
+    SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Victor) -> (),
     
     SetDefaultLighting: () -> (),
     SetDefaultTerrain: () -> (),
@@ -117,7 +121,7 @@ export type RoundEvent_CorpseSearched = {
 
 export type RoundEvent_MetaEvent = {
     RoundPhase: "Start"?,
-    Winners: Role?,
+    Winners: Victor?,
     NewMap: string?,
 }
 
@@ -195,7 +199,7 @@ export type Round = {
     GetPartialRound: (self: Round) -> PartialRound, -- Returns a limited view of the round, safe for clients to peak at. Does not include any Participants, see Participant:ViewPartialParticipant for that.
     PauseRound: (self: Round) -> (), -- Pauses the round. Errors if the round is not in progress.
     StartRound: (self: Round) -> (), -- Starts this round. Usually shouldn't be called externally.
-    EndRound: (self: Round, victors: Role) -> (), -- Ends this round.
+    EndRound: (self: Round, victors: Victor) -> (), -- Ends this round.
 
     IsRoundPreparing: (self: Round) -> boolean, -- Returns true if the current round phase is Preparing or Waiting.
     IsRoundOver: (self: Round) -> boolean, -- Returns true if the current round phase is Highlights or Intermission.
@@ -220,7 +224,7 @@ export type Round = {
     Must be defined manually. Roles form a significant part of Gamemodes.
 ]]
 export type RoundEndInfo = {
-    Winners: Role,
+    Winners: Role | ClientParticipant,
     Music: Sound?,
     Highlights: {RoundHighlight},
     Events: {UserFacingRoundEvent},
@@ -266,6 +270,7 @@ export type Gamemode = {
     Must be defined in a Gamemode.
 ]]
 export type Role = {
+    Kind: "Role",
     Name: string, -- Name of this role.
     FormattedName: string?, -- Rich text formatted name, usually with the role colour
     Description: string?, -- Description of this role.
