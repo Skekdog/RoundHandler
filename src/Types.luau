@@ -57,8 +57,10 @@ export type Adapter = {
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round, timeDelay: number) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Role) -> (),
+    
     SetDefaultLighting: () -> (),
     SetDefaultTerrain: () -> (),
+    LoadBound: (round: Round, bound: BasePart) -> (),
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
@@ -382,6 +384,8 @@ export type WeaponSpawnsStructure = {GetChildren: (self: Folder) -> {BasePart & 
 export type PropsStructure = {GetChildren: (self: Folder) -> {PropInstance}} & Folder
 export type TerrainColorsStructure = {GetChildren: (self: Folder) -> {Color3Value}} & Folder
 export type WaterSettingsStructure = {GetChildren: (self: Folder) -> {NumberValue | Color3Value}} & Folder
+export type WindowsStructure = {GetChildren: (self: Folder) -> {BasePart}} & Folder
+export type BoundsStructure = {GetChildren: (self: Folder) -> {BasePart & {Name: "KillBound" | string}}} & Folder
 
 export type MapStructure =  {
     Name: string,
@@ -401,6 +405,8 @@ export type MapStructure =  {
     ((MapStructure, "TerrainColors") -> TerrainColorsStructure?) &
     ((MapStructure, "WaterSettings") -> WaterSettingsStructure?) &
     ((MapStructure, "TerrainRegion") -> TerrainRegion?) &
+    ((MapStructure, "Windows") -> WindowsStructure?) &
+    ((MapStructure, "Bounds") -> BoundsStructure?) &
     ((MapStructure, string) -> Instance?)
 }
 

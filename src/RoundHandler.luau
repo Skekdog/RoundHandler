@@ -708,6 +708,22 @@ local function newRound(gamemode): Types.Round
                 weaponSpawns.Parent = mapFolder
             end
 
+            local bounds = map:FindFirstChild("Bounds")
+            if bounds then
+                for _, bound in bounds:GetChildren() do
+                    bound.CanTouch = false
+                    bound.CanQuery = false
+                    bound.CollisionGroup = Adapter.BOUNDS_COLLISION_GROUP
+                    Adapter.LoadBound(self, bound)
+                end
+                bounds.Parent = mapFolder
+            end
+
+            local windows = map:FindFirstChild("Windows")
+            if windows then
+                windows.Parent = mapFolder
+            end
+
             map.Spawns.Parent = mapFolder
 
             local lighting = map:FindFirstChild("Lighting")
