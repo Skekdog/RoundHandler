@@ -407,7 +407,9 @@ export type MapStructure =  {
     ((MapStructure, "TerrainRegion") -> TerrainRegion?) &
     ((MapStructure, "Windows") -> WindowsStructure?) &
     ((MapStructure, "Bounds") -> BoundsStructure?) &
-    ((MapStructure, string) -> Instance?)
+    ((MapStructure, string) -> Instance?),
+
+    GetChildren: (self: MapStructure) -> {Instance}
 }
 
 export type MapStructureCast = Instance & MapStructure

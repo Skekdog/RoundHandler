@@ -765,6 +765,10 @@ local function newRound(gamemode): Types.Round
                     end
                 end
             end
+
+            for _, v in map:GetChildren() do
+                v.Parent = mapFolder
+            end
             
             self.Map = mapFolder :: any
             mapFolder.Parent = workspace
