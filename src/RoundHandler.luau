@@ -715,6 +715,11 @@ local function newRound(gamemode): Types.Round
                 windows.Parent = mapFolder
             end
 
+            local gravity = map:FindFirstChild("Gravity")
+            if gravity then
+                workspace.Gravity = gravity.Value
+            end
+
             map.Spawns.Parent = mapFolder
 
             local lighting = map:FindFirstChild("Lighting")
