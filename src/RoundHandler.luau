@@ -676,7 +676,7 @@ local function newRound(gamemode): Types.Round
                         Humanoid = propInstance:FindFirstChild("Humanoid") :: Humanoid?,
                         OnBreak = function(self)
                             if onBreak then
-                                (require)(onBreak)(self.Attacker)
+                                (require)(onBreak)(if self.Attacker then self.Attacker:ViewPartialSelf() else nil)
                             end
                         end
                     }
