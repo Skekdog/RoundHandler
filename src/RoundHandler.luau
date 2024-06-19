@@ -1,7 +1,6 @@
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
-local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require(script.Parent.Types)
@@ -287,9 +286,6 @@ local function newParticipant(round, plr): Types.Participant
             end
         end,
 
-        GiveEquipment = Adapter.GiveEquipment,
-        RemoveEquipment = Adapter.RemoveEquipment,
-
         PurchaseEquipment = function(self, equipment)
             local purchases = self.EquipmentPurchases
             if (purchases[equipment.Name] or 0) >= (equipment.MaxStock or math.huge) then
@@ -304,7 +300,7 @@ local function newParticipant(round, plr): Types.Participant
                 self.EquipmentPurchases[equipment.Name] = 0
             end
             self.Credits -= equipment.Cost or 0
-            return self:GiveEquipment(equipment)
+            return Adapter.GiveEquipment(self, equipment)
         end,
 
         AddKill = function(self, victim, ignoreKarma)
@@ -692,36 +688,14 @@ local function newRound(gamemode): Types.Round
                 props.Parent = mapFolder
             end
 
-            local function onWeaponAdded(weapon: any)
-                weapon.Anchored = false
-                weapon.Touched:Once(function(part)
-                    local plr = Players:GetPlayerFromCharacter(part.Parent :: Model)
-                    if not plr then
-                        return
-                    end
-
-                    local participant = self:GetParticipant(plr.Name)
-                    if not participant then
-                        return
-                    end
-
-                    local equipment = self:GetEquipment(weapon.Name)
-                    if not equipment then
-                        return warn(weapon.Name.." not found as Equipment")
-                    end
-
-                    participant:GiveEquipment(equipment)
-                    weapon:Destroy()
-                    return
-                end)
-            end
-
             local weaponSpawns = map:FindFirstChild("WeaponSpawns")
             if weaponSpawns then
                 for _, weapon in weaponSpawns:GetChildren() do
-                    onWeaponAdded(weapon)
+                    Adapter.LoadWeaponSpawn(self, weapon)
                 end
-                weaponSpawns.ChildAdded:Connect(onWeaponAdded)
+                weaponSpawns.ChildAdded:Connect(function(part)
+                    Adapter.LoadWeaponSpawn(self, part :: BasePart)
+                end)
                 weaponSpawns.Parent = mapFolder
             end
 

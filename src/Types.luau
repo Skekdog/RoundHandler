@@ -53,7 +53,6 @@ export type Adapter = {
     CalculateUserFacingEvents: (events: RoundEventLog, winners: Victor) -> {UserFacingRoundEvent}, -- Returns a sorted list of UserFacingRoundEvents, to display to players.
 
     GiveEquipment: (participant: Participant, item: Equipment) -> EquipmentGiveRejectionReason?, -- Returns a string describing the error if any occured, else nil
-    RemoveEquipment: (participant: Participant, item: Equipment) -> (),
     ClearAllEquipment: (participant: Participant) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
@@ -64,7 +63,9 @@ export type Adapter = {
     
     SetDefaultLighting: () -> (),
     SetDefaultTerrain: () -> (),
+
     LoadBound: (round: Round, bound: BasePart) -> (),
+    LoadWeaponSpawn: (round: Round, weaponSpawn: BasePart) -> (),
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
@@ -73,7 +74,7 @@ export type Adapter = {
 }
 
 export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm"
-export type EquipmentItem = Instance | (self: Equipment, participant: Participant) -> ()
+export type EquipmentItem = PVInstance | (self: Equipment, participant: Participant) -> ()
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
     Description: string?, -- Description of this equipment.
@@ -364,8 +365,6 @@ export type Participant = {
     
     Credits: Integer, -- Available credits that can be spent in Equipment Shop.
     EquipmentPurchases: {[EquipmentName]: PositiveInteger}, -- The Equipment this Participant purchased, and how many times.
-    RemoveEquipment: (self: Participant, equipment: Equipment) -> (), -- Removes this Equipment from the Participant's inventory.
-    GiveEquipment: (self: Participant, equipment: Equipment) -> EquipmentGiveRejectionReason?, -- Adds this Equipment to the Participant's inventory.
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
     ViewCorpse: (self: Participant) -> CorpseInfo, -- Returns the target's Corpse info. Errors if self is not dead.
