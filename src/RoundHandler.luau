@@ -94,7 +94,7 @@ local function newParticipant(round, plr): Types.Participant
                 if v.Player == from.Player then -- Comparing the Participants directly causes a type error. Presumably adding an __eq metamethod would solve this, but I don't want to do that because metatables make typechecking so much more annoying.
                     table.insert(self.SlayVotes, from)
                     if #self.SlayVotes >= SLAY_VOTES then
-                        self:Kill()
+                        self:TakeDamage(math.huge)
                     end
                     return true
                 end
@@ -284,7 +284,7 @@ local function newParticipant(round, plr): Types.Participant
                 if self.Role.AnnounceDisconnect then
                     Adapter.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
                 end
-                self:Kill()
+                self:TakeDamage(math.huge)
             end
         end,
 
@@ -350,44 +350,49 @@ local function newParticipant(round, plr): Types.Participant
             end
         end,
 
-        Kill = function(self, attacker, weapon, headshot, ignoreKarma)
+        TakeDamage = function(self, damage, attacker, weapon, headshot, ignoreKarma)
             if self:IsDead() then
                 return
             end
-            self.Status = "Missing"
-            self.KilledAsFreeKill = self.FreeKill
-            self.KilledAt = workspace:GetServerTimeNow()
-            self.KilledByHeadshot = headshot or false
-            self.KilledByParticipant = attacker
-            self.KilledByWeapon = weapon or "Suicide"
-
-            local isCorrectKill = true
-            if attacker then
-                isCorrectKill = not round:IsRoleAlliedWith(self.Role, attacker.Role)
-                self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
-                self.KilledByParticipant = attacker
-                attacker:AddKill(self, ignoreKarma or true)
-            end
 
             local hum = self.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                hum.Health = 0
+            if not hum then
+                return
             end
 
-            local data: Types.RoundEvent_Death = {
-                CorrectKill = isCorrectKill,
-                FreeKill = self.FreeKill,
-                SelfDefense = self.KilledInSelfDefense,
-                Victim = self,
-                Weapon = self.KilledByWeapon,
-                Attacker = attacker,
-            }
+            hum.Health -= damage
 
-            self.Round:LogEvent("Death", data)
-            Adapter.OnDeath(self)
+            if hum.Health <= 0 then
+                self.Status = "Missing"
+                self.KilledAsFreeKill = self.FreeKill
+                self.KilledAt = workspace:GetServerTimeNow()
+                self.KilledByHeadshot = headshot or false
+                self.KilledByParticipant = attacker
+                self.KilledByWeapon = weapon or "Suicide"
 
-            if self.Round.Gamemode.OnDeath then
-                self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
+                local isCorrectKill = true
+                if attacker then
+                    isCorrectKill = not round:IsRoleAlliedWith(self.Role, attacker.Role)
+                    self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
+                    self.KilledByParticipant = attacker
+                    attacker:AddKill(self, ignoreKarma or true)
+                end
+
+                local data: Types.RoundEvent_Death = {
+                    CorrectKill = isCorrectKill,
+                    FreeKill = self.FreeKill,
+                    SelfDefense = self.KilledInSelfDefense,
+                    Victim = self,
+                    Weapon = self.KilledByWeapon,
+                    Attacker = attacker,
+                }
+    
+                self.Round:LogEvent("Death", data)
+                Adapter.OnDeath(self)
+    
+                if self.Round.Gamemode.OnDeath then
+                    self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
+                end
             end
         end,
 
@@ -420,7 +425,7 @@ local function newRound(gamemode): Types.Round
             end)
 
             for _, v in victims do
-                v:Kill(attacker, weapon, false, noGuilt)
+                v:TakeDamage(math.huge, attacker, weapon, false, noGuilt)
             end
         end,
 
@@ -484,7 +489,7 @@ local function newRound(gamemode): Types.Round
                         return
                     end
 
-                    participant:Kill()
+                    participant:TakeDamage(math.huge)
                 end)
             end)
             plr:LoadCharacter()
