@@ -44,7 +44,9 @@ export type Adapter = {
     SLAY_VOTES: PositiveInteger,
     LOAD_LIGHTING_SETTINGS: boolean,
     LOAD_TERRAIN_SETTINGS: boolean,
+    LOAD_GRAVITY_SETTING: boolean,
     BOUNDS_COLLISION_GROUP: string,
+    DEFAULT_GRAVITY: number,
 
     GetKarma: (plr: Player) -> number,
     SetKarma: (plr: Player, karma: number) -> (),

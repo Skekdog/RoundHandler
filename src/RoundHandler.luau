@@ -37,6 +37,8 @@ local function unloadMap(round: Types.Round): ()
     Adapter.SetDefaultTerrain()
     workspace.Terrain:Clear()
 
+    workspace.Gravity = Adapter.DEFAULT_GRAVITY
+
     round.Map:Destroy()
     if round.MaterialVariantsFolder then
         round.MaterialVariantsFolder:Destroy()
@@ -717,7 +719,7 @@ local function newRound(gamemode): Types.Round
             end
 
             local gravity = map:FindFirstChild("Gravity")
-            if gravity then
+            if gravity and Adapter.LOAD_GRAVITY_SETTING then
                 workspace.Gravity = gravity.Value
             end
 
