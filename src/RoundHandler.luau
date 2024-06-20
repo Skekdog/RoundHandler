@@ -684,6 +684,7 @@ local function newRound(gamemode): Types.Round
                     if prop.Humanoid then
                         prop.Humanoid.Died:Once(prop.OnBreak)
                     end
+                    Adapter.LoadProp(self, prop)
                 end
                 props.Parent = mapFolder
             end

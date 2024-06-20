@@ -66,6 +66,7 @@ export type Adapter = {
 
     LoadBound: (round: Round, bound: BasePart) -> (),
     LoadWeaponSpawn: (round: Round, weaponSpawn: BasePart) -> (),
+    LoadProp: (round: Round, prop: Prop) -> (),
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
