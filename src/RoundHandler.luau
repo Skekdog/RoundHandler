@@ -152,6 +152,17 @@ local function newParticipant(round, plr): Types.Participant
             return module.NoRole
         end,
 
+        GetHealth = function(self)
+            if self:IsDead() then
+                return 0
+            end
+            local hum = self.Character:FindFirstChildOfClass("Humanoid")
+            if hum then
+                return hum.Health
+            end
+            return 0
+        end,
+
         AssignRole = function(self, role)
             local previousRole = self.Role
             self.Role = role
@@ -358,6 +369,10 @@ local function newParticipant(round, plr): Types.Participant
             local hum = self.Character:FindFirstChildOfClass("Humanoid")
             if not hum then
                 return
+            end
+
+            if attacker and not attacker:HasSelfDefenseAgainst(self) and not ignoreKarma and self.Round.Gamemode.SelfDefenseDuration then
+                self:AddSelfDefense(attacker, self.Round.Gamemode.SelfDefenseDuration)
             end
 
             hum.Health -= damage
@@ -680,16 +695,35 @@ local function newRound(gamemode): Types.Round
                     local prop: Types.Prop = {
                         Kind = "Prop",
                         PropInstance = propInstance,
-                        Humanoid = propInstance:FindFirstChild("Humanoid") :: Humanoid?,
+                        TakeDamage = function(self, damage, attacker)
+                            if not self:HasHealth() then
+                                error("Prop is not alive")
+                            end
+                            self.Attacker = attacker
+                            propInstance:SetAttribute("Health", self:GetHealth() - damage)
+                        end,
                         OnBreak = function(self)
                             if onBreak then
                                 (require)(onBreak)(if self.Attacker then self.Attacker:ViewPartialSelf() else nil)
                             end
+                            self.PropInstance:Destroy()
+                        end,
+                        GetHealth = function(self)
+                            return propInstance:GetAttribute("Health") or error("Prop is not alive")
+                        end,
+                        HasHealth = function(self)
+                            return propInstance:GetAttribute("Health") ~= nil
                         end
                     }
                     self._props[propInstance] = prop
-                    if prop.Humanoid then
-                        prop.Humanoid.Died:Once(prop.OnBreak)
+                    if propInstance:GetAttribute("Health") then
+                        local con
+                        con = propInstance:GetAttributeChangedSignal("Health"):Connect(function()
+                            if propInstance:GetAttribute("Health") <= 0 then
+                                prop:OnBreak()
+                                con:Disconnect()
+                            end
+                        end)
                     end
                     Adapter.LoadProp(self, prop)
                 end

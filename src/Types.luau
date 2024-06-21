@@ -170,9 +170,10 @@ export type Prop = {
     Kind: "Prop",
     PropInstance: PropInstance,
     Attacker: Participant?,
-    Humanoid: Humanoid?,
     OnBreak: (self: Prop) -> (),
-    
+    TakeDamage: (self: Prop, damage: number, attacker: Participant?) -> (),
+    HasHealth: (self: Prop) -> boolean,
+    GetHealth: (self: Prop) -> number,
 }
 export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: RoundPhaseChangeEvent, phase: RoundPhase) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
@@ -254,6 +255,7 @@ export type Gamemode = {
 
     FriendlyFire: boolean?, -- Whether allies can damage each other. Has no bearing on self-defense.
     SelfDefense: boolean?, -- Whether self-defense is allowed.
+    SelfDefenseDuration: PositiveNumber?, -- Duration of self defense.
     UseKarma: boolean?, -- Whether karma will be affected by this round, and whether it will have an effect in this round.
 
     StartingCredits: Integer?, -- Amount of credits to start with.
@@ -359,6 +361,8 @@ export type Participant = {
     KilledInSelfDefense: boolean, -- Whether this Participant was killed in self defense or not.
     KilledAsFreeKill: boolean, -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
     KilledByHeadshot: boolean, -- True if they were killed by a headshot.
+
+    GetHealth: (self: Participant) -> number,
     TakeDamage: (self: Participant, damage: number, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
     Karma: number, -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
@@ -423,7 +427,12 @@ export type MapStructure =  {
 export type MapStructureCast = Instance & MapStructure
 
 export type PropInstance = BasePart & {
-    FindFirstChild: ((self: Folder, name: "OnBreak") -> ModuleScript?) & ((self: Folder, name: "Humanoid") -> Humanoid?),
+    FindFirstChild: (PropInstance, name: "OnBreak") -> ModuleScript?,
+    GetAttribute:
+    ((PropInstance, attribute: "Health") -> number?) &
+    ((PropInstance, attribute: "NoGrab") -> boolean?),
+    SetAttribute: (PropInstance, attribute: "Health", value: number) -> (),
+    GetAttributeChangedSignal: (PropInstance, attribute: "Health") -> RBXScriptSignal?,
 }
 
 return {}
