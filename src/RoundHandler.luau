@@ -911,4 +911,13 @@ function module.GetRound(identifier: Types.UUID): Types.Round
     return module.Rounds[identifier] or error(`Could not find round with ID: {identifier}`)
 end
 
+function module.GetRoundFromMapDescendant(mapDescendant: Instance): Types.Round
+    for _, v in module.Rounds do
+        if (v.Map :: Types.MapStructureCast):IsAncestorOf(mapDescendant) then
+            return v
+        end
+    end
+    error("Could not find round from descendant: "..mapDescendant:GetFullName())
+end
+
 return module
