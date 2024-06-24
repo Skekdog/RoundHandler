@@ -340,7 +340,7 @@ local function newParticipant(round, plr): Types.Participant
             if self.EquipmentPurchases[equipment.Name] then
                 self.EquipmentPurchases[equipment.Name] += 1
             else
-                self.EquipmentPurchases[equipment.Name] = 0
+                self.EquipmentPurchases[equipment.Name] = 1
             end
             self:SetCredits(self._credits - (equipment.Cost or 0))
             return
