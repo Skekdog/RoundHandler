@@ -55,10 +55,29 @@ local function newParticipant(round, plr): Types.Participant
 
         Karma = if round.Gamemode.UseKarma then Adapter.GetKarma(plr) else 1000,
         Role = module.NoRole,
-        Credits = 0,
         Score = {},
 
-        Status = "Alive",
+        _credits = 0,
+        _status = "Alive",
+        GetCredits = function(self)
+            return self._credits
+        end,
+        SetCredits = function(self, credits)
+            self._credits = credits
+            self.CreditsChanged:Fire(self:ViewPartialSelf())
+        end,
+        GetStatus = function(self)
+            return self._status
+        end,
+        SetStatus = function(self, status)
+            self._status = status
+            self.StatusChanged:Fire(self:ViewPartialSelf())
+        end,
+
+        CreditsChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
+        StatusChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
+        RoleChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
+
         SearchedBy = {},
         KilledByWeapon = "Suicide",
         KilledAt = 0,
@@ -79,8 +98,8 @@ local function newParticipant(round, plr): Types.Participant
                 Player = self.Player,
                 FormattedName = self.FormattedName,
                 Role = getGamemodeRoleString(round, self.Role),
-                Status = self.Status,
-                Credits = self.Credits,
+                Status = self._status,
+                Credits = self._credits,
                 EquipmentPurchases = self.EquipmentPurchases,
             }
         end,
@@ -106,7 +125,7 @@ local function newParticipant(round, plr): Types.Participant
         EquipmentPurchases = {},
 
         IsDead = function(self)
-            return (self.Status == "Missing") or (self.Status == "Dead")
+            return (self._status == "Missing") or (self._status == "Dead")
         end,
 
         ViewPartialParticipant = function(self, viewer)
@@ -115,7 +134,7 @@ local function newParticipant(round, plr): Types.Participant
                 canSeeMissing = true
             end
 
-            local status: Types.ParticipantStatus = self.Status
+            local status: Types.ParticipantStatus = self._status
             if (status == "Missing") and (not canSeeMissing) then
                 status = "Alive"
             end
@@ -167,7 +186,7 @@ local function newParticipant(round, plr): Types.Participant
             local previousRole = self.Role
             self.Role = role
             self.FormattedName = `<font color='#{role.Colour:ToHex()}'>{self.Player.Name}</font>`
-            self.Credits += role.StartingCredits or 0
+            self:SetCredits(self._credits + (role.StartingCredits or 0))
 
             if role.StartingEquipment then
                 for _, v in role.StartingEquipment do
@@ -194,6 +213,8 @@ local function newParticipant(round, plr): Types.Participant
                     end
                 end
             end
+
+            self.RoleChanged:Fire(self:ViewPartialSelf())
 
             Adapter.SendRoleAlert(self, role)
             if role.OnRoleAssigned then
@@ -256,20 +277,20 @@ local function newParticipant(round, plr): Types.Participant
                 end
             end
 
-            if target.Status == "Missing" then
-                Adapter.SendMessage(`{self.Player.Name} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
-                target.Status = "Dead"
+            if target._status == "Missing" then
+                Adapter.SendMessage(`{self.FormattedName} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
+                target:SetStatus("Dead")
             end
 
-            if self.Role.CanStealCredits and (target.Credits > 0) then
+            if self.Role.CanStealCredits and (target._credits > 0) then
                 event = {
                     Participant = self,
                     Corpse = target,
-                    CreditsFound = target.Credits,
+                    CreditsFound = target._credits,
                 }
-                Adapter.SendMessage(`You have found {target.Credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
-                self.Credits += target.Credits
-                target.Credits = 0
+                Adapter.SendMessage(`You have found {target._credits} credits on the corpse of {target.FormattedName}.`, "info", "creditsEarned", {self})
+                self:SetCredits(self._credits + target._credits)
+                target:SetCredits(0)
             end
 
             if event then
@@ -304,7 +325,7 @@ local function newParticipant(round, plr): Types.Participant
             if (purchases[equipment.Name] or 0) >= (equipment.MaxStock or math.huge) then
                 return "NotInStock"
             end
-            if self.Credits < (equipment.Cost or 0) then
+            if self._credits < (equipment.Cost or 0) then
                 return "NotEnoughCredits"
             end
             if self.EquipmentPurchases[equipment.Name] then
@@ -312,7 +333,7 @@ local function newParticipant(round, plr): Types.Participant
             else
                 self.EquipmentPurchases[equipment.Name] = 0
             end
-            self.Credits -= equipment.Cost or 0
+            self:SetCredits(self._credits - (equipment.Cost or 0))
             return Adapter.GiveEquipment(self, equipment)
         end,
 
@@ -378,7 +399,7 @@ local function newParticipant(round, plr): Types.Participant
             hum.Health -= damage
 
             if hum.Health <= 0 then
-                self.Status = "Missing"
+                self:SetStatus("Missing")
                 self.KilledAsFreeKill = self.FreeKill
                 self.KilledAt = workspace:GetServerTimeNow()
                 self.KilledByHeadshot = headshot or false
@@ -427,7 +448,7 @@ local function newRound(gamemode): Types.Round
         RoundPhase = "Waiting",
         Paused = false,
 
-        RoundPhaseChangeEvent = Instance.new("BindableEvent") :: BindableEvent & Types.RoundPhaseChangeEvent,
+        RoundPhaseChangeEvent = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.RoundPhase>,
 
         Participants = {},
         EventLog = {MetaEvent = {}, CorpseSearched = {}, Death = {}},
@@ -472,7 +493,7 @@ local function newRound(gamemode): Types.Round
             end
         
             local participant = newParticipant(self, plr)
-            participant.Credits = self.Gamemode.StartingCredits or 0
+            participant:SetCredits(self.Gamemode.StartingCredits or 0)
         
             table.insert(self.Participants, participant)
         

@@ -175,7 +175,8 @@ export type Prop = {
     HasHealth: (self: Prop) -> boolean,
     GetHealth: (self: Prop) -> number,
 }
-export type RoundPhaseChangeEvent = {Event: RBXScriptSignal<RoundPhase>, Fire: (self: RoundPhaseChangeEvent, phase: RoundPhase) -> ()}
+
+export type Signal<T> = {Event: RBXScriptSignal<T>, Fire: (self: Signal<T>, data: T) -> ()}
 export type RoundEventLog = {MetaEvent: {RoundEvent<RoundEvent_MetaEvent>}, CorpseSearched: {RoundEvent<RoundEvent_CorpseSearched>}, Death: {RoundEvent<RoundEvent_Death>}}
 export type Round = {
     ID: UUID, -- Unique identifier of the round.
@@ -196,7 +197,7 @@ export type Round = {
 
     DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
 
-    RoundPhaseChangeEvent: RoundPhaseChangeEvent, -- A BindableEvent that fires whenever the round phase changes.
+    RoundPhaseChangeEvent: Signal<RoundPhase>, -- A BindableEvent that fires whenever the round phase changes.
 
     GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant from a username.
     JoinRound: (self: Round, plr: Player) -> Participant, -- Adds a Participant to this Round.
@@ -354,7 +355,6 @@ export type Participant = {
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant}, -- A list of Participants who have searched this Corpse.
-    Status: ParticipantStatus, -- Missing if dead but body has not been searched by anyone.
     KilledAt: Timestamp, -- Timestamp of the Participant's demise. Initially 0.
     KilledByWeapon: MurderWeapon, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
     KilledByParticipant: Participant?, -- Who killed this Participant.
@@ -365,12 +365,17 @@ export type Participant = {
     GetHealth: (self: Participant) -> number,
     TakeDamage: (self: Participant, damage: number, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     
+    GetCredits: (self: Participant) -> Integer,
+    SetCredits: (self: Participant, credits: Integer) -> (),
+
+    GetStatus: (self: Participant) -> ParticipantStatus,
+    SetStatus: (self: Participant, status: ParticipantStatus) -> (),
+    
     Karma: number, -- The Participant's current karma. When the round ends, this is applied using Adapters.SetKarma() if applicable. Initially set by Adapters.GetKarma().
     FreeKill: boolean, -- true if the Participant has done something which now means they can be freely killed by anyone, such as RDM.
     SlayVotes: {Participant}, -- A list of Participants who have voted to slay this person due to RDM.
     TryAddSlayVote: (self: Participant, from: Participant) -> boolean, -- Tries to add a vote to slay this Participant, and executes them if required. Will return false if the vote could not be added, such as due to this Participant already voting to remove them, else returning true if successful.
     
-    Credits: Integer, -- Available credits that can be spent in Equipment Shop.
     EquipmentPurchases: {[EquipmentName]: PositiveInteger}, -- The Equipment this Participant purchased, and how many times.
     PurchaseEquipment: (self: Participant, equipment: Equipment) -> EquipmentPurchaseRejectionReason?, -- Deducts credits and stock and gives Equipment. If GiveEquipment rejects, purchase also rejects.
 
@@ -387,6 +392,13 @@ export type Participant = {
     SelfDefenseList: {SelfDefenseEntry}, -- A list of Participants who this participant can freely kill in self-defense.
     AddSelfDefense: (self: Participant, against: Participant, duration: number) -> (), -- Adds a self defense entry against a Participant.
     HasSelfDefenseAgainst: (self: Participant, against: Participant) -> boolean, -- Returns true if this Participant is allowed to hurt the `against` participant in self defense.
+
+    CreditsChanged: Signal<ClientOwnParticipant>,
+    StatusChanged: Signal<ClientOwnParticipant>,
+    RoleChanged: Signal<ClientOwnParticipant>,
+
+    _credits: Integer,
+    _status: ParticipantStatus,
 }
 
 export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
