@@ -720,7 +720,7 @@ local function newRound(gamemode): Types.Round
 
             local props = map:FindFirstChild("Props")
             if props then
-                for _, propInstance in props:GetChildren() do
+                local function loadProp(propInstance: Types.PropInstance)
                     local onBreak = propInstance:FindFirstChild("OnBreak")
                     local prop: Types.Prop = {
                         Kind = "Prop",
@@ -757,6 +757,10 @@ local function newRound(gamemode): Types.Round
                     end
                     Adapter.LoadProp(self, prop)
                 end
+                for _, propInstance in props:GetChildren() do
+                    loadProp(propInstance)
+                end
+                props.ChildAdded:Connect(loadProp :: (Instance) -> ())
                 props.Parent = mapFolder
             end
 
