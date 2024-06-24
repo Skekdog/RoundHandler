@@ -321,10 +321,19 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         PurchaseEquipment = function(self, equipment)
+            if self:IsDead() then
+                return "Dead"
+            end
             local purchases = self.EquipmentPurchases
             if (purchases[equipment.Name] or 0) >= (equipment.MaxStock or math.huge) then
                 return "NotInStock"
             end
+
+            local response = Adapter.GiveEquipment(self, equipment)
+            if response then
+                return response
+            end
+
             if self._credits < (equipment.Cost or 0) then
                 return "NotEnoughCredits"
             end
@@ -334,7 +343,7 @@ local function newParticipant(round, plr): Types.Participant
                 self.EquipmentPurchases[equipment.Name] = 0
             end
             self:SetCredits(self._credits - (equipment.Cost or 0))
-            return Adapter.GiveEquipment(self, equipment)
+            return
         end,
 
         AddKill = function(self, victim, ignoreKarma)

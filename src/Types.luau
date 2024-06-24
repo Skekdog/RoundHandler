@@ -334,7 +334,7 @@ export type CorpseInfo = {
 export type FreeKillReason = "Teamkill" | string
 export type DeathType = "Drown" | "Fall" | "Crush" | "Explosion" | "Suicide" | "Mutation" | "Burn" | WeaponAttackType
 export type EquipmentGiveRejectionReason = string -- for use in Adapters.GiveEquipment
-export type EquipmentPurchaseRejectionReason = "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
+export type EquipmentPurchaseRejectionReason = "Dead" | "NotEnoughCredits" | "NotInStock" | EquipmentGiveRejectionReason
 export type ParticipantScoring = {[ScoreReason]: Integer}
 -- Mutation: DNA mutated by teleporter (in a deadly way)
 export type Participant = {
