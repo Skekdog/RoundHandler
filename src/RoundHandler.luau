@@ -268,12 +268,17 @@ local function newParticipant(round, plr): Types.Participant
                     Participant = self,
                     Corpse = target,
                 }
-                if not table.find(target.SearchedBy, self) then
-                    if self.Role.CorpseResultsPublicised then
-                        target.SearchedBy = self.Round.Participants
-                    else
-                        table.insert(target.SearchedBy, self)
+            end
+
+            if not table.find(target.SearchedBy, self) then
+                if self.Role.CorpseResultsPublicised then
+                    target.SearchedBy = self.Round.Participants
+                    for _, v in self.Round.Participants do
+                        Adapter.OnCorpseResult(v, target)
                     end
+                else
+                    table.insert(target.SearchedBy, self)
+                    Adapter.OnCorpseResult(self, target)
                 end
             end
 

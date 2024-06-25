@@ -72,6 +72,7 @@ export type Adapter = {
 
     OnCharacterLoad: (participant: Participant) -> (),
     OnDeath: (victim: Participant) -> (),
+    OnCorpseResult: (receiver: Participant, corpse: Participant) -> (),
 
     DoIntermission: (round: Round) -> boolean, -- Returns true if an intermission should be held, delaying the destruction of the round. Should also run anything that an intermission should handle, like map voting.
 }
