@@ -13,7 +13,7 @@ export type Asset = "rbxassetid://" | string
 export type PauseFailReason = "RoundNotInProgress"
 
 -- The participant that a client can view of themselves
-export type GamemodeRoleString = "GAMEMODE_ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE_ROLE -> Role table
+export type GamemodeRoleString = "GAMEMODE__ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE__ROLE -> Role table
 export type ParticipantStatus = "Alive" | "Dead" | "Missing"
 export type ClientOwnParticipant = {
     Kind: "ClientOwnParticipant",
@@ -145,7 +145,7 @@ export type UserFacingRoundEvent = {
     Text: string,
 }
 
-export type UUID = "00000000-0000-0000-0000-000000000000" | string
+export type UUID = "{00000000-0000-0000-0000-000000000000}" | string
 export type RoundPhase = "Waiting" | "Preparing" | "Playing" | "Highlights" | "Intermission" | "Destroy"
 --[[
 Round Phases:
