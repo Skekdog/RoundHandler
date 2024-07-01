@@ -469,9 +469,9 @@ local function newRound(gamemode): Types.Round
 
         _props = {},
 
-        DoMassDeath = function(self, victims, weapon, attacker: Types.Participant?, noGuilt: boolean?)
+        DoMassDeath = function(self, victims, weapon, attacker, noGuilt)
             table.sort(victims, function(a, b)
-                return a.Role == self.Gamemode.PhyrricVictors
+                return a.Role.Name == self.Gamemode.PhyrricVictors
             end)
 
             for _, v in victims do

@@ -196,7 +196,7 @@ export type Round = {
     EventLog: RoundEventLog, -- A list of events that have taken place.
     GetProp: (self: Round, propInstance: PropInstance) -> Prop, -- Returns the Prop from a PropInstance. Errors if the prop could not be found.
 
-    DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant, noGuilt: boolean) -> () & (self: Round, victims: {Participant}, weapon: Equipment | DeathType) -> (), -- PLAYERS SHOULD NOT BE KILLED BEFORE CALLING THIS! Accepts a table of Participants, who will be correctly killed for Phyrric victory to occur. Should be called when something that can kill multiple people at once, such as an explosion, occurs.
+    DoMassDeath: (self: Round, victims: {Participant}, weapon: Equipment | DeathType, attacker: Participant?, noGuilt: boolean?) -> (),
 
     RoundPhaseChangeEvent: Signal<RoundPhase>, -- A BindableEvent that fires whenever the round phase changes.
 
