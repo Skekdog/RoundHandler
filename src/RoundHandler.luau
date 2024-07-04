@@ -586,7 +586,7 @@ local function newRound(gamemode): Types.Round
                 else
                     victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
                 end
-                self:EndRound(victors)
+                self:EndRound(victors, true)
             end)
 
             gm:AssignRoles(participants)
@@ -615,7 +615,7 @@ local function newRound(gamemode): Types.Round
                     else
                         victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
                     end
-                    self:EndRound(victors)
+                    self:EndRound(victors, true)
                 end)
             end
             return
@@ -636,7 +636,7 @@ local function newRound(gamemode): Types.Round
             return self._props[propInstance] or error(`Prop {propInstance.Name} was not found`)
         end,
 
-        EndRound = function(self, victors)
+        EndRound = function(self, victors, timeout)
             if self:IsRoundOver() then
                 error("Round is already ended")
             end
@@ -663,6 +663,10 @@ local function newRound(gamemode): Types.Round
             else
                 victoryMusic = victors.VictoryMusic
                 winners = victors
+            end
+
+            if timeout and gamemode.TimeoutMusic then
+                victoryMusic = gamemode.TimeoutMusic
             end
 
             assert(victoryMusic)

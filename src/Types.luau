@@ -206,7 +206,7 @@ export type Round = {
     GetPartialRound: (self: Round) -> PartialRound, -- Returns a limited view of the round, safe for clients to peak at. Does not include any Participants, see Participant:ViewPartialParticipant for that.
     PauseRound: (self: Round) -> (), -- Pauses the round. Errors if the round is not in progress.
     StartRound: (self: Round) -> (), -- Starts this round. Usually shouldn't be called externally.
-    EndRound: (self: Round, victors: Victor) -> (), -- Ends this round.
+    EndRound: (self: Round, victors: Victor, timeout: boolean?) -> (), -- Ends this round.
 
     IsRoundPreparing: (self: Round) -> boolean, -- Returns true if the current round phase is Preparing or Waiting.
     IsRoundOver: (self: Round) -> boolean, -- Returns true if the current round phase is Highlights or Intermission.
@@ -250,6 +250,7 @@ export type Gamemode = {
     MaximumPlayers: PositiveInteger?, -- The gamemode will not appear in voting if there are more players than this value.
 
     TimeoutVictors: RoleName | (self: Gamemode, round: Round) -> RoleName, -- Which role wins if the round timer expires?
+    TimeoutMusic: {Sound}?,
     PhyrricVictors: RoleName, -- Which role wins if everyone dies at the same time? Cannot be a function because this is checked on every mass death event. --todo: So what if it gets checked every time?
 
     CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight}, -- Returns an ordered list of round highlights.
