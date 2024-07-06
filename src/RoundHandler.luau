@@ -662,7 +662,11 @@ local function newRound(gamemode): Types.Round
                 winners = victors:ViewPartialParticipant()
             else
                 victoryMusic = victors.VictoryMusic
-                winners = victors
+                if victors.Allegiance then
+                    winners = self:GetRoleFromName(victors.Allegiance)
+                else
+                    winners = victors
+                end
             end
 
             if timeout and gamemode.TimeoutMusic then
