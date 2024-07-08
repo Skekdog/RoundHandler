@@ -1,6 +1,7 @@
 local HttpService = game:GetService("HttpService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
+local Players = game:GetService("Players")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local Types = require(script.Parent.Types)
@@ -542,7 +543,8 @@ local function newRound(gamemode): Types.Round
                     participant:TakeDamage(math.huge)
                 end)
             end)
-            plr:LoadCharacter()
+
+            task.spawn(plr.LoadCharacter, plr)
 
             if self.Gamemode.StartingEquipment then
                 for _, v in self.Gamemode.StartingEquipment do
@@ -566,6 +568,15 @@ local function newRound(gamemode): Types.Round
             if not self:IsRoundPreparing() then
                 error("Attempt to start round whilst it is not preparing")
             end
+
+            for _, v in self.Participants do
+                if not v.Character then
+                    repeat
+                        task.wait()
+                    until not v.Player:IsDescendantOf(Players) or v.Character
+                end
+            end
+
             self.RoundPhase = "Playing"
             self:LogEvent("MetaEvent", {RoundPhase = "Start"})
             local gm = self.Gamemode
