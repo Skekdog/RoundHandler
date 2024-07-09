@@ -754,7 +754,6 @@ local function newRound(gamemode): Types.Round
             local props = map:FindFirstChild("Props")
             if props then
                 local function loadProp(propInstance: Types.PropInstance)
-                    local onBreak = propInstance:FindFirstChild("OnBreak")
                     local prop: Types.Prop = {
                         Kind = "Prop",
                         PropInstance = propInstance,
@@ -766,10 +765,10 @@ local function newRound(gamemode): Types.Round
                             propInstance:SetAttribute("Health", self:GetHealth() - damage)
                         end,
                         OnBreak = function(self)
-                            if onBreak then
-                                (require)(onBreak)(if self.Attacker then self.Attacker:ViewPartialSelf() else nil)
+                            if not propInstance:GetAttribute("NoDestroy") then
+                                propInstance:Destroy()
                             end
-                            self.PropInstance:Destroy()
+                            propInstance:SetAttribute("Health", nil) -- Prevents breaking prop multiple times if NoDestroy is true
                         end,
                         GetHealth = function(self)
                             return propInstance:GetAttribute("Health") or error("Prop is not alive")
@@ -782,7 +781,10 @@ local function newRound(gamemode): Types.Round
                     if propInstance:GetAttribute("Health") then
                         local con
                         con = propInstance:GetAttributeChangedSignal("Health"):Connect(function()
-                            if propInstance:GetAttribute("Health") <= 0 then
+                            local health = propInstance:GetAttribute("Health")
+                            if not health then
+                                return con:Disconnect()
+                            elseif health <= 0 then
                                 prop:OnBreak()
                                 con:Disconnect()
                             end
