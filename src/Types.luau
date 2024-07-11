@@ -171,6 +171,7 @@ export type Prop = {
     Kind: "Prop",
     PropInstance: PropInstance,
     Attacker: Participant?,
+    IsDead: boolean,
     OnBreak: (self: Prop) -> (),
     TakeDamage: (self: Prop, damage: number, attacker: Participant?) -> (),
     HasHealth: (self: Prop) -> boolean,

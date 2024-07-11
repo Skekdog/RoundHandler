@@ -761,6 +761,7 @@ local function newRound(gamemode): Types.Round
                 local function loadProp(propInstance: Types.PropInstance)
                     local prop: Types.Prop = {
                         Kind = "Prop",
+                        IsDead = false,
                         PropInstance = propInstance,
                         TakeDamage = function(self, damage, attacker)
                             if not self:HasHealth() then
@@ -773,7 +774,7 @@ local function newRound(gamemode): Types.Round
                             if not propInstance:GetAttribute("NoDestroy") then
                                 propInstance:Destroy()
                             end
-                            propInstance:SetAttribute("Health", nil) -- Prevents breaking prop multiple times if NoDestroy is true
+                            self.IsDead = true
                         end,
                         GetHealth = function(self)
                             return propInstance:GetAttribute("Health") or error("Prop is not alive")
@@ -783,13 +784,15 @@ local function newRound(gamemode): Types.Round
                         end
                     }
                     self._props[propInstance] = prop
-                    if propInstance:GetAttribute("Health") then
+                    if prop:HasHealth() then
                         local con
                         con = propInstance:GetAttributeChangedSignal("Health"):Connect(function()
                             local health = propInstance:GetAttribute("Health")
-                            if not health then
+                            if prop.IsDead then
                                 return con:Disconnect()
-                            elseif health <= 0 then
+                            end
+                            if health <= 0 then
+                                prop.IsDead = true
                                 prop:OnBreak()
                                 con:Disconnect()
                             end
