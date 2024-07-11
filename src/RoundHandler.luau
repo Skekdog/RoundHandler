@@ -470,13 +470,18 @@ local function newRound(gamemode): Types.Round
 
         _props = {},
 
-        DoMassDeath = function(self, victims, weapon, attacker, noGuilt)
-            table.sort(victims, function(a, b)
+        DoMassDamage = function(self, victims, weapon, attacker, noGuilt)
+            local order = {}
+            for i, v in victims do
+                table.insert(order, i)
+            end
+
+            table.sort(order, function(a, b)
                 return a.Role.Name == self.Gamemode.PhyrricVictors
             end)
 
-            for _, v in victims do
-                v:TakeDamage(math.huge, attacker, weapon, false, noGuilt)
+            for _, v in order do
+                v:TakeDamage(victims[v], attacker, weapon, false, noGuilt)
             end
         end,
 
