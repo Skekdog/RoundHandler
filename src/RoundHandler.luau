@@ -75,6 +75,10 @@ local function newParticipant(round, plr): Types.Participant
             self.StatusChanged:Fire(self:ViewPartialSelf())
         end,
 
+        HasHealth = function(self)
+            return true
+        end,
+
         CreditsChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
         StatusChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
         RoleChanged = Instance.new("BindableEvent") :: BindableEvent & Types.Signal<Types.Participant>,
