@@ -433,13 +433,17 @@ local function newParticipant(round, plr): Types.Participant
                     attacker:AddKill(self, ignoreKarma or true)
                 end
 
+                if self.KilledByWeapon == "Suicide" then
+                    self.KilledByParticipant = self
+                end
+
                 local data: Types.RoundEvent_Death = {
                     CorrectKill = isCorrectKill,
                     FreeKill = self.FreeKill,
                     SelfDefense = self.KilledInSelfDefense,
                     Victim = self,
                     Weapon = self.KilledByWeapon,
-                    Attacker = attacker,
+                    Attacker = self.KilledByParticipant,
                 }
     
                 self.Round:LogEvent("Death", data)
