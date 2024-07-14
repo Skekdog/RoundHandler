@@ -429,7 +429,6 @@ local function newParticipant(round, plr): Types.Participant
                 if attacker then
                     isCorrectKill = not round:IsRoleAlliedWith(self.Role, attacker.Role)
                     self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
-                    self.KilledByParticipant = attacker
                     attacker:AddKill(self, ignoreKarma or true)
                 end
 
@@ -447,11 +446,13 @@ local function newParticipant(round, plr): Types.Participant
                 }
     
                 self.Round:LogEvent("Death", data)
-                Adapter.OnDeath(self)
-    
-                if self.Round.Gamemode.OnDeath then
-                    self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
-                end
+
+                task.defer(function()
+                    Adapter.OnDeath(self)
+                    if self.Round.Gamemode.OnDeath then
+                        self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
+                    end
+                end)
             end
         end,
 
@@ -477,21 +478,6 @@ local function newRound(gamemode): Types.Round
         EventLog = {MetaEvent = {}, CorpseSearched = {}, Death = {}},
 
         _props = {},
-
-        DoMassDamage = function(self, victims, weapon, attacker, noGuilt)
-            local order = {}
-            for i, v in victims do
-                table.insert(order, i)
-            end
-
-            table.sort(order, function(a, b)
-                return a.Role.Name == self.Gamemode.PhyrricVictors
-            end)
-
-            for _, v in order do
-                v:TakeDamage(victims[v], attacker, weapon, false, noGuilt)
-            end
-        end,
 
         GetParticipant = function(self, name)
             for _, participant in self.Participants do

@@ -197,8 +197,6 @@ export type Round = {
     EventLog: RoundEventLog, -- A list of events that have taken place.
     GetProp: (self: Round, propInstance: PropInstance) -> Prop, -- Returns the Prop from a PropInstance. Errors if the prop could not be found.
 
-    DoMassDamage: (self: Round, victims: {[Participant]: number}, weapon: Equipment | DeathType, attacker: Participant?, noGuilt: boolean?) -> (),
-
     RoundPhaseChangeEvent: Signal<RoundPhase>, -- A BindableEvent that fires whenever the round phase changes.
 
     GetParticipant: (self: Round, name: Username) -> Participant?, -- Returns a Participant from a username.
