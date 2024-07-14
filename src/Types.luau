@@ -36,7 +36,7 @@ export type ClientParticipant = {
 export type Victor = Participant | Role
 
 export type MessageSeverity = "info" | "warn" | "error"
-export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart"
+export type MessageType = "update" | "bodyFound" | "disconnect" | "creditsEarned" | "karma" | "timeToRoundStart" | "other"
 export type Adapter = {
     PREPARING_TIME: PositiveNumber,
     HIGHLIGHTS_TIME: PositiveNumber,
@@ -58,7 +58,7 @@ export type Adapter = {
     ClearAllEquipment: (participant: Participant) -> (),
 
     SendSlayVote: (to: Participant, target: Participant) -> (), -- Sends a prompt to vote slay an RDMer.
-    SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: {Participant}) -> () & (message: string, severity: MessageSeverity, messageType: MessageType, isGlobal: true) -> (),
+    SendMessage: (message: string, severity: MessageSeverity, messageType: MessageType, recipients: true | {Participant | Player}) -> (),
     SendRoleAlert: (recipient: Participant, role: Role) -> (),
     CheckForUpdate: (round: Round, timeDelay: number) -> boolean,
     SendRoundHighlights: (recipients: {Participant}, highlights: {RoundHighlight}, events: {UserFacingRoundEvent}, scores: {[FormattedUsername]: {[ScoreReason]: Integer}}, victors: Victor) -> (),
