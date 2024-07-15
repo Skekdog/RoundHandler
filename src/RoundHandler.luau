@@ -259,6 +259,7 @@ local function newParticipant(round, plr): Types.Participant
                 EquipmentList = equipmentList,
                 KillList = killList,
                 MurderWeapon = self.KilledByWeapon,
+                DNAExpiry = self.DNAExpiry,
             }
         end,
 

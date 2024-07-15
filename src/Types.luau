@@ -324,6 +324,7 @@ export type CorpseInfo = {
     KillList: {FormattedUsername},
     SelfDefense: boolean,
     FreeKill: boolean,
+    DNAExpiry: Timestamp?,
 }
 
 --[[
@@ -356,7 +357,7 @@ export type Participant = {
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant}, -- A list of Participants who have searched this Corpse.
-    DNAExpiry: number?,
+    DNAExpiry: Timestamp?,
     KilledAt: Timestamp, -- Timestamp of the Participant's demise. Initially 0.
     KilledByWeapon: MurderWeapon, -- The weapon used to kill a Participant. If a weapon was not directly used, then describes how they died.
     KilledByParticipant: Participant?, -- Who killed this Participant.
