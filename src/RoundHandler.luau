@@ -238,7 +238,7 @@ local function newParticipant(round, plr): Types.Participant
             local equipmentList = {}
             for i in self.EquipmentPurchases do
                 local equipment = self.Round:GetEquipment(i)
-                if type(equipment) == "function" then
+                if equipment and type(equipment.Item) == "function" then
                     table.insert(equipmentList, equipment)
                 end
             end
