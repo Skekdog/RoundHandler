@@ -432,9 +432,11 @@ local function newParticipant(round, plr): Types.Participant
                     self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
                     attacker:AddKill(self, ignoreKarma or true)
 
-                    local DNADuration = (200 - (attacker.Character:GetPivot().Position - self.Character:GetPivot().Position).Magnitude) / 2
-                    if DNADuration > 0 then
-                        self.DNAExpiry = self.KilledAt + DNADuration
+                    if typeof(weapon) == "table" and not weapon.NoDNA then
+                        local DNADuration = (200 - (attacker.Character:GetPivot().Position - self.Character:GetPivot().Position).Magnitude) / 2
+                        if DNADuration > 0 then
+                            self.DNAExpiry = self.KilledAt + DNADuration
+                        end
                     end
                 end
 

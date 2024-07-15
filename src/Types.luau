@@ -89,6 +89,7 @@ export type Equipment = {
 
     AttackType: WeaponAttackType?, -- This determines the event flavour text that will be shown to players.
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
+    NoDNA: boolean?, -- true if this weapon should not leave a DNA sample on the body.
 
     Item: EquipmentItem, -- Either a tool added to inventory, or a function that does something.
 }
