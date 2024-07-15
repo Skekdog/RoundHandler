@@ -430,6 +430,11 @@ local function newParticipant(round, plr): Types.Participant
                     isCorrectKill = not round:IsRoleAlliedWith(self.Role, attacker.Role)
                     self.KilledInSelfDefense = attacker:HasSelfDefenseAgainst(self)
                     attacker:AddKill(self, ignoreKarma or true)
+
+                    local DNADuration = (200 - (attacker.Character:GetPivot().Position - self.Character:GetPivot().Position).Magnitude) / 2
+                    if DNADuration > 0 then
+                        self.DNAExpiry = self.KilledAt + DNADuration
+                    end
                 end
 
                 if self.KilledByWeapon == "Suicide" then
