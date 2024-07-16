@@ -376,6 +376,9 @@ local function newParticipant(round, plr): Types.Participant
             if not self.Round.Gamemode.SelfDefense then -- no point if it's not enabled
                 return
             end
+            if against == self then
+                return
+            end
             table.insert(self.SelfDefenseList, {
                 Against = against,
                 Until = workspace:GetServerTimeNow() + duration
@@ -598,11 +601,11 @@ local function newRound(gamemode): Types.Round
             end
             self.TimeMilestone = workspace:GetServerTimeNow() + duration
             self._roundTimerThread = task.delay(duration, function()
-                local victors: Types.Role
+                local victors: Types.Victor
                 if type(self.Gamemode.TimeoutVictors) == "string" then
                     victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors)
                 else
-                    victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
+                    victors = self.Gamemode.TimeoutVictors(self.Gamemode, self)
                 end
                 self:EndRound(victors, true)
             end)
@@ -627,11 +630,11 @@ local function newRound(gamemode): Types.Round
                 assert(self._roundTimerContinueFor)
                 self.TimeMilestone = self._roundTimerContinueFor + workspace:GetServerTimeNow()
                 self._roundTimerThread = task.delay(self._roundTimerContinueFor, function()
-                    local victors: Types.Role
+                    local victors: Types.Victor
                     if type(self.Gamemode.TimeoutVictors) == "string" then
                         victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors)
                     else
-                        victors = self:GetRoleFromName(self.Gamemode.TimeoutVictors(self.Gamemode, self))
+                        victors = self.Gamemode.TimeoutVictors(self.Gamemode, self)
                     end
                     self:EndRound(victors, true)
                 end)

@@ -237,6 +237,8 @@ export type RoundEndInfo = {
     Events: {UserFacingRoundEvent},
     Scores: {[FormattedUsername]: ParticipantScoring},
 }
+
+export type DetermineVictors = RoleName | (self: Gamemode, round: Round) -> Victor
 export type Gamemode = {
     Name: string, -- Name of the gamemode.
     Description: string?, -- Description of the gamemode.
@@ -249,9 +251,9 @@ export type Gamemode = {
     RecommendedPlayers: PositiveInteger?, -- The gamemode will not appear in voting without at least this many players.
     MaximumPlayers: PositiveInteger?, -- The gamemode will not appear in voting if there are more players than this value.
 
-    TimeoutVictors: RoleName | (self: Gamemode, round: Round) -> RoleName, -- Which role wins if the round timer expires?
+    PhyrricVictors: RoleName?,
+    TimeoutVictors: DetermineVictors, -- Which role wins if the round timer expires?
     TimeoutMusic: {Sound}?,
-    PhyrricVictors: RoleName, -- Which role wins if everyone dies at the same time? Cannot be a function because this is checked on every mass death event. --todo: So what if it gets checked every time?
 
     CalculateRoundHighlights: (self: Gamemode, round: Round) -> {RoundHighlight}, -- Returns an ordered list of round highlights.
     CalculateNonDefaultUserFacingEvents: ((self: Gamemode, round: Round) -> {UserFacingRoundEvent})?, -- Calculates the user facing event log for non-default events. Only needed if this Gamemode uses custom events. If any custom event is not converted, it will not be displayed to players.
