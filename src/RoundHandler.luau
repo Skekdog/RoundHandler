@@ -387,7 +387,7 @@ local function newParticipant(round, plr): Types.Participant
                 return false
             end
             for _, v in self.SelfDefenseList do
-                if (v.Against.Player == against.Player) and (v.Until < workspace:GetServerTimeNow()) then -- see comment for TryAddSlayVote
+                if (v.Against.Player == against.Player) and (v.Until > workspace:GetServerTimeNow()) then -- see comment for TryAddSlayVote
                     return true
                 end
             end
@@ -412,8 +412,8 @@ local function newParticipant(round, plr): Types.Participant
                 return
             end
 
-            if attacker and not attacker:HasSelfDefenseAgainst(self) and not ignoreKarma and self.Round.Gamemode.SelfDefenseDuration then
-                self:AddSelfDefense(attacker, self.Round.Gamemode.SelfDefenseDuration)
+            if attacker and not attacker:HasSelfDefenseAgainst(self) then
+                self:AddSelfDefense(attacker, self.Round.Gamemode.SelfDefenseDuration or 5)
             end
 
             hum.Health -= damage

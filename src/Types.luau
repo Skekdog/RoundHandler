@@ -82,7 +82,7 @@ export type EquipmentItem = PVInstance | (self: Equipment, participant: Particip
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
     Description: string?, -- Description of this equipment.
-    Icon: Asset, -- Icon of this equipment.
+    Icon: Asset?, -- Icon of this equipment.
     Cost: Integer?, -- The number of credits that this equipment costs to buy.
     MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
     Extras: any, -- Any extra info about the equipment, for use in custom functions.
