@@ -782,7 +782,7 @@ local function newRound(gamemode): Types.Round
                             self.IsDead = true
                         end,
                         GetHealth = function(self)
-                            return propInstance:GetAttribute("Health") or error("Prop is not alive")
+                            return propInstance:GetAttribute("Health") :: number or error("Prop is not alive")
                         end,
                         HasHealth = function(self)
                             return propInstance:GetAttribute("Health") ~= nil
