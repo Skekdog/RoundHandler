@@ -356,7 +356,9 @@ export type Participant = {
     ViewPartialParticipant: (self: Participant, viewer: Participant?) -> ClientParticipant, -- Returns a limited view of the Participant, for clients.
     ViewPartialSelf: (self: Participant) -> ClientOwnParticipant, -- Returns a limited view of the Participant, for clients.
 
+    Removed: boolean?,
     LeaveRound: (self: Participant, persistTimer: boolean?) -> (), -- Removes this Participant from the Round.
+    RejoinRound: (self: Participant) -> (),
 
     IsDamageJustifiedAgainst: (self: Participant, target: Participant) -> boolean,
     SearchedBy: {Participant}, -- A list of Participants who have searched this Corpse.

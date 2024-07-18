@@ -153,6 +153,22 @@ local function newParticipant(round, plr): Types.Participant
             }
         end,
 
+        RejoinRound = function(self)
+            if self.Round:IsRoundInProgress() then
+                error("Cannot rejoin a round that is in progress")
+            end
+
+            self:LeaveRound(true)
+
+            task.defer(function()
+                if self.Round:IsRoundInProgress() then
+                    return
+                end
+                
+                self.Round:JoinRound(plr)
+            end)
+        end,
+
         TryViewParticipantRole = function(self, viewer)
             if self.Round:IsRoundOver() then
                 return self.Role
@@ -310,6 +326,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         LeaveRound = function(self, persistTimer)
+            self.Removed = true
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
@@ -423,6 +440,9 @@ local function newParticipant(round, plr): Types.Participant
 
             if hum.Health <= 0 then
                 self:SetStatus("Missing")
+                if round:IsRoundPreparing() then
+                    return self:RejoinRound()
+                end
                 self.KilledAsFreeKill = self.FreeKill
                 self.KilledAt = workspace:GetServerTimeNow()
                 self.KilledByHeadshot = headshot or false
@@ -543,11 +563,11 @@ local function newRound(gamemode): Types.Round
                 end
 
                 hum.Died:Once(function()
-                    if self:IsRoundPreparing() then
-                        -- Respawn if the round hasn't started
-                        participant:LeaveRound(true)
-                        self:JoinRound(plr)
+                    if participant.Removed then
                         return
+                    end
+                    if self:IsRoundPreparing() then
+                        return participant:RejoinRound()
                     end
 
                     participant:TakeDamage(math.huge)
