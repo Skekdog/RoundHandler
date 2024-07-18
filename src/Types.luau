@@ -129,6 +129,7 @@ export type RoundEvent_MetaEvent = {
     RoundPhase: "Start"?,
     Winners: Victor?,
     NewMap: string?,
+    DisconnectedParticipant: Participant?,
 }
 
 export type RoundEventData = RoundEvent_MetaEvent | RoundEvent_CorpseSearched | RoundEvent_Death

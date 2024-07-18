@@ -344,7 +344,13 @@ local function newParticipant(round, plr): Types.Participant
                 if self.Role.AnnounceDisconnect then
                     Adapter.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
                 end
-                self:TakeDamage(math.huge)
+                self:SetStatus("Dead")
+                self.Round:LogEvent("MetaEvent", {
+                    DisconnectedParticipant = self,
+                })
+                if self.Round.Gamemode.OnDeath then
+                    self.Round.Gamemode.OnDeath(self.Round.Gamemode, self)
+                end
             end
         end,
 
