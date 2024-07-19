@@ -570,6 +570,12 @@ local function newRound(gamemode): Types.Round
                     self.Gamemode.OnCharacterLoad(self.Gamemode, char)
                 end
 
+                if self.Gamemode.StartingEquipment then
+                    for _, v in self.Gamemode.StartingEquipment do
+                        Adapter.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
+                    end 
+                end
+
                 hum.Died:Once(function()
                     if participant.Removed then
                         return
@@ -583,12 +589,6 @@ local function newRound(gamemode): Types.Round
             end)
 
             task.spawn(plr.LoadCharacter, plr)
-
-            if self.Gamemode.StartingEquipment then
-                for _, v in self.Gamemode.StartingEquipment do
-                    Adapter.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
-                end 
-            end
         
             if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
