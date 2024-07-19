@@ -340,6 +340,8 @@ local function newParticipant(round, plr): Types.Participant
                     end
                     task.cancel(timerThread)
                 end
+
+                Adapter.ClearAllEquipment(self)
             else
                 if self.Role.AnnounceDisconnect then
                     Adapter.SendMessage(`{self.FormattedName} has disconnected. They were a {self.Role.FormattedName}.`, "info", "disconnect", self.Round.Participants)
