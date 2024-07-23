@@ -303,6 +303,8 @@ export type Role = {
     CanSeeMissing: boolean?, -- Whether this role can see Missing participants, or if they will be shown as alive instead.
     AwardOnDeath: {[RoleRelationship]: Integer}?, -- How many credits to award to other roles when a member of this role is killed.
 
+    PointsForSearchingCorpse: number?,
+
     Accessories: {Accessory}?, -- A list of accessories to add to the character.
     Health: number?, -- Sets Health and MaxHealth (of Humanoid).
     Speed: number?,  -- Sets normal WalkSpeed.
