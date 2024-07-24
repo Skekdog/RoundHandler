@@ -305,6 +305,10 @@ local function newParticipant(round, plr): Types.Participant
             end
 
             if target._status == "Missing" then
+                if self.Role.PointsForSearchingCorpse then
+                    self:AddScore("Bodies Found", self.Role.PointsForSearchingCorpse)
+                end
+                
                 Adapter.SendMessage(`{self.FormattedName} found the body of {target.FormattedName}. They were a {target.Role.FormattedName}!`, "info", "bodyFound", self.Round.Participants)
                 target:SetStatus("Dead")
             end

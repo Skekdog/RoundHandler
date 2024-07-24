@@ -96,7 +96,7 @@ export type Equipment = {
 
 export type RoleRelationship = "__All" | "__Ally" | "__Enemy" | RoleName
 
-export type ScoreReason = "KilledEnemy" | "KilledAlly" | "LeftoverCredits" | "Actions" | string
+export type ScoreReason = "Bodies Found" | string
 
 export type MurderWeapon = Equipment | DeathType
 
