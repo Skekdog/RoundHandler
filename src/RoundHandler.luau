@@ -53,6 +53,7 @@ local function newParticipant(round, plr): Types.Participant
         Character = nil :: any, -- We can't actually set Character here, because plr hasn't loaded in yet
         FormattedName = plr.Name,
         Round = round,
+        Extras = {},
 
         Karma = if round.Gamemode.UseKarma then Adapter.GetKarma(plr) else 1000,
         Role = module.NoRole,

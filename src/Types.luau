@@ -348,6 +348,7 @@ export type ParticipantScoring = {[ScoreReason]: Integer}
 export type Participant = {
     Kind: "Participant",
     Round: Round, -- A reference to the round.
+    Extras: {[any]: any},
 
     Player: Player, -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
     Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.
