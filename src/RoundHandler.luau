@@ -1,4 +1,5 @@
 local HttpService = game:GetService("HttpService")
+local InsertService = game:GetService("InsertService")
 local Lighting = game:GetService("Lighting")
 local MaterialService = game:GetService("MaterialService")
 local Players = game:GetService("Players")
@@ -129,6 +130,7 @@ local function newParticipant(round, plr): Types.Participant
         end,
 
         EquipmentPurchases = {},
+        _roleAccessories = {},
 
         IsDead = function(self)
             return (self._status == "Missing") or (self._status == "Dead")
@@ -229,9 +231,20 @@ local function newParticipant(round, plr): Types.Participant
                 if role.Speed then
                     hum.WalkSpeed = role.Speed
                 end
+
+                for _, v in self._roleAccessories do
+                    v:Destroy()
+                end
+
                 if role.Accessories then
-                    for _, accessory in role.Accessories do
-                        hum:AddAccessory(accessory:Clone())
+                    for _, v in role.Accessories do
+                        local accessory = InsertService:LoadAsset(v):FindFirstChildOfClass("Accessory")
+                        if not accessory then
+                            continue
+                        end
+
+                        hum:AddAccessory(accessory)
+                        table.insert(self._roleAccessories, accessory)
                     end
                 end
             end

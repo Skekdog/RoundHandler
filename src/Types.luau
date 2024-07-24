@@ -305,7 +305,7 @@ export type Role = {
 
     PointsForSearchingCorpse: number?,
 
-    Accessories: {Accessory}?, -- A list of accessories to add to the character.
+    Accessories: {Asset}?, -- A list of accessories to add to the character.
     Health: number?, -- Sets Health and MaxHealth (of Humanoid).
     Speed: number?,  -- Sets normal WalkSpeed.
     JumpPower: number?, -- Sets JumpPower (of Humanoid).
@@ -412,6 +412,7 @@ export type Participant = {
 
     _credits: Integer,
     _status: ParticipantStatus,
+    _roleAccessories: {Accessory},
 }
 
 export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
