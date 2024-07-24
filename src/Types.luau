@@ -10,7 +10,9 @@ export type EquipmentName = string
 export type RoleName = string
 
 export type Asset = "rbxassetid://" | string
-export type PauseFailReason = "RoundNotInProgress"
+export type ModelAsset = Asset
+export type ImageAsset = Asset
+export type AccessoryAsset = Asset
 
 -- The participant that a client can view of themselves
 export type GamemodeRoleString = "GAMEMODE__ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE__ROLE -> Role table
@@ -78,14 +80,14 @@ export type Adapter = {
 }
 
 export type WeaponAttackType = "Blunt" | "Blade" | "Explosion" | "Firearm"
-export type EquipmentItem = PVInstance | (self: Equipment, participant: Participant) -> ()
+export type EquipmentItem = ModelAsset? | (self: Equipment, participant: Participant) -> ()
 export type Equipment = {
     Name: EquipmentName, -- Name of the equipment.
     Description: string?, -- Description of this equipment.
-    Icon: Asset?, -- Icon of this equipment.
+    Icon: ImageAsset?, -- Icon of this equipment.
     Cost: Integer?, -- The number of credits that this equipment costs to buy.
     MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
-    Extras: any, -- Any extra info about the equipment, for use in custom functions.
+    Extras: any?, -- Any extra info about the equipment, for use in custom functions.
 
     AttackType: WeaponAttackType?, -- This determines the event flavour text that will be shown to players.
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
@@ -144,7 +146,7 @@ export type Icon = "CorrectKill" | "IncorrectKill" | "SelfDefense" | "FreeKill"
 export type UserFacingRoundEvent = {
     Timestamp: Timestamp,
     Category: RoundEventCategory,
-    Icons: {Asset | Icon},
+    Icons: {ImageAsset | Icon},
     Text: string,
 }
 
