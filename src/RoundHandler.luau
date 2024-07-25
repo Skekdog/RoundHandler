@@ -238,8 +238,15 @@ local function newParticipant(round, plr): Types.Participant
 
                 if role.Accessories then
                     for _, v in role.Accessories do
-                        local accessory = InsertService:LoadAsset(v):FindFirstChildOfClass("Accessory")
-                        if not accessory then
+                        local id = tonumber(v:split("//")[2])
+                        if not id then
+                            continue
+                        end
+
+                        local success, accessory = pcall(function()
+                            return InsertService:LoadAsset(id):FindFirstChildOfClass("Accessory")
+                        end)
+                        if not success or not accessory then
                             continue
                         end
 
