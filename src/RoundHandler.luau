@@ -598,7 +598,7 @@ local function newRound(gamemode): Types.Round
                 if self.Gamemode.StartingEquipment then
                     for _, v in self.Gamemode.StartingEquipment do
                         Adapter.GiveEquipment(participant, self:GetEquipment(v) :: Types.Equipment)
-                    end 
+                    end
                 end
 
                 hum.Died:Once(function()
