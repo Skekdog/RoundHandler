@@ -819,6 +819,7 @@ local function newRound(gamemode): Types.Round
                             model:SetAttribute(i, v)
                         end
 
+                        model.Name = propInstance.Name
                         model.PrimaryPart = propInstance
 
                         model.Parent = propInstance.Parent

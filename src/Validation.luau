@@ -216,16 +216,6 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         end
     end
 
-    local mats = map:FindFirstChild("MaterialVariants")
-    if mats then
-        for _, v in mats:GetChildren() do
-            if v.ClassName ~= "MaterialVariant" then
-                i("MaterialVariants must only contain MaterialVariants.")
-                break
-            end
-        end
-    end
-
     if not map:FindFirstChild("Map") then
         i("Map must have a Folder named Map.")
     end
@@ -246,7 +236,7 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         i("Map must have a Folder named Props.")
     else
         for _, prop in props:GetChildren() do
-            if not prop:IsA("Model") or not prop:IsA("BasePart") then
+            if not prop:IsA("Model") and not prop:IsA("BasePart") then
                 i(`Props must be a BasePart or a Model.`)
                 continue
             end
