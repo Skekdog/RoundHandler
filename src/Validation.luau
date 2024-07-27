@@ -169,7 +169,7 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         table.insert(issues, issue)
     end
 
-    if (map :: Types.MapStructureCast):FindFirstChildWhichIsA("ScriptBase", true) then
+    if (map :: Types.MapStructureCast):FindFirstChildWhichIsA("BaseScript", true) or (map :: Types.MapStructureCast):FindFirstAncestorWhichIsA("ModuleScript", true) then
         i("Maps must not contain scripts.")
     end
 
