@@ -437,28 +437,30 @@ export type MapStructure =  {
     Map: Folder,
 
     FindFirstChild:
-    ((MapStructure, "Lighting") -> LightingStructure?) &
-    ((MapStructure, "Props") -> PropsStructure?) &
-    ((MapStructure, "MaterialVariants") -> MaterialVariantsStructure?) &
-    ((MapStructure, "WeaponSpawns") -> WeaponSpawnsStructure?) &
-    ((MapStructure, "TerrainColors") -> TerrainColorsStructure?) &
-    ((MapStructure, "WaterSettings") -> WaterSettingsStructure?) &
-    ((MapStructure, "TerrainRegion") -> TerrainRegion?) &
-    ((MapStructure, "Windows") -> WindowsStructure?) &
-    ((MapStructure, "Bounds") -> BoundsStructure?) &
-    ((MapStructure, "Gravity") -> NumberValue?) &
-    ((MapStructure, string) -> Instance?),
+        & ((MapStructure, "Lighting") -> LightingStructure?)
+        & ((MapStructure, "Props") -> PropsStructure?)
+        & ((MapStructure, "MaterialVariants") -> MaterialVariantsStructure?)
+        & ((MapStructure, "WeaponSpawns") -> WeaponSpawnsStructure?)
+        & ((MapStructure, "TerrainColors") -> TerrainColorsStructure?)
+        & ((MapStructure, "WaterSettings") -> WaterSettingsStructure?)
+        & ((MapStructure, "TerrainRegion") -> TerrainRegion?)
+        & ((MapStructure, "Windows") -> WindowsStructure?)
+        & ((MapStructure, "Bounds") -> BoundsStructure?)
+        & ((MapStructure, "Gravity") -> NumberValue?)
+        & ((MapStructure, string) -> Instance?),
 
     GetChildren: (self: MapStructure) -> {Instance}
 }
 
 export type MapStructureCast = Instance & MapStructure
 
-export type PropInstance = BasePart & {
+export type PropInstance = Model & {
     FindFirstChild: (PropInstance, name: "OnBreak") -> ModuleScript?,
+
     GetAttribute:
-    ((PropInstance, attribute: "Health") -> number?) &
-    ((PropInstance, attribute: "NoGrab") -> boolean?),
+        & ((PropInstance, attribute: "Health") -> number?)
+        & ((PropInstance, attribute: "NoGrab") -> boolean?),
+    
     SetAttribute: (PropInstance, attribute: "Health", value: number) -> (),
     GetAttributeChangedSignal: (PropInstance, attribute: "Health") -> RBXScriptSignal?,
 }

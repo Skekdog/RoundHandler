@@ -242,8 +242,8 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         i("Map must have a Folder named Props.")
     else
         for _, prop in props:GetChildren() do
-            if not prop:IsA("BasePart") then
-                i("Props must only contain BaseParts.")
+            if prop:FindFirstChildWhichIsA("Model", true) then
+                i("Props must never have a Model as a descendant.")
                 break
             end
         end

@@ -817,6 +817,22 @@ local function newRound(gamemode): Types.Round
             local props = map:FindFirstChild("Props")
             if props then
                 local function loadProp(propInstance: Types.PropInstance)
+                    if self._props[propInstance] then -- If we made a model for the prop below then we do not need to load it again
+                        return
+                    end
+
+                    if not propInstance:IsA("Model") then
+                        local model = Instance.new("Model")
+                        for i, v in propInstance:GetAttributes() do
+                            model:SetAttribute(i, v)
+                        end
+
+                        model.Parent = propInstance.Parent
+                        propInstance.Parent = model
+
+                        propInstance = model :: Types.PropInstance
+                    end
+
                     local prop: Types.Prop = {
                         Kind = "Prop",
                         IsDead = false,
