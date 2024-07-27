@@ -169,6 +169,10 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         table.insert(issues, issue)
     end
 
+    if (map :: Types.MapStructureCast):FindFirstChildWhichIsA("ScriptBase", true) then
+        i("Maps must not contain scripts.")
+    end
+
     local lighting = map:FindFirstChild("Lighting")
     if lighting then
         local oldLightingProperties = {}

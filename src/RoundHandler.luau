@@ -803,15 +803,6 @@ local function newRound(gamemode): Types.Round
             local mapFolder = Instance.new("Folder")
             mapFolder.Name = `__Map_{self.ID}`
 
-            local scripts = {}
-            for _, v in (map :: Types.MapStructureCast):GetDescendants() do
-                if v:IsA("Script") then
-                    v:SetAttribute("__NoEnable", not v.Enabled)
-                    v.Enabled = false
-                    table.insert(scripts, v)
-                end
-            end
-
             map.Map.Parent = mapFolder
 
             local props = map:FindFirstChild("Props")
@@ -959,12 +950,6 @@ local function newRound(gamemode): Types.Round
 
             self.Map = mapFolder :: Types.MapStructureCast
             mapFolder.Parent = workspace
-
-            task.defer(function()
-                for _, v in scripts do
-                    v.Enabled = not v:GetAttribute("__NoEnable")
-                end
-            end)
         end,
         
         IsRoundPreparing = function(self)
