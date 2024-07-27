@@ -246,18 +246,27 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
         i("Map must have a Folder named Props.")
     else
         for _, prop in props:GetChildren() do
+            if not prop:IsA("Model") or not prop:IsA("BasePart") then
+                i(`Props must be a BasePart or a Model.`)
+                continue
+            end
+
             if prop:FindFirstChildWhichIsA("Model", true) then
                 i(`Prop {prop.Name} must not have a Model as a descendant.`)
             end
 
+            if prop:IsA("Model") and not prop:FindFirstChildWhichIsA("BasePart") then
+                i(`Prop {prop.Name} must have at least one BasePart.`)
+            end
+
             local healthType = typeof(prop:GetAttribute("Health"))
             if healthType ~= "nil" and healthType ~= "number" then
-                i(`Prop {prop.Name} Health attribute must be a number or nil`)
+                i(`Prop {prop.Name} Health attribute must be a number or nil.`)
             end
 
             local noGrabType = typeof(prop:GetAttribute("NoGrab"))
             if noGrabType ~= "nil" and noGrabType ~= "boolean" then
-                i(`Prop {prop.Name} Health attribute must be a boolean or nil`)
+                i(`Prop {prop.Name} Health attribute must be a boolean or nil.`)
             end
         end
     end

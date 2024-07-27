@@ -814,14 +814,21 @@ local function newRound(gamemode): Types.Round
 
                     if not propInstance:IsA("Model") then
                         local model = Instance.new("Model")
+
                         for i, v in propInstance:GetAttributes() do
                             model:SetAttribute(i, v)
                         end
+
+                        model.PrimaryPart = propInstance
 
                         model.Parent = propInstance.Parent
                         propInstance.Parent = model
 
                         propInstance = model :: Types.PropInstance
+                    end
+
+                    if not propInstance.PrimaryPart then
+                        propInstance.PrimaryPart = propInstance:FindFirstChildWhichIsA("BasePart")
                     end
 
                     local prop: Types.Prop = {
