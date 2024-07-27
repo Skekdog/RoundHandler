@@ -243,8 +243,17 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
     else
         for _, prop in props:GetChildren() do
             if prop:FindFirstChildWhichIsA("Model", true) then
-                i("Props must never have a Model as a descendant.")
-                break
+                i(`Prop {prop.Name} must not have a Model as a descendant.`)
+            end
+
+            local healthType = typeof(prop:GetAttribute("Health"))
+            if healthType ~= "nil" and healthType ~= "number" then
+                i(`Prop {prop.Name} Health attribute must be a number or nil`)
+            end
+
+            local noGrabType = typeof(prop:GetAttribute("NoGrab"))
+            if noGrabType ~= "nil" and noGrabType ~= "boolean" then
+                i(`Prop {prop.Name} Health attribute must be a boolean or nil`)
             end
         end
     end

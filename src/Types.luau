@@ -178,8 +178,7 @@ export type Prop = {
     IsDead: boolean,
     OnBreak: (self: Prop) -> (),
     TakeDamage: (self: Prop, damage: number, attacker: Participant?) -> (),
-    HasHealth: (self: Prop) -> boolean,
-    GetHealth: (self: Prop) -> number,
+    GetHealth: (self: Prop) -> number?,
 }
 
 export type Signal<T> = {Event: RBXScriptSignal<T>, Fire: (self: Signal<T>, data: T) -> ()}
@@ -376,7 +375,6 @@ export type Participant = {
     KilledAsFreeKill: boolean, -- Whether this Participant was killed as a free kill or not. Always check this as opposed to FreeKillReasons, as additional reasons may be added after death.
     KilledByHeadshot: boolean, -- True if they were killed by a headshot.
 
-    HasHealth: (self: Participant) -> true, -- Exists to simplify usage alongside props. Will always return true.
     GetHealth: (self: Participant) -> number,
     TakeDamage: (self: Participant, damage: number, attacker: Participant?, weapon: MurderWeapon?, headshot: boolean?, ignoreKarma: boolean?) -> (), -- Sets the Humanoid's Health to 0 and sets relevant properties on the Participant.
     

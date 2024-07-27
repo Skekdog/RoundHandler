@@ -838,11 +838,12 @@ local function newRound(gamemode): Types.Round
                         IsDead = false,
                         PropInstance = propInstance,
                         TakeDamage = function(self, damage, attacker)
-                            if not self:HasHealth() then
-                                error("Prop is not alive")
+                            local health = self:GetHealth()
+                            if not health then
+                                return
                             end
                             self.Attacker = attacker
-                            propInstance:SetAttribute("Health", self:GetHealth() - damage)
+                            propInstance:SetAttribute("Health", health - damage)
                         end,
                         OnBreak = function(self)
                             if not propInstance:GetAttribute("NoDestroy") then
@@ -851,14 +852,11 @@ local function newRound(gamemode): Types.Round
                             self.IsDead = true
                         end,
                         GetHealth = function(self)
-                            return propInstance:GetAttribute("Health") :: number or error("Prop is not alive")
-                        end,
-                        HasHealth = function(self)
-                            return propInstance:GetAttribute("Health") ~= nil
+                            return propInstance:GetAttribute("Health") :: number?
                         end
                     }
                     self._props[propInstance] = prop
-                    if prop:HasHealth() then
+                    if prop:GetHealth() then
                         local con
                         con = propInstance:GetAttributeChangedSignal("Health"):Connect(function()
                             local health = propInstance:GetAttribute("Health")
