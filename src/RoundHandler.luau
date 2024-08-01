@@ -364,6 +364,7 @@ local function newParticipant(round, plr): Types.Participant
                         return
                     end
                     task.cancel(timerThread)
+                    self.Round._roundTimerThread = nil
                 end
 
                 Adapter.ClearAllEquipment(self)
@@ -616,6 +617,7 @@ local function newRound(gamemode): Types.Round
             task.spawn(plr.LoadCharacter, plr)
         
             if (#self.Participants >= self.Gamemode.MinimumPlayers) and (not self._roundTimerThread) then
+                self.TimeMilestone = workspace:GetServerTimeNow() + PREPARING_TIME
                 self._roundTimerThread = task.delay(PREPARING_TIME, self.StartRound, self)
             end
 
@@ -630,6 +632,9 @@ local function newRound(gamemode): Types.Round
         StartRound = function(self)
             if not self:IsRoundPreparing() then
                 error("Attempt to start round whilst it is not preparing")
+            end
+            if #self.Participants < self.Gamemode.MinimumPlayers then
+                error("Attempt to start round whilst below minimum players")
             end
 
             for _, v in self.Participants do
