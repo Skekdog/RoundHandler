@@ -457,7 +457,8 @@ export type PropInstance = Model & {
 
     GetAttribute:
         & ((PropInstance, attribute: "Health") -> number?)
-        & ((PropInstance, attribute: "NoGrab") -> boolean?),
+        & ((PropInstance, attribute: "NoGrab") -> boolean?)
+        & ((PropInstance, attribute: "AllowPreGameDamage") -> boolean?),
     
     SetAttribute: (PropInstance, attribute: "Health", value: number) -> (),
     GetAttributeChangedSignal: (PropInstance, attribute: "Health") -> RBXScriptSignal?,

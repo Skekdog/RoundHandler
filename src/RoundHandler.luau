@@ -841,12 +841,15 @@ local function newRound(gamemode): Types.Round
                         Kind = "Prop",
                         IsDead = false,
                         PropInstance = propInstance,
-                        TakeDamage = function(self, damage, attacker)
-                            local health = self:GetHealth()
+                        TakeDamage = function(prop, damage, attacker)
+                            if self:IsRoundPreparing() and not propInstance:GetAttribute("AllowPreGameDamage") then
+                                return
+                            end
+                            local health = prop:GetHealth()
                             if not health then
                                 return
                             end
-                            self.Attacker = attacker
+                            prop.Attacker = attacker
                             propInstance:SetAttribute("Health", health - damage)
                         end,
                         OnBreak = function(self)
