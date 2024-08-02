@@ -643,6 +643,16 @@ local function newRound(gamemode): Types.Round
                         task.wait()
                     until not v.Player:IsDescendantOf(Players) or v.Character
                 end
+
+                if v.Character then
+                    local hum = v.Character:FindFirstChildOfClass("Humanoid")
+
+                    if not hum then
+                        continue
+                    end
+
+                    hum.Health = hum.MaxHealth
+                end
             end
 
             self.RoundPhase = "Playing"
