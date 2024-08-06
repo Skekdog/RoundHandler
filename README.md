@@ -1,6 +1,8 @@
 # This is a Work In Progress!
 And as of yet, not well tested.
 
+There also seems to be a fundamental issue with equipment - how do we standardise that?
+
 ## RoundHandler
 A Roblox round engine, initially developed for [Those You Trust](https://www.roblox.com/games/2848381272). Provides a simple way to create role-based gamemodes, with support for advanced functions.
 
