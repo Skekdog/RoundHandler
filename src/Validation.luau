@@ -196,7 +196,7 @@ function module.ValidateMap(map: Types.MapStructure): {string?}
     if terrainColors then
         for _, v in terrainColors:GetChildren() do
             local success, _ = pcall(function()
-                workspace.Terrain:SetMaterialColor((Enum :: any).Material[v.Name], v.Value)
+                workspace.Terrain:SetMaterialColor((Enum.Material :: any)[v.Name], v.Value)
             end)
             if not success then
                 i(`Failed to set material {v.Name} color for Terrain, check that this material exists.`)

@@ -14,6 +14,8 @@ export type ModelAsset = Asset
 export type ImageAsset = Asset
 export type AccessoryAsset = Asset
 
+type Extras = {[any]: any}?
+
 -- The participant that a client can view of themselves
 export type GamemodeRoleString = "GAMEMODE__ROLE" | string -- Instead of sending a new table to each client every time they should save the roles in GAMEMODE__ROLE -> Role table
 export type ParticipantStatus = "Alive" | "Dead" | "Missing"
@@ -87,7 +89,7 @@ export type Equipment = {
     Icon: ImageAsset?, -- Icon of this equipment.
     Cost: Integer?, -- The number of credits that this equipment costs to buy.
     MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
-    Extras: any?, -- Any extra info about the equipment, for use in custom functions.
+    Extras: {}?, -- Any extra info about the equipment, for use in custom functions.
 
     AttackType: WeaponAttackType?, -- This determines the event flavour text that will be shown to players.
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
@@ -245,7 +247,7 @@ export type Gamemode = {
     Name: string, -- Name of the gamemode.
     Description: string?, -- Description of the gamemode.
     Authors: string?, -- Authors of the gamemode.
-    Extras: any, -- Any extra info about the gamemode, for use in custom functions.
+    Extras: Extras, -- Any extra info about the gamemode, for use in custom functions.
 
     EngineVersion: string, -- Indicates the engine version that this gamemode was designed for.
 
@@ -288,7 +290,7 @@ export type Role = {
     FormattedName: string?, -- Rich text formatted name, usually with the role colour
     Description: string?, -- Description of this role.
     Colour: Color3, -- Colour of this role. Not color.
-    Extras: any, -- Any extra info about the role, for use in custom functions.
+    Extras: Extras, -- Any extra info about the role, for use in custom functions.
 
     Allegiance: RoleName?, -- i.e, Detective wins as Innocent. Does not necessarily impact Ally / Enemy status.
     VictoryMusic: {Sound}?, -- Music that plays when this role wins. Must not be nil for the Allegiance roles, no effect on other roles.
@@ -349,7 +351,7 @@ export type ParticipantScoring = {[ScoreReason]: Integer}
 export type Participant = {
     Kind: "Participant",
     Round: Round, -- A reference to the round.
-    Extras: {[any]: any},
+    Extras: Extras,
 
     Player: Player, -- A reference to the Player object. Will never be nil, but may be parented to nil if the player disconnects. As such it may be useful to check the parent property.
     Character: Model, -- A reference to the Player's character. May be parented to nil if falling into the void, for example, but generally will not be nil. As such it may be useful to check the parent property.

@@ -958,14 +958,14 @@ local function newRound(gamemode): Types.Round
                 local terrainColors = map:FindFirstChild("TerrainColors")
                 if terrainColors then
                     for _, v in terrainColors:GetChildren() do
-                        workspace.Terrain:SetMaterialColor((Enum :: any).Material[v.Name], v.Value)
+                        workspace.Terrain:SetMaterialColor((Enum.Material :: any)[v.Name], v.Value)
                     end
                 end
 
                 local waterSettings = map:FindFirstChild("WaterSettings")
                 if waterSettings then
                     for _, v in waterSettings:GetChildren() do
-                        (workspace :: any).Terrain[v.Name] = v.Value
+                        (workspace.Terrain :: any)[v.Name] = v.Value
                     end
                 end
             end
