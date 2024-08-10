@@ -89,7 +89,7 @@ export type Equipment = {
     Icon: ImageAsset?, -- Icon of this equipment.
     Cost: Integer?, -- The number of credits that this equipment costs to buy.
     MaxStock: PositiveInteger?, -- The maximum times a single Participant can purchase this equipment, per round.
-    Extras: {}?, -- Any extra info about the equipment, for use in custom functions.
+    Extras: Extras, -- Any extra info about the equipment, for use in custom functions.
 
     AttackType: WeaponAttackType?, -- This determines the event flavour text that will be shown to players.
     NoGuilt: boolean?, -- true if this weapon should not cause the attacker to be a free kill for killing the wrong person.
