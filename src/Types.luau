@@ -415,6 +415,7 @@ export type Participant = {
     _credits: Integer,
     _status: ParticipantStatus,
     _roleAccessories: {Accessory},
+    _onDisconnectConnection: RBXScriptConnection?,
 }
 
 export type LightingStructure = {GetChildren: (self: Folder) -> {StringValue | NumberValue | Color3Value | BoolValue | Instance}} & Folder
