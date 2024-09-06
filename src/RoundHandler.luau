@@ -352,6 +352,9 @@ local function newParticipant(round, plr): Types.Participant
 
         LeaveRound = function(self, persistTimer)
             self.Removed = true
+            if self._onDisconnectConnection then
+                self._onDisconnectConnection:Disconnect()
+            end
             if self.Round:IsRoundPreparing() then
                 local index = table.find(self.Round.Participants, self)
                 if index then
@@ -576,7 +579,7 @@ local function newRound(gamemode): Types.Round
         
             table.insert(self.Participants, participant)
         
-            plr.Destroying:Connect(function()
+            participant._onDisconnectConnection = plr.Destroying:Once(function()
                 participant:LeaveRound()
             end)
         
@@ -799,6 +802,9 @@ local function newRound(gamemode): Types.Round
             self.RoundPhaseChangeEvent:Fire("Destroy")
 
             for _, participant in self.Participants do
+                if participant._onDisconnectConnection then
+                    participant._onDisconnectConnection:Disconnect()
+                end
                 Adapter.ClearAllEquipment(participant)
             end
 
@@ -817,6 +823,7 @@ local function newRound(gamemode): Types.Round
         
             local mapFolder = Instance.new("Folder")
             mapFolder.Name = `__Map_{self.ID}`
+            mapFolder.Parent = workspace
 
             map.Map.Parent = mapFolder
 
@@ -898,13 +905,13 @@ local function newRound(gamemode): Types.Round
 
             local weaponSpawns = map:FindFirstChild("WeaponSpawns")
             if weaponSpawns then
+                weaponSpawns.Parent = mapFolder
                 for _, weapon in weaponSpawns:GetChildren() do
                     Adapter.LoadWeaponSpawn(self, weapon)
                 end
                 weaponSpawns.ChildAdded:Connect(function(part)
                     Adapter.LoadWeaponSpawn(self, part :: BasePart)
                 end)
-                weaponSpawns.Parent = mapFolder
             end
 
             local bounds = map:FindFirstChild("Bounds")
@@ -975,7 +982,6 @@ local function newRound(gamemode): Types.Round
             end
 
             self.Map = mapFolder :: Types.MapStructureCast
-            mapFolder.Parent = workspace
         end,
         
         IsRoundPreparing = function(self)
